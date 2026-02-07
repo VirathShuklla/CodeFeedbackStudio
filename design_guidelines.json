@@ -1,0 +1,148 @@
+{
+  "identity": {
+    "name": "CodeFeedback Studio",
+    "tone": "Academic, Professional, Constructive, Focused",
+    "theme_mode": "light",
+    "primary_archetype": "The Performance Pro (Academic Edition)"
+  },
+  "typography": {
+    "font_family": {
+      "headings": "Manrope, sans-serif",
+      "body": "Inter, sans-serif",
+      "code": "JetBrains Mono, monospace"
+    },
+    "scale": {
+      "h1": "text-4xl font-bold tracking-tight lg:text-5xl",
+      "h2": "text-3xl font-semibold tracking-tight",
+      "h3": "text-2xl font-semibold tracking-tight",
+      "body_large": "text-lg leading-relaxed",
+      "body_default": "text-base leading-relaxed",
+      "caption": "text-sm text-muted-foreground",
+      "code_snippet": "text-sm font-mono"
+    },
+    "imports": [
+      "@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Manrope:wght@400;600;700;800&display=swap');"
+    ]
+  },
+  "colors": {
+    "palette": {
+      "background": "hsl(210, 40%, 98%)",
+      "surface": "hsl(0, 0%, 100%)",
+      "primary": "hsl(220, 80%, 50%)",
+      "primary_foreground": "hsl(0, 0%, 100%)",
+      "secondary": "hsl(260, 60%, 96%)",
+      "secondary_foreground": "hsl(222, 47%, 11%)",
+      "accent": "hsl(210, 40%, 96.1%)",
+      "accent_foreground": "hsl(222, 47%, 11%)",
+      "muted": "hsl(210, 40%, 96.1%)",
+      "muted_foreground": "hsl(215, 16%, 47%)",
+      "border": "hsl(214, 32%, 91%)",
+      "input": "hsl(214, 32%, 91%)",
+      "ring": "hsl(220, 80%, 50%)"
+    },
+    "feedback_status": {
+      "error": "hsl(0, 84%, 60%)",
+      "warning": "hsl(38, 92%, 50%)",
+      "success": "hsl(142, 71%, 45%)",
+      "info": "hsl(220, 80%, 50%)"
+    },
+    "monaco_theme": {
+      "base": "vs",
+      "inherit": true,
+      "rules": [
+        { "token": "comment", "foreground": "9CA3AF", "fontStyle": "italic" },
+        { "token": "keyword", "foreground": "1D4ED8", "fontStyle": "bold" },
+        { "token": "string", "foreground": "059669" }
+      ],
+      "colors": {
+        "editor.background": "#FFFFFF",
+        "editor.lineHighlightBackground": "#F3F4F6",
+        "editorLineNumber.foreground": "#9CA3AF"
+      }
+    }
+  },
+  "layout_strategies": {
+    "dashboard_grid": {
+      "type": "Bento Grid Mode B (High Density)",
+      "classes": "grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6 p-8",
+      "items": {
+        "summary_card": "col-span-1 bg-white rounded-xl border border-slate-200 shadow-sm p-6",
+        "main_chart": "col-span-2 row-span-2 bg-white rounded-xl border border-slate-200 shadow-sm p-6",
+        "activity_feed": "col-span-1 row-span-2 bg-white rounded-xl border border-slate-200 shadow-sm p-6 overflow-hidden"
+      }
+    },
+    "code_review_layout": {
+      "type": "Three Column Fixed",
+      "classes": "flex h-[calc(100vh-4rem)] overflow-hidden bg-background",
+      "panels": {
+        "file_tree": "w-64 border-r border-border bg-surface overflow-y-auto p-4",
+        "editor": "flex-1 relative overflow-hidden",
+        "feedback_panel": "w-80 border-l border-border bg-surface overflow-y-auto p-4"
+      }
+    },
+    "spacing": {
+      "container_padding": "p-8 md:p-12",
+      "section_gap": "gap-8",
+      "internal_padding": "p-6"
+    }
+  },
+  "components": {
+    "buttons": {
+      "primary": "rounded-full bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm px-6 py-2 font-medium transition-all active:scale-95",
+      "secondary": "rounded-full bg-secondary text-secondary-foreground hover:bg-secondary/80 px-6 py-2 font-medium transition-all",
+      "ghost": "rounded-full hover:bg-accent hover:text-accent-foreground px-4 py-2 transition-all"
+    },
+    "cards": {
+      "default": "bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow duration-200",
+      "interactive": "cursor-pointer hover:border-primary/50 hover:ring-1 hover:ring-primary/50 transition-all"
+    },
+    "inputs": {
+      "default": "rounded-lg border-input bg-slate-50 px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+    },
+    "badges": {
+      "status_open": "bg-blue-100 text-blue-700 hover:bg-blue-200 rounded-md px-2 py-0.5 text-xs font-medium",
+      "status_fixed": "bg-green-100 text-green-700 hover:bg-green-200 rounded-md px-2 py-0.5 text-xs font-medium",
+      "status_review": "bg-amber-100 text-amber-700 hover:bg-amber-200 rounded-md px-2 py-0.5 text-xs font-medium"
+    }
+  },
+  "visual_enhancers": {
+    "glassmorphism": {
+      "header": "bg-white/80 backdrop-blur-md border-b border-slate-200/50 sticky top-0 z-50"
+    },
+    "shadows": {
+      "soft": "0 2px 8px -2px rgba(0, 0, 0, 0.05)",
+      "hover": "0 10px 25px -5px rgba(0, 0, 0, 0.1)"
+    },
+    "empty_states": {
+      "style": "Minimalist SVG or ASCII Art",
+      "text": "text-muted-foreground text-center"
+    }
+  },
+  "assets": {
+    "images": {
+      "login_background": "https://images.unsplash.com/photo-1718220216044-006f43e3a9b1?crop=entropy&cs=srgb&fm=jpg&q=85",
+      "empty_dashboard": "https://images.unsplash.com/photo-1666618207644-4de0226a3f85?crop=entropy&cs=srgb&fm=jpg&q=85"
+    },
+    "icons": {
+      "library": "lucide-react",
+      "style": "Stroke width 1.5px, size 18px or 20px"
+    }
+  },
+  "instructions_to_main_agent": [
+    "IMPLEMENTATION: Use the provided color palette variables in tailwind.config.js. Do not hardcode hex values in components.",
+    "LAYOUT: Strictly follow the 'Bento Grid' layout for the dashboard. Do not create a generic list view.",
+    "EDITOR: When implementing Monaco Editor, apply the custom theme defined in 'monaco_theme' to ensure it blends with the light mode UI.",
+    "FEEDBACK: Use the specific status colors (error/warning/success) for all feedback indicators and badges.",
+    "ACCESSIBILITY: Ensure all text meets APCA contrast standards. The primary blue on white is safe, but be careful with muted text.",
+    "TESTING: Add 'data-testid' to all interactive elements (buttons, inputs, grid items) as per the system rules.",
+    "ROUTING: Ensure the layout handles the 'Code Review' page differently (full screen, no standard footer) compared to the Dashboard (standard layout)."
+  ],
+  "universal_guidelines": [
+    "Avoid 'AI Slop': Do not use generic gradients or centered layouts.",
+    "Use 2-3x more spacing than typical designs.",
+    "Every interaction needs micro-animations.",
+    "Use 'sonner' for toasts.",
+    "Components MUST use named exports.",
+    "Pages MUST use default exports."
+  ]
+}
