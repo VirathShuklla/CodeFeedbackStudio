@@ -1,75 +1,44 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Manrope:wght@400;600;700;800&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-body {
-    margin: 0;
-    font-family:
-        -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
-        "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
-        sans-serif;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-}
-
-code {
-    font-family:
-        source-code-pro, Menlo, Monaco, Consolas, "Courier New", monospace;
-}
-
 @layer base {
     :root {
-        --background: 0 0% 100%;
-        --foreground: 0 0% 3.9%;
+        --background: 210 40% 98%;
+        --foreground: 222 47% 11%;
         --card: 0 0% 100%;
-        --card-foreground: 0 0% 3.9%;
+        --card-foreground: 222 47% 11%;
         --popover: 0 0% 100%;
-        --popover-foreground: 0 0% 3.9%;
-        --primary: 0 0% 9%;
-        --primary-foreground: 0 0% 98%;
-        --secondary: 0 0% 96.1%;
-        --secondary-foreground: 0 0% 9%;
-        --muted: 0 0% 96.1%;
-        --muted-foreground: 0 0% 45.1%;
-        --accent: 0 0% 96.1%;
-        --accent-foreground: 0 0% 9%;
-        --destructive: 0 84.2% 60.2%;
-        --destructive-foreground: 0 0% 98%;
-        --border: 0 0% 89.8%;
-        --input: 0 0% 89.8%;
-        --ring: 0 0% 3.9%;
-        --chart-1: 12 76% 61%;
-        --chart-2: 173 58% 39%;
-        --chart-3: 197 37% 24%;
-        --chart-4: 43 74% 66%;
-        --chart-5: 27 87% 67%;
-        --radius: 0.5rem;
-    }
-    .dark {
-        --background: 0 0% 3.9%;
-        --foreground: 0 0% 98%;
-        --card: 0 0% 3.9%;
-        --card-foreground: 0 0% 98%;
-        --popover: 0 0% 3.9%;
-        --popover-foreground: 0 0% 98%;
-        --primary: 0 0% 98%;
-        --primary-foreground: 0 0% 9%;
-        --secondary: 0 0% 14.9%;
-        --secondary-foreground: 0 0% 98%;
-        --muted: 0 0% 14.9%;
-        --muted-foreground: 0 0% 63.9%;
-        --accent: 0 0% 14.9%;
-        --accent-foreground: 0 0% 98%;
-        --destructive: 0 62.8% 30.6%;
-        --destructive-foreground: 0 0% 98%;
-        --border: 0 0% 14.9%;
-        --input: 0 0% 14.9%;
-        --ring: 0 0% 83.1%;
-        --chart-1: 220 70% 50%;
-        --chart-2: 160 60% 45%;
-        --chart-3: 30 80% 55%;
-        --chart-4: 280 65% 60%;
-        --chart-5: 340 75% 55%;
+        --popover-foreground: 222 47% 11%;
+        --primary: 220 80% 50%;
+        --primary-foreground: 0 0% 100%;
+        --secondary: 260 60% 96%;
+        --secondary-foreground: 222 47% 11%;
+        --muted: 210 40% 96.1%;
+        --muted-foreground: 215 16% 47%;
+        --accent: 210 40% 96.1%;
+        --accent-foreground: 222 47% 11%;
+        --destructive: 0 84% 60%;
+        --destructive-foreground: 0 0% 100%;
+        --border: 214 32% 91%;
+        --input: 214 32% 91%;
+        --ring: 220 80% 50%;
+        --radius: 0.75rem;
+        
+        /* Chart colors */
+        --chart-1: 220 80% 50%;
+        --chart-2: 142 71% 45%;
+        --chart-3: 38 92% 50%;
+        --chart-4: 0 84% 60%;
+        --chart-5: 260 60% 55%;
+        
+        /* Custom feedback colors */
+        --feedback-error: 0 84% 60%;
+        --feedback-warning: 38 92% 50%;
+        --feedback-success: 142 71% 45%;
+        --feedback-info: 220 80% 50%;
     }
 }
 
@@ -77,39 +46,182 @@ code {
     * {
         @apply border-border;
     }
+    
     body {
-        @apply bg-background text-foreground;
+        @apply bg-background text-foreground antialiased;
+        font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    }
+    
+    h1, h2, h3, h4, h5, h6 {
+        font-family: 'Manrope', sans-serif;
+    }
+    
+    code, pre, .font-mono {
+        font-family: 'JetBrains Mono', 'Fira Code', monospace;
     }
 }
 
-@layer base {
-    [data-debug-wrapper="true"] {
-        display: contents !important;
+@layer components {
+    .btn-primary {
+        @apply rounded-full bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm px-6 py-2 font-medium transition-all active:scale-95;
     }
+    
+    .btn-secondary {
+        @apply rounded-full bg-secondary text-secondary-foreground hover:bg-secondary/80 px-6 py-2 font-medium transition-all;
+    }
+    
+    .btn-ghost {
+        @apply rounded-full hover:bg-accent hover:text-accent-foreground px-4 py-2 transition-all;
+    }
+    
+    .card-default {
+        @apply bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow duration-200;
+    }
+    
+    .card-interactive {
+        @apply card-default cursor-pointer hover:border-primary/50 hover:ring-1 hover:ring-primary/50;
+    }
+    
+    .input-default {
+        @apply rounded-lg border-input bg-slate-50 px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2;
+    }
+    
+    .badge-open {
+        @apply bg-blue-100 text-blue-700 hover:bg-blue-200 rounded-md px-2 py-0.5 text-xs font-medium;
+    }
+    
+    .badge-fixed {
+        @apply bg-green-100 text-green-700 hover:bg-green-200 rounded-md px-2 py-0.5 text-xs font-medium;
+    }
+    
+    .badge-review {
+        @apply bg-amber-100 text-amber-700 hover:bg-amber-200 rounded-md px-2 py-0.5 text-xs font-medium;
+    }
+    
+    .badge-pending {
+        @apply bg-slate-100 text-slate-700 rounded-md px-2 py-0.5 text-xs font-medium;
+    }
+    
+    .glass-header {
+        @apply bg-white/80 backdrop-blur-md border-b border-slate-200/50 sticky top-0 z-50;
+    }
+    
+    .severity-critical {
+        @apply bg-red-100 text-red-700 border-red-200;
+    }
+    
+    .severity-moderate {
+        @apply bg-amber-100 text-amber-700 border-amber-200;
+    }
+    
+    .severity-minor {
+        @apply bg-blue-100 text-blue-700 border-blue-200;
+    }
+}
 
-    [data-debug-wrapper="true"] > * {
-        margin-left: inherit;
-        margin-right: inherit;
-        margin-top: inherit;
-        margin-bottom: inherit;
-        padding-left: inherit;
-        padding-right: inherit;
-        padding-top: inherit;
-        padding-bottom: inherit;
-        column-gap: inherit;
-        row-gap: inherit;
-        gap: inherit;
-        border-left-width: inherit;
-        border-right-width: inherit;
-        border-top-width: inherit;
-        border-bottom-width: inherit;
-        border-left-style: inherit;
-        border-right-style: inherit;
-        border-top-style: inherit;
-        border-bottom-style: inherit;
-        border-left-color: inherit;
-        border-right-color: inherit;
-        border-top-color: inherit;
-        border-bottom-color: inherit;
+@layer utilities {
+    .animate-fade-in {
+        animation: fadeIn 0.3s ease-out;
     }
+    
+    .animate-slide-up {
+        animation: slideUp 0.3s ease-out;
+    }
+    
+    .animate-slide-in-right {
+        animation: slideInRight 0.3s ease-out;
+    }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideUp {
+    from { 
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to { 
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideInRight {
+    from { 
+        opacity: 0;
+        transform: translateX(20px);
+    }
+    to { 
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* Monaco Editor Overrides */
+.monaco-editor {
+    font-family: 'JetBrains Mono', monospace !important;
+}
+
+.monaco-editor .margin {
+    background-color: #f8fafc !important;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: hsl(210, 40%, 96.1%);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: hsl(215, 16%, 70%);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: hsl(215, 16%, 55%);
+}
+
+/* Code highlight decorations */
+.code-highlight-error {
+    background-color: rgba(239, 68, 68, 0.15) !important;
+    border-left: 3px solid #ef4444 !important;
+}
+
+.code-highlight-warning {
+    background-color: rgba(245, 158, 11, 0.15) !important;
+    border-left: 3px solid #f59e0b !important;
+}
+
+.code-highlight-info {
+    background-color: rgba(59, 130, 246, 0.15) !important;
+    border-left: 3px solid #3b82f6 !important;
+}
+
+/* Line number gutter markers */
+.issue-gutter-marker {
+    width: 8px !important;
+    height: 8px !important;
+    border-radius: 50%;
+    margin-left: 4px;
+    margin-top: 6px;
+}
+
+.issue-gutter-critical {
+    background-color: #ef4444;
+}
+
+.issue-gutter-moderate {
+    background-color: #f59e0b;
+}
+
+.issue-gutter-minor {
+    background-color: #3b82f6;
 }
