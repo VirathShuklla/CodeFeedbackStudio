@@ -127,33 +127,22 @@ class CodeFeedbackStudioTester:
         """Test user login and JWT token generation"""
         print("\n🔍 Testing User Login...")
         
-        if not self.marker_user or not self.student_user:
-            self.log_test("Login Test Skipped", False, "Registration failed")
-            return
+        if not self.marker_user:
+            self.log_test("Marker Login Test Skipped", False, "Marker registration failed")
+        else:
+            # Login marker
+            marker_login = {
+                "email": self.marker_user["email"],
+                "password": "TestPass123!"
+            }
+            
+            success, data = self.make_request('POST', '/auth/login', marker_login, expected_status=200)
+            if success and 'token' in data:
+                self.marker_token = data['token']
+            self.log_test("Marker Login", success and 'token' in data,
+                         "" if success else f"Failed: {data}")
         
-        # Login marker
-        marker_login = {
-            "email": self.marker_user["email"],
-            "password": "TestPass123!"
-        }
-        
-        success, data = self.make_request('POST', '/auth/login', marker_login, expected_status=200)
-        if success and 'token' in data:
-            self.marker_token = data['token']
-        self.log_test("Marker Login", success and 'token' in data,
-                     "" if success else f"Failed: {data}")
-        
-        # Login student
-        student_login = {
-            "email": self.student_user["email"],
-            "password": "TestPass123!"
-        }
-        
-        success, data = self.make_request('POST', '/auth/login', student_login, expected_status=200)
-        if success and 'token' in data:
-            self.student_token = data['token']
-        self.log_test("Student Login", success and 'token' in data,
-                     "" if success else f"Failed: {data}")
+        # Student login will be tested after student registration with course
 
     def test_auth_me_endpoint(self):
         """Test /auth/me endpoint with tokens"""
