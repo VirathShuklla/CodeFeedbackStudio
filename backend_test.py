@@ -219,25 +219,29 @@ class CodeFeedbackStudioTester:
                          "" if success else f"Failed: {data}")
 
     def test_assignment_management(self):
-        """Test assignment creation and retrieval"""
+        """Test assignment creation and retrieval with deadlines"""
         print("\n🔍 Testing Assignment Management...")
         
         if not self.marker_token or not self.course_id:
             self.log_test("Assignment Tests Skipped", False, "Missing marker token or course")
             return
         
-        # Create assignment
+        # Create assignment with deadline (datetime-local format)
+        from datetime import datetime, timezone, timedelta
+        future_deadline = (datetime.now(timezone.utc) + timedelta(hours=1)).isoformat()
+        
         assignment_data = {
             "course_id": self.course_id,
             "title": "Test Assignment - Hello World",
             "description": "Write a simple Hello World program",
+            "due_date": future_deadline,
             "max_attempts": 3
         }
         
         success, data = self.make_request('POST', '/assignments', assignment_data, self.marker_token, expected_status=200)
         if success:
             self.assignment_id = data.get('id')
-        self.log_test("Assignment Creation", success,
+        self.log_test("Assignment Creation with deadline", success,
                      "" if success else f"Failed: {data}")
         
         # Get assignments
@@ -251,6 +255,23 @@ class CodeFeedbackStudioTester:
             success, data = self.make_request('GET', f'/assignments/{self.assignment_id}', token=self.marker_token)
             self.log_test("Get Specific Assignment", success,
                          "" if success else f"Failed: {data}")
+        
+        # Create assignment with past deadline for deadline enforcement test
+        past_deadline = (datetime.now(timezone.utc) - timedelta(hours=1)).isoformat()
+        
+        past_assignment_data = {
+            "course_id": self.course_id,
+            "title": "Past Deadline Assignment",
+            "description": "Assignment with past deadline",
+            "due_date": past_deadline,
+            "max_attempts": 3
+        }
+        
+        success, data = self.make_request('POST', '/assignments', past_assignment_data, self.marker_token, expected_status=200)
+        if success:
+            self.past_assignment_id = data.get('id')
+        self.log_test("Assignment Creation with past deadline", success,
+                     "" if success else f"Failed: {data}")
 
     def test_issue_categories(self):
         """Test issue categories"""
