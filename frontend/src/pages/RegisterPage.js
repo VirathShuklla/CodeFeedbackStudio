@@ -35,13 +35,11 @@ export default function RegisterPage() {
   useEffect(() => {
     const fetchCourses = async () => {
       try {
-        // Public endpoint to list courses for registration
-        const response = await axios.get(`${API_URL}/api/courses`, {
-          headers: {} // No auth needed for listing
-        });
+        // Public endpoint - no auth needed for registration
+        const response = await axios.get(`${API_URL}/api/public/courses`);
         setCourses(response.data || []);
       } catch (error) {
-        // If no courses exist yet, that's okay
+        console.error('Failed to fetch courses:', error);
         setCourses([]);
       } finally {
         setLoadingCourses(false);
