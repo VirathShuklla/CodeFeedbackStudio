@@ -207,6 +207,19 @@ class CodeFeedbackStudioTester:
                 self.student_user = data
             self.log_test("Student Registration WITH course selection", success,
                          "" if success else f"Failed: {data}")
+            
+            # Login student after successful registration
+            if success:
+                student_login = {
+                    "email": student_data["email"],
+                    "password": "TestPass123!"
+                }
+                
+                success, data = self.make_request('POST', '/auth/login', student_login, expected_status=200)
+                if success and 'token' in data:
+                    self.student_token = data['token']
+                self.log_test("Student Login after course registration", success and 'token' in data,
+                             "" if success else f"Failed: {data}")
 
     def test_assignment_management(self):
         """Test assignment creation and retrieval with deadlines"""
