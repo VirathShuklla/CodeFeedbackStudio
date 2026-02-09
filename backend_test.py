@@ -451,15 +451,28 @@ class CodeFeedbackStudioTester:
                          "" if success else f"Failed: {data}")
 
     def test_analytics_endpoints(self):
-        """Test analytics endpoints"""
-        print("\n🔍 Testing Analytics Endpoints...")
+        """Test course-scoped analytics endpoints"""
+        print("\n🔍 Testing Course-Scoped Analytics Endpoints...")
         
-        # Marker analytics
+        # Marker analytics - course-scoped
         if self.marker_token:
             success, data = self.make_request('GET', '/analytics/marker', token=self.marker_token)
-            analytics_valid = success and isinstance(data, dict) and 'total_submissions' in data
-            self.log_test("Marker Analytics", analytics_valid,
+            analytics_valid = success and isinstance(data, dict) and 'courses' in data
+            self.log_test("Marker Analytics (course-scoped)", analytics_valid,
                          "" if analytics_valid else f"Failed: {data}")
+            
+            # Test course-specific analytics
+            if self.course_id and analytics_valid:
+                success, data = self.make_request('GET', f'/analytics/marker?course_id={self.course_id}', token=self.marker_token)
+                course_analytics_valid = success and isinstance(data, dict) and 'courses' in data
+                self.log_test("Course-specific Marker Analytics", course_analytics_valid,
+                             "" if course_analytics_valid else f"Failed: {data}")
+                
+                # Verify marker sees only their courses
+                if course_analytics_valid and data.get('courses'):
+                    marker_courses_only = all(course.get('course_id') == self.course_id for course in data['courses'])
+                    self.log_test("Marker sees only their courses in analytics", marker_courses_only,
+                                 "" if marker_courses_only else f"Found other courses: {data}")
         
         # Student analytics
         if self.student_token:
