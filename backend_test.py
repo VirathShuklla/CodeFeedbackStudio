@@ -180,16 +180,19 @@ class CodeFeedbackStudioTester:
             self.log_test("Course Tests Skipped", False, "No marker token")
             return
         
-        # Create course
+        # Create course with code/name/year
         course_data = {
             "name": "Test Course - Python Fundamentals",
-            "description": "A test course for automated testing"
+            "code": "CS101",
+            "description": "A test course for automated testing",
+            "year": 2024,
+            "semester": "Fall"
         }
         
         success, data = self.make_request('POST', '/courses', course_data, self.marker_token, expected_status=200)
         if success:
             self.course_id = data.get('id')
-        self.log_test("Course Creation", success,
+        self.log_test("Course Creation with code/name/year", success,
                      "" if success else f"Failed: {data}")
         
         # Get courses
@@ -197,6 +200,23 @@ class CodeFeedbackStudioTester:
         courses_found = success and isinstance(data, list) and len(data) > 0
         self.log_test("Get Courses", courses_found,
                      "" if courses_found else f"Failed: {data}")
+        
+        # Now test student registration WITH course selection
+        if self.course_id:
+            timestamp = datetime.now().strftime("%H%M%S")
+            student_data = {
+                "email": f"student_{timestamp}@test.com", 
+                "password": "TestPass123!",
+                "full_name": "Test Student",
+                "role": "student",
+                "course_id": self.course_id
+            }
+            
+            success, data = self.make_request('POST', '/auth/register', student_data, expected_status=200)
+            if success:
+                self.student_user = data
+            self.log_test("Student Registration WITH course selection", success,
+                         "" if success else f"Failed: {data}")
 
     def test_assignment_management(self):
         """Test assignment creation and retrieval"""
