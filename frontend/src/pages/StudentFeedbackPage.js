@@ -16,7 +16,8 @@ import {
   Code2,
   ChevronRight,
   History,
-  ExternalLink
+  ExternalLink,
+  ThumbsUp
 } from 'lucide-react';
 import Editor from '@monaco-editor/react';
 
@@ -127,8 +128,24 @@ export default function StudentFeedbackPage() {
     }
   };
 
+  const getStatusBadge = (status) => {
+    switch (status) {
+      case 'feedback_released':
+        return <Badge variant="secondary" className="badge-fixed text-xs">Feedback Ready</Badge>;
+      case 'no_issues':
+        return <Badge variant="secondary" className="bg-green-100 text-green-700 text-xs">No Issues</Badge>;
+      case 'in_review':
+        return <Badge variant="secondary" className="badge-review text-xs">In Review</Badge>;
+      default:
+        return <Badge variant="secondary" className="badge-pending text-xs">{status}</Badge>;
+    }
+  };
+
   const fixedCount = issues.filter(i => i.student_status === 'fixed').length;
-  const progressPercent = issues.length > 0 ? (fixedCount / issues.length) * 100 : 0;
+  const progressPercent = issues.length > 0 ? (fixedCount / issues.length) * 100 : 100;
+
+  // Check if this is a "no issues" submission
+  const isNoIssues = submission?.status === 'no_issues';
 
   if (loading) {
     return (
@@ -162,13 +179,22 @@ export default function StudentFeedbackPage() {
         </div>
         
         <div className="ml-auto flex items-center gap-4">
-          <div className="flex items-center gap-2 text-sm">
-            <span className="text-muted-foreground">Progress:</span>
-            <span className="font-medium">{fixedCount}/{issues.length} fixed</span>
-          </div>
-          <div className="w-32">
-            <Progress value={progressPercent} className="h-2" />
-          </div>
+          {isNoIssues ? (
+            <div className="flex items-center gap-2 text-green-600">
+              <ThumbsUp className="w-4 h-4" />
+              <span className="font-medium">Perfect Score!</span>
+            </div>
+          ) : (
+            <>
+              <div className="flex items-center gap-2 text-sm">
+                <span className="text-muted-foreground">Progress:</span>
+                <span className="font-medium">{fixedCount}/{issues.length} fixed</span>
+              </div>
+              <div className="w-32">
+                <Progress value={progressPercent} className="h-2" />
+              </div>
+            </>
+          )}
         </div>
       </header>
 
@@ -180,36 +206,35 @@ export default function StudentFeedbackPage() {
             <History className="w-4 h-4" /> Submission History
           </h3>
           <div className="space-y-2">
-            {history.map((sub) => (
-              <div
-                key={sub.id}
-                className={`p-3 rounded-lg border cursor-pointer transition-all ${
-                  sub.id === submissionId 
-                    ? 'border-primary bg-primary/5' 
-                    : sub.status === 'feedback_released'
-                      ? 'border-border hover:border-primary/30'
-                      : 'border-border opacity-50 cursor-not-allowed'
-                }`}
-                onClick={() => {
-                  if (sub.status === 'feedback_released') {
-                    navigate(`/student/feedback/${sub.id}`);
-                  }
-                }}
-                data-testid={`history-item-${sub.id}`}
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">Attempt {sub.attempt_number}</span>
-                  {sub.status === 'feedback_released' ? (
-                    <Badge variant="secondary" className="badge-fixed text-xs">Ready</Badge>
-                  ) : (
-                    <Badge variant="secondary" className="badge-pending text-xs">{sub.status}</Badge>
-                  )}
+            {history.map((sub) => {
+              const canView = sub.status === 'feedback_released' || sub.status === 'no_issues';
+              return (
+                <div
+                  key={sub.id}
+                  className={`p-3 rounded-lg border cursor-pointer transition-all ${
+                    sub.id === submissionId 
+                      ? 'border-primary bg-primary/5' 
+                      : canView
+                        ? 'border-border hover:border-primary/30'
+                        : 'border-border opacity-50 cursor-not-allowed'
+                  }`}
+                  onClick={() => {
+                    if (canView) {
+                      navigate(`/student/feedback/${sub.id}`);
+                    }
+                  }}
+                  data-testid={`history-item-${sub.id}`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">Attempt {sub.attempt_number}</span>
+                    {getStatusBadge(sub.status)}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {new Date(sub.submission_time).toLocaleDateString()}
+                  </p>
                 </div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {new Date(sub.submission_time).toLocaleDateString()}
-                </p>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 
@@ -240,16 +265,33 @@ export default function StudentFeedbackPage() {
         <div className="w-96 border-l border-border bg-white flex flex-col">
           <div className="p-4 border-b border-border">
             <h3 className="text-sm font-semibold text-foreground">
-              Feedback ({issues.length} issues)
+              {isNoIssues ? 'Feedback' : `Feedback (${issues.length} issues)`}
             </h3>
             <p className="text-xs text-muted-foreground mt-1">
-              Click an issue to jump to the code location
+              {isNoIssues ? 'Your code has been reviewed' : 'Click an issue to jump to the code location'}
             </p>
           </div>
           
           <ScrollArea className="flex-1">
             <div className="p-4 space-y-4">
-              {issues.length === 0 ? (
+              {/* No Issues - Perfect Score */}
+              {isNoIssues ? (
+                <div className="py-8 text-center">
+                  <div className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4">
+                    <ThumbsUp className="w-10 h-10 text-green-600" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-green-700 mb-2">No Issues Found!</h3>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Your code is correct. Great work on this submission!
+                  </p>
+                  {submission?.marker_comment && (
+                    <div className="p-4 rounded-xl bg-green-50 border border-green-100 text-left">
+                      <p className="text-xs font-medium text-green-700 mb-1">Marker's Comment</p>
+                      <p className="text-sm text-green-800">{submission.marker_comment}</p>
+                    </div>
+                  )}
+                </div>
+              ) : issues.length === 0 ? (
                 <div className="py-8 text-center">
                   <CheckCircle2 className="w-8 h-8 text-green-500 mx-auto mb-2" />
                   <p className="text-sm text-muted-foreground">No issues found!</p>
