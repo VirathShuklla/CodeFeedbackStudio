@@ -524,6 +524,7 @@ class CodeFeedbackStudioTester:
             self.test_issue_categories()
             self.test_submission_workflow()
             self.test_feedback_workflow()
+            self.test_no_issues_workflow()
             self.test_student_feedback_access()
             self.test_analytics_endpoints()
             self.test_error_handling()
