@@ -94,7 +94,7 @@ class CodeFeedbackStudioTester:
         
         timestamp = datetime.now().strftime("%H%M%S")
         
-        # Register marker
+        # Register marker (no course required)
         marker_data = {
             "email": f"marker_{timestamp}@test.com",
             "password": "TestPass123!",
@@ -105,22 +105,22 @@ class CodeFeedbackStudioTester:
         success, data = self.make_request('POST', '/auth/register', marker_data, expected_status=200)
         if success:
             self.marker_user = data
-        self.log_test("Marker Registration", success,
+        self.log_test("Marker Registration (no course required)", success,
                      "" if success else f"Failed: {data}")
         
-        # Register student
-        student_data = {
-            "email": f"student_{timestamp}@test.com", 
+        # Test student registration WITHOUT course (should fail)
+        student_data_no_course = {
+            "email": f"student_nocourse_{timestamp}@test.com", 
             "password": "TestPass123!",
-            "full_name": "Test Student",
+            "full_name": "Test Student No Course",
             "role": "student"
         }
         
-        success, data = self.make_request('POST', '/auth/register', student_data, expected_status=200)
-        if success:
-            self.student_user = data
-        self.log_test("Student Registration", success,
-                     "" if success else f"Failed: {data}")
+        success, data = self.make_request('POST', '/auth/register', student_data_no_course, expected_status=400)
+        self.log_test("Student Registration Without Course (should fail)", success,
+                     "" if success else f"Should return 400: {data}")
+        
+        # Note: Student registration WITH course will be tested after course creation
 
     def test_user_login(self):
         """Test user login and JWT token generation"""
