@@ -383,6 +383,53 @@ class CodeFeedbackStudioTester:
         self.log_test("Publish Feedback", success,
                      "" if success else f"Failed: {data}")
 
+    def test_no_issues_workflow(self):
+        """Test 'No Issues Found' functionality"""
+        print("\n🔍 Testing 'No Issues Found' Workflow...")
+        
+        if not self.marker_token or not self.submission_id:
+            self.log_test("No Issues Tests Skipped", False, "Missing required data")
+            return
+        
+        # Create a second submission for no-issues test
+        if self.student_token and self.assignment_id:
+            perfect_submission_data = {
+                "assignment_id": self.assignment_id,
+                "code_content": "def hello_world():\n    \"\"\"Print hello world message.\"\"\"\n    print('Hello, World!')\n\nif __name__ == '__main__':\n    hello_world()",
+                "filename": "perfect_code.py"
+            }
+            
+            success, data = self.make_request('POST', '/submissions', perfect_submission_data, self.student_token, expected_status=200)
+            if success:
+                perfect_submission_id = data.get('id')
+                
+                # Marker marks submission as 'No Issues Found' (fully correct)
+                no_issues_data = {
+                    "submission_id": perfect_submission_id,
+                    "marker_comment": "Excellent work! Code is well-structured and follows best practices."
+                }
+                
+                success, data = self.make_request('POST', f'/submissions/{perfect_submission_id}/mark-no-issues', no_issues_data, self.marker_token, expected_status=200)
+                self.log_test("Marker marks submission as 'No Issues Found'", success,
+                             "" if success else f"Failed: {data}")
+                
+                # Check that submission status is 'no_issues'
+                success, data = self.make_request('GET', f'/submissions/{perfect_submission_id}', token=self.marker_token)
+                if success and data.get('status') == 'no_issues':
+                    self.log_test("Submission status updated to 'no_issues'", True)
+                    
+                    # Student sees 'No Issues' status in feedback view
+                    success, data = self.make_request('GET', f'/submissions/{perfect_submission_id}', token=self.student_token)
+                    student_sees_no_issues = success and data.get('status') == 'no_issues'
+                    self.log_test("Student sees 'No Issues' status in feedback view", student_sees_no_issues,
+                                 "" if student_sees_no_issues else f"Failed: {data}")
+                else:
+                    self.log_test("Submission status updated to 'no_issues'", False, f"Status not updated: {data}")
+            else:
+                self.log_test("Create perfect submission for no-issues test", False, f"Failed: {data}")
+        else:
+            self.log_test("No Issues Tests Skipped", False, "Missing student token or assignment")
+
     def test_student_feedback_access(self):
         """Test student accessing published feedback"""
         print("\n🔍 Testing Student Feedback Access...")
