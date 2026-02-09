@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Manrope:wght@400;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Outfit:wght@400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,39 +6,29 @@
 
 @layer base {
     :root {
-        --background: 210 40% 98%;
-        --foreground: 222 47% 11%;
+        --background: 0 0% 99%;
+        --foreground: 240 10% 10%;
         --card: 0 0% 100%;
-        --card-foreground: 222 47% 11%;
+        --card-foreground: 240 10% 10%;
         --popover: 0 0% 100%;
-        --popover-foreground: 222 47% 11%;
-        --primary: 220 80% 50%;
+        --popover-foreground: 240 10% 10%;
+        --primary: 230 80% 55%;
         --primary-foreground: 0 0% 100%;
-        --secondary: 260 60% 96%;
-        --secondary-foreground: 222 47% 11%;
-        --muted: 210 40% 96.1%;
-        --muted-foreground: 215 16% 47%;
-        --accent: 210 40% 96.1%;
-        --accent-foreground: 222 47% 11%;
-        --destructive: 0 84% 60%;
+        --secondary: 240 5% 96%;
+        --secondary-foreground: 240 10% 10%;
+        --muted: 240 5% 96%;
+        --muted-foreground: 240 5% 45%;
+        --accent: 240 5% 96%;
+        --accent-foreground: 240 10% 10%;
+        --destructive: 0 72% 51%;
         --destructive-foreground: 0 0% 100%;
-        --border: 214 32% 91%;
-        --input: 214 32% 91%;
-        --ring: 220 80% 50%;
-        --radius: 0.75rem;
+        --border: 240 6% 90%;
+        --input: 240 6% 90%;
+        --ring: 230 80% 55%;
+        --radius: 0.625rem;
         
-        /* Chart colors */
-        --chart-1: 220 80% 50%;
-        --chart-2: 142 71% 45%;
-        --chart-3: 38 92% 50%;
-        --chart-4: 0 84% 60%;
-        --chart-5: 260 60% 55%;
-        
-        /* Custom feedback colors */
-        --feedback-error: 0 84% 60%;
-        --feedback-warning: 38 92% 50%;
-        --feedback-success: 142 71% 45%;
-        --feedback-info: 220 80% 50%;
+        --success: 142 71% 45%;
+        --warning: 38 92% 50%;
     }
 }
 
@@ -53,7 +43,8 @@
     }
     
     h1, h2, h3, h4, h5, h6 {
-        font-family: 'Manrope', sans-serif;
+        font-family: 'Outfit', sans-serif;
+        letter-spacing: -0.02em;
     }
     
     code, pre, .font-mono {
@@ -62,74 +53,75 @@
 }
 
 @layer components {
+    /* Clean button styles */
     .btn-primary {
-        @apply rounded-full bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm px-6 py-2 font-medium transition-all active:scale-95;
+        @apply bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg px-5 py-2.5 font-medium transition-all duration-200 shadow-sm hover:shadow;
     }
     
     .btn-secondary {
-        @apply rounded-full bg-secondary text-secondary-foreground hover:bg-secondary/80 px-6 py-2 font-medium transition-all;
+        @apply bg-secondary text-secondary-foreground hover:bg-secondary/80 rounded-lg px-5 py-2.5 font-medium transition-all duration-200;
     }
     
     .btn-ghost {
-        @apply rounded-full hover:bg-accent hover:text-accent-foreground px-4 py-2 transition-all;
+        @apply hover:bg-accent rounded-lg px-4 py-2 transition-all duration-200;
     }
     
-    .card-default {
-        @apply bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow duration-200;
+    /* Card styles */
+    .card-clean {
+        @apply bg-white rounded-xl border border-border/60 shadow-sm;
     }
     
-    .card-interactive {
-        @apply card-default cursor-pointer hover:border-primary/50 hover:ring-1 hover:ring-primary/50;
+    .card-hover {
+        @apply card-clean hover:border-primary/30 hover:shadow-md transition-all duration-200 cursor-pointer;
     }
     
-    .input-default {
-        @apply rounded-lg border-input bg-slate-50 px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2;
+    /* Status badges */
+    .status-pending {
+        @apply bg-amber-50 text-amber-700 border border-amber-200 rounded-full px-3 py-1 text-xs font-medium;
     }
     
-    .badge-open {
-        @apply bg-blue-100 text-blue-700 hover:bg-blue-200 rounded-md px-2 py-0.5 text-xs font-medium;
+    .status-reviewed {
+        @apply bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full px-3 py-1 text-xs font-medium;
     }
     
-    .badge-fixed {
-        @apply bg-green-100 text-green-700 hover:bg-green-200 rounded-md px-2 py-0.5 text-xs font-medium;
+    .status-closed {
+        @apply bg-slate-100 text-slate-600 border border-slate-200 rounded-full px-3 py-1 text-xs font-medium;
     }
     
-    .badge-review {
-        @apply bg-amber-100 text-amber-700 hover:bg-amber-200 rounded-md px-2 py-0.5 text-xs font-medium;
+    /* Header */
+    .header-clean {
+        @apply bg-white/90 backdrop-blur-md border-b border-border/50 sticky top-0 z-50;
     }
     
-    .badge-pending {
-        @apply bg-slate-100 text-slate-700 rounded-md px-2 py-0.5 text-xs font-medium;
+    /* Input focus */
+    .input-clean {
+        @apply rounded-lg border-border bg-white px-4 py-2.5 text-sm ring-offset-background 
+               placeholder:text-muted-foreground/60 
+               focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary
+               transition-all duration-200;
     }
     
-    .glass-header {
-        @apply bg-white/80 backdrop-blur-md border-b border-slate-200/50 sticky top-0 z-50;
-    }
-    
+    /* Severity styles */
     .severity-critical {
-        @apply bg-red-100 text-red-700 border-red-200;
+        @apply bg-red-50 text-red-700 border-red-200;
     }
     
     .severity-moderate {
-        @apply bg-amber-100 text-amber-700 border-amber-200;
+        @apply bg-amber-50 text-amber-700 border-amber-200;
     }
     
     .severity-minor {
-        @apply bg-blue-100 text-blue-700 border-blue-200;
+        @apply bg-blue-50 text-blue-700 border-blue-200;
     }
 }
 
 @layer utilities {
     .animate-fade-in {
-        animation: fadeIn 0.3s ease-out;
+        animation: fadeIn 0.25s ease-out;
     }
     
     .animate-slide-up {
         animation: slideUp 0.3s ease-out;
-    }
-    
-    .animate-slide-in-right {
-        animation: slideInRight 0.3s ease-out;
     }
 }
 
@@ -141,7 +133,7 @@
 @keyframes slideUp {
     from { 
         opacity: 0;
-        transform: translateY(10px);
+        transform: translateY(8px);
     }
     to { 
         opacity: 1;
@@ -149,84 +141,62 @@
     }
 }
 
-@keyframes slideInRight {
-    from { 
-        opacity: 0;
-        transform: translateX(20px);
-    }
-    to { 
-        opacity: 1;
-        transform: translateX(0);
-    }
-}
-
-/* Monaco Editor Overrides */
+/* Monaco Editor */
 .monaco-editor {
     font-family: 'JetBrains Mono', monospace !important;
 }
 
 .monaco-editor .margin {
-    background-color: #f8fafc !important;
+    background-color: #fafafa !important;
 }
 
-/* Custom scrollbar */
+/* Scrollbar */
 ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
+    width: 6px;
+    height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-    background: hsl(210, 40%, 96.1%);
-    border-radius: 4px;
+    background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-    background: hsl(215, 16%, 70%);
-    border-radius: 4px;
+    background: hsl(240, 5%, 80%);
+    border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: hsl(215, 16%, 55%);
+    background: hsl(240, 5%, 65%);
 }
 
-/* Code highlight decorations */
+/* Code highlights */
 .code-highlight-error {
-    background-color: rgba(239, 68, 68, 0.15) !important;
+    background-color: rgba(239, 68, 68, 0.1) !important;
     border-left: 3px solid #ef4444 !important;
 }
 
 .code-highlight-warning {
-    background-color: rgba(245, 158, 11, 0.15) !important;
+    background-color: rgba(245, 158, 11, 0.1) !important;
     border-left: 3px solid #f59e0b !important;
 }
 
 .code-highlight-info {
-    background-color: rgba(59, 130, 246, 0.15) !important;
+    background-color: rgba(59, 130, 246, 0.1) !important;
     border-left: 3px solid #3b82f6 !important;
 }
 
-/* Line number gutter markers */
+/* Gutter markers */
 .issue-gutter-marker {
-    width: 8px !important;
-    height: 8px !important;
+    width: 6px !important;
+    height: 6px !important;
     border-radius: 50%;
     margin-left: 4px;
-    margin-top: 6px;
+    margin-top: 7px;
 }
 
-.issue-gutter-critical {
-    background-color: #ef4444;
-}
+.issue-gutter-critical { background-color: #ef4444; }
+.issue-gutter-moderate { background-color: #f59e0b; }
+.issue-gutter-minor { background-color: #3b82f6; }
 
-.issue-gutter-moderate {
-    background-color: #f59e0b;
-}
-
-.issue-gutter-minor {
-    background-color: #3b82f6;
-}
-
-/* Hide Emergent watermark badge */
-#emergent-badge {
-    display: none !important;
-}
+/* Hide watermark */
+#emergent-badge { display: none !important; }

@@ -2,73 +2,115 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { AppLayout } from '../components/layout/AppLayout';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/card';
 import { Button } from '../components/ui/button';
-import { Badge } from '../components/ui/badge';
-import { Progress } from '../components/ui/progress';
-import { ScrollArea } from '../components/ui/scroll-area';
+import { Textarea } from '../components/ui/textarea';
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '../components/ui/dialog';
 import { toast } from 'sonner';
-import { 
-  FileText, 
-  Clock, 
-  CheckCircle2, 
-  AlertCircle,
-  ArrowRight,
-  TrendingUp,
-  Target,
-  BookOpen
-} from 'lucide-react';
+import { FileText, Clock, Upload, CheckCircle2, AlertCircle, Ban } from 'lucide-react';
+import Editor from '@monaco-editor/react';
 
 export default function StudentDashboard() {
   const { api, user } = useAuth();
   const navigate = useNavigate();
+  const [assignments, setAssignments] = useState([]);
   const [submissions, setSubmissions] = useState([]);
-  const [progress, setProgress] = useState(null);
+  const [course, setCourse] = useState(null);
   const [loading, setLoading] = useState(true);
+  
+  // Submit dialog
+  const [showSubmitDialog, setShowSubmitDialog] = useState(false);
+  const [selectedAssignment, setSelectedAssignment] = useState(null);
+  const [codeContent, setCodeContent] = useState('# Your Python code here\n\ndef main():\n    pass\n\nif __name__ == "__main__":\n    main()\n');
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [subsRes, progressRes] = await Promise.all([
-          api().get('/submissions'),
-          api().get('/analytics/student')
-        ]);
-        setSubmissions(subsRes.data);
-        setProgress(progressRes.data);
-      } catch (error) {
-        toast.error('Failed to load dashboard data');
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchData();
   }, [api]);
 
-  const feedbackReadySubmissions = submissions.filter(s => s.status === 'feedback_released');
-  const pendingSubmissions = submissions.filter(s => s.status === 'pending' || s.status === 'in_review');
-
-  const getStatusBadge = (status) => {
-    switch (status) {
-      case 'pending':
-        return <Badge variant="secondary" className="badge-pending">Submitted</Badge>;
-      case 'in_review':
-        return <Badge variant="secondary" className="badge-review">In Review</Badge>;
-      case 'feedback_released':
-        return <Badge variant="secondary" className="badge-fixed">Feedback Ready</Badge>;
-      default:
-        return <Badge variant="secondary">{status}</Badge>;
+  const fetchData = async () => {
+    try {
+      const [assignmentsRes, submissionsRes] = await Promise.all([
+        api().get('/assignments'),
+        api().get('/submissions')
+      ]);
+      setAssignments(assignmentsRes.data);
+      setSubmissions(submissionsRes.data);
+      
+      // Get course info
+      if (user?.course_id) {
+        try {
+          const courseRes = await api().get(`/courses/${user.course_id}`);
+          setCourse(courseRes.data);
+        } catch (e) {
+          // Course might not exist
+        }
+      }
+    } catch (error) {
+      toast.error('Failed to load data');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const resolutionRate = progress?.total_issues > 0 
-    ? Math.round((progress.fixed_issues / progress.total_issues) * 100) 
-    : 0;
+  const handleSubmit = async () => {
+    if (!selectedAssignment || !codeContent.trim()) {
+      toast.error('Please provide code');
+      return;
+    }
+    
+    try {
+      await api().post('/submissions', {
+        assignment_id: selectedAssignment.id,
+        code_content: codeContent,
+        filename: 'main.py'
+      });
+      toast.success('Submitted successfully!');
+      setShowSubmitDialog(false);
+      setCodeContent('# Your Python code here\n');
+      setSelectedAssignment(null);
+      fetchData();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Submission failed');
+    }
+  };
+
+  const getLatestSubmission = (assignmentId) => {
+    return submissions.find(s => s.assignment_id === assignmentId);
+  };
+
+  const getStatusDisplay = (submission) => {
+    if (!submission) return null;
+    
+    switch (submission.status) {
+      case 'pending':
+      case 'in_review':
+        return { label: 'Pending review', class: 'status-pending', icon: Clock };
+      case 'feedback_released':
+        return { label: 'Reviewed – feedback available', class: 'status-reviewed', icon: AlertCircle };
+      case 'no_issues':
+        return { label: 'Reviewed – no issues found', class: 'status-reviewed', icon: CheckCircle2 };
+      default:
+        return { label: submission.status, class: 'status-pending', icon: Clock };
+    }
+  };
+
+  const formatDeadline = (dueDate) => {
+    if (!dueDate) return null;
+    return new Date(dueDate).toLocaleDateString('en-US', { 
+      month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+    });
+  };
 
   if (loading) {
     return (
       <AppLayout>
-        <div className="p-8 flex items-center justify-center min-h-[calc(100vh-4rem)]">
-          <div className="animate-pulse text-muted-foreground">Loading dashboard...</div>
+        <div className="p-8 flex items-center justify-center min-h-[60vh]">
+          <div className="text-muted-foreground">Loading...</div>
         </div>
       </AppLayout>
     );
@@ -76,193 +118,139 @@ export default function StudentDashboard() {
 
   return (
     <AppLayout>
-      <div className="p-8 md:p-12" data-testid="student-dashboard">
+      <div className="max-w-3xl mx-auto px-6 py-8" data-testid="student-dashboard">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold font-['Manrope'] text-foreground">
-            Welcome back, {user?.full_name?.split(' ')[0]}!
+          <h1 className="text-2xl font-semibold font-['Outfit']">
+            {course ? `${course.code ? `${course.code} – ` : ''}${course.name}` : 'Your Assignments'}
           </h1>
-          <p className="text-muted-foreground mt-1">Track your progress and view feedback on your submissions</p>
+          {course && (
+            <p className="text-sm text-muted-foreground mt-1">
+              {course.semester && course.year ? `${course.semester} ${course.year}` : ''}
+            </p>
+          )}
         </div>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card className="card-default" data-testid="stat-submissions">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground font-medium">Total Submissions</p>
-                  <p className="text-3xl font-bold text-foreground mt-1">{progress?.total_submissions || 0}</p>
-                </div>
-                <div className="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center">
-                  <FileText className="w-6 h-6 text-blue-600" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="card-default" data-testid="stat-issues">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground font-medium">Total Issues</p>
-                  <p className="text-3xl font-bold text-foreground mt-1">{progress?.total_issues || 0}</p>
-                </div>
-                <div className="w-12 h-12 rounded-xl bg-amber-100 flex items-center justify-center">
-                  <AlertCircle className="w-6 h-6 text-amber-600" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="card-default" data-testid="stat-fixed">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground font-medium">Issues Fixed</p>
-                  <p className="text-3xl font-bold text-foreground mt-1">{progress?.fixed_issues || 0}</p>
-                </div>
-                <div className="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center">
-                  <CheckCircle2 className="w-6 h-6 text-green-600" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="card-default" data-testid="stat-progress">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground font-medium">Resolution Rate</p>
-                  <p className="text-3xl font-bold text-foreground mt-1">{resolutionRate}%</p>
-                </div>
-                <div className="w-12 h-12 rounded-xl bg-purple-100 flex items-center justify-center">
-                  <TrendingUp className="w-6 h-6 text-purple-600" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Main Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Feedback Ready - Large Card */}
-          <Card className="card-default lg:col-span-2" data-testid="feedback-ready-card">
-            <CardHeader className="pb-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="text-lg font-semibold font-['Manrope']">Feedback Ready</CardTitle>
-                  <CardDescription>Review feedback from your marker</CardDescription>
-                </div>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="gap-1"
-                  onClick={() => navigate('/student/assignments')}
-                  data-testid="view-all-btn"
-                >
-                  View all <ArrowRight className="w-4 h-4" />
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {feedbackReadySubmissions.length === 0 ? (
-                <div className="py-12 text-center">
-                  <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mx-auto mb-4">
-                    <BookOpen className="w-8 h-8 text-muted-foreground" />
-                  </div>
-                  <p className="text-muted-foreground">No feedback available yet</p>
-                  <p className="text-sm text-muted-foreground mt-1">Check back later for your results</p>
-                </div>
-              ) : (
-                <ScrollArea className="h-[300px]">
-                  <div className="space-y-3">
-                    {feedbackReadySubmissions.map((submission) => (
-                      <div
-                        key={submission.id}
-                        className="flex items-center justify-between p-4 rounded-xl border border-border hover:border-primary/30 hover:bg-primary/5 transition-all cursor-pointer group"
-                        onClick={() => navigate(`/student/feedback/${submission.id}`)}
-                        data-testid={`submission-${submission.id}`}
-                      >
-                        <div className="flex items-center gap-4">
-                          <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
-                            <CheckCircle2 className="w-5 h-5 text-green-600" />
-                          </div>
-                          <div>
-                            <p className="font-medium text-foreground">{submission.filename}</p>
-                            <p className="text-sm text-muted-foreground">
-                              Attempt {submission.attempt_number} • {submission.issues_count} issues
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          {getStatusBadge(submission.status)}
-                          <ArrowRight className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </ScrollArea>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Progress Card */}
-          <Card className="card-default" data-testid="progress-card">
-            <CardHeader className="pb-4">
-              <CardTitle className="text-lg font-semibold font-['Manrope']">Your Progress</CardTitle>
-              <CardDescription>Issue resolution tracking</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm text-muted-foreground">Overall Progress</span>
-                  <span className="text-sm font-medium">{resolutionRate}%</span>
-                </div>
-                <Progress value={resolutionRate} className="h-2" />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="p-3 rounded-xl bg-green-50 border border-green-100">
-                  <div className="flex items-center gap-2 mb-1">
-                    <CheckCircle2 className="w-4 h-4 text-green-600" />
-                    <span className="text-xs text-green-700 font-medium">Fixed</span>
-                  </div>
-                  <p className="text-2xl font-bold text-green-700">{progress?.fixed_issues || 0}</p>
-                </div>
-                <div className="p-3 rounded-xl bg-amber-50 border border-amber-100">
-                  <div className="flex items-center gap-2 mb-1">
-                    <AlertCircle className="w-4 h-4 text-amber-600" />
-                    <span className="text-xs text-amber-700 font-medium">Open</span>
-                  </div>
-                  <p className="text-2xl font-bold text-amber-700">{progress?.open_issues || 0}</p>
-                </div>
-              </div>
-
-              {Object.keys(progress?.issues_by_category || {}).length > 0 && (
-                <div className="space-y-3">
-                  <p className="text-sm font-medium text-muted-foreground">Issues by Category</p>
-                  {Object.entries(progress?.issues_by_category || {}).slice(0, 5).map(([category, count]) => (
-                    <div key={category} className="flex items-center justify-between">
-                      <span className="text-sm text-foreground">{category}</span>
-                      <Badge variant="secondary" className="bg-primary/10 text-primary">{count}</Badge>
+        {/* Assignments */}
+        {assignments.length === 0 ? (
+          <div className="card-clean p-12 text-center">
+            <FileText className="w-10 h-10 text-muted-foreground/50 mx-auto mb-3" />
+            <p className="text-muted-foreground">No assignments yet</p>
+            <p className="text-sm text-muted-foreground/70 mt-1">Check back later</p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {assignments.map((assignment) => {
+              const submission = getLatestSubmission(assignment.id);
+              const status = getStatusDisplay(submission);
+              const isPastDeadline = assignment.is_past_deadline;
+              const canSubmit = !isPastDeadline && (!submission || submissions.filter(s => s.assignment_id === assignment.id).length < assignment.max_attempts);
+              const hasReviewedFeedback = submission?.status === 'feedback_released' || submission?.status === 'no_issues';
+              
+              return (
+                <div key={assignment.id} className="card-clean p-5" data-testid={`assignment-${assignment.id}`}>
+                  <div className="flex items-start justify-between mb-3">
+                    <div>
+                      <h3 className="font-medium">{assignment.title}</h3>
+                      {assignment.description && (
+                        <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{assignment.description}</p>
+                      )}
                     </div>
-                  ))}
+                  </div>
+                  
+                  {/* Deadline */}
+                  {assignment.due_date && (
+                    <div className={`flex items-center gap-1.5 text-sm mb-4 ${isPastDeadline ? 'text-red-600' : 'text-muted-foreground'}`}>
+                      <Clock className="w-3.5 h-3.5" />
+                      <span>
+                        {isPastDeadline ? 'Closed' : `Due ${formatDeadline(assignment.due_date)}`}
+                      </span>
+                    </div>
+                  )}
+                  
+                  {/* Status */}
+                  {status && (
+                    <div className="flex items-center gap-2 mb-4">
+                      <status.icon className="w-4 h-4" />
+                      <span className={status.class}>{status.label}</span>
+                    </div>
+                  )}
+                  
+                  {/* Actions */}
+                  <div className="flex gap-3">
+                    {hasReviewedFeedback && (
+                      <Button 
+                        variant="outline"
+                        onClick={() => navigate(`/student/feedback/${submission.id}`)}
+                        className="flex-1"
+                        data-testid={`view-feedback-btn-${assignment.id}`}
+                      >
+                        View Feedback
+                      </Button>
+                    )}
+                    
+                    {isPastDeadline ? (
+                      <Button disabled className="flex-1" data-testid={`submit-btn-${assignment.id}`}>
+                        <Ban className="w-4 h-4 mr-2" /> Submissions closed
+                      </Button>
+                    ) : canSubmit ? (
+                      <Button 
+                        onClick={() => {
+                          setSelectedAssignment(assignment);
+                          setShowSubmitDialog(true);
+                        }}
+                        className="btn-primary flex-1"
+                        data-testid={`submit-btn-${assignment.id}`}
+                      >
+                        <Upload className="w-4 h-4 mr-2" />
+                        {submission ? 'Resubmit' : 'Submit'}
+                      </Button>
+                    ) : !hasReviewedFeedback && (
+                      <Button disabled className="flex-1">
+                        Max attempts reached
+                      </Button>
+                    )}
+                  </div>
                 </div>
-              )}
+              );
+            })}
+          </div>
+        )}
 
-              <Button 
-                className="w-full rounded-full" 
-                variant="outline"
-                onClick={() => navigate('/student/assignments')}
-                data-testid="submit-new-btn"
-              >
-                <Target className="w-4 h-4 mr-2" />
-                Submit New Assignment
+        {/* Submit Dialog */}
+        <Dialog open={showSubmitDialog} onOpenChange={setShowSubmitDialog}>
+          <DialogContent className="max-w-3xl max-h-[85vh]">
+            <DialogHeader>
+              <DialogTitle className="font-['Outfit']">Submit: {selectedAssignment?.title}</DialogTitle>
+            </DialogHeader>
+            
+            <div className="mt-4 border rounded-lg overflow-hidden h-[400px]">
+              <Editor
+                height="400px"
+                defaultLanguage="python"
+                value={codeContent}
+                onChange={(value) => setCodeContent(value || '')}
+                theme="vs-light"
+                options={{
+                  minimap: { enabled: false },
+                  fontSize: 14,
+                  lineNumbers: 'on',
+                  scrollBeyondLastLine: false,
+                  automaticLayout: true,
+                  fontFamily: "'JetBrains Mono', monospace",
+                  padding: { top: 12 }
+                }}
+              />
+            </div>
+            
+            <DialogFooter className="mt-4">
+              <Button variant="outline" onClick={() => setShowSubmitDialog(false)}>Cancel</Button>
+              <Button onClick={handleSubmit} className="btn-primary" data-testid="submit-code-btn">
+                Submit
               </Button>
-            </CardContent>
-          </Card>
-        </div>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </AppLayout>
   );
