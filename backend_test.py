@@ -298,7 +298,7 @@ class CodeFeedbackStudioTester:
             self.log_test("Submission Tests Skipped", False, "Missing student token or assignment")
             return
         
-        # Create submission
+        # Create submission before deadline
         submission_data = {
             "assignment_id": self.assignment_id,
             "code_content": "print('Hello, World!')\n\ndef main():\n    print('This is a test submission')\n\nif __name__ == '__main__':\n    main()",
@@ -308,8 +308,20 @@ class CodeFeedbackStudioTester:
         success, data = self.make_request('POST', '/submissions', submission_data, self.student_token, expected_status=200)
         if success:
             self.submission_id = data.get('id')
-        self.log_test("Student Submission", success,
+        self.log_test("Student Submission before deadline", success,
                      "" if success else f"Failed: {data}")
+        
+        # Test deadline enforcement - try to submit to past deadline assignment
+        if hasattr(self, 'past_assignment_id') and self.past_assignment_id:
+            past_submission_data = {
+                "assignment_id": self.past_assignment_id,
+                "code_content": "print('This should fail')",
+                "filename": "past_deadline.py"
+            }
+            
+            success, data = self.make_request('POST', '/submissions', past_submission_data, self.student_token, expected_status=403)
+            self.log_test("Deadline enforcement - 403 response if past deadline", success,
+                         "" if success else f"Should return 403: {data}")
         
         # Get submissions
         success, data = self.make_request('GET', '/submissions', token=self.student_token)
@@ -322,6 +334,16 @@ class CodeFeedbackStudioTester:
             success, data = self.make_request('GET', f'/submissions/{self.submission_id}', token=self.student_token)
             self.log_test("Get Specific Submission", success,
                          "" if success else f"Failed: {data}")
+        
+        # Student views assignments for their course only
+        success, data = self.make_request('GET', '/assignments', token=self.student_token)
+        if success and isinstance(data, list):
+            # Check that all assignments belong to student's course
+            course_match = all(assignment.get('course_id') == self.course_id for assignment in data)
+            self.log_test("Student views assignments for their course only", course_match,
+                         "" if course_match else f"Found assignments from other courses: {data}")
+        else:
+            self.log_test("Student views assignments for their course only", False, f"Failed to get assignments: {data}")
 
     def test_feedback_workflow(self):
         """Test marker feedback workflow"""
