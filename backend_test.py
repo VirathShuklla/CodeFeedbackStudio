@@ -20,6 +20,7 @@ class CodeFeedbackStudioTester:
         self.student_user = None
         self.course_id = None
         self.assignment_id = None
+        self.past_assignment_id = None
         self.submission_id = None
         self.issue_id = None
         self.category_id = None
