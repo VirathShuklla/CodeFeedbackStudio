@@ -23,6 +23,17 @@ import {
   DialogHeader,
   DialogTitle,
 } from '../components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '../components/ui/alert-dialog';
 import { toast } from 'sonner';
 import { 
   ArrowLeft, 
@@ -32,12 +43,11 @@ import {
   AlertCircle,
   Info,
   Trash2,
-  Clock,
   CheckCircle2,
   Code2,
-  FileText,
   ChevronRight,
-  History
+  History,
+  ThumbsUp
 } from 'lucide-react';
 import Editor from '@monaco-editor/react';
 
@@ -64,6 +74,10 @@ export default function CodeReviewPage() {
     suggested_fix: '',
     verification_criteria: ''
   });
+  
+  // No issues dialog
+  const [showNoIssuesDialog, setShowNoIssuesDialog] = useState(false);
+  const [noIssuesComment, setNoIssuesComment] = useState('');
   
   // Decorations for highlighting
   const [decorations, setDecorations] = useState([]);
@@ -179,6 +193,21 @@ export default function CodeReviewPage() {
     }
   };
 
+  const handleMarkNoIssues = async () => {
+    try {
+      await api().post(`/submissions/${submissionId}/mark-no-issues`, {
+        submission_id: submissionId,
+        marker_comment: noIssuesComment || 'No issues found. Code is correct.'
+      });
+      toast.success('Submission marked as fully correct!');
+      setShowNoIssuesDialog(false);
+      setNoIssuesComment('');
+      fetchData();
+    } catch (error) {
+      toast.error('Failed to mark submission');
+    }
+  };
+
   const scrollToLine = (lineNumber) => {
     if (editorRef.current) {
       editorRef.current.revealLineInCenter(lineNumber);
@@ -208,6 +237,19 @@ export default function CodeReviewPage() {
     }
   };
 
+  const getStatusBadge = (status) => {
+    switch (status) {
+      case 'feedback_released':
+        return <Badge variant="secondary" className="badge-fixed">Published</Badge>;
+      case 'no_issues':
+        return <Badge variant="secondary" className="bg-green-100 text-green-700">No Issues</Badge>;
+      case 'in_review':
+        return <Badge variant="secondary" className="badge-review">In Review</Badge>;
+      default:
+        return <Badge variant="secondary" className="badge-pending">Pending</Badge>;
+    }
+  };
+
   if (loading) {
     return (
       <div className="h-screen flex items-center justify-center bg-background">
@@ -215,6 +257,8 @@ export default function CodeReviewPage() {
       </div>
     );
   }
+
+  const isCompleted = submission?.status === 'feedback_released' || submission?.status === 'no_issues';
 
   return (
     <div className="h-screen flex flex-col bg-background" data-testid="code-review-page">
@@ -240,22 +284,59 @@ export default function CodeReviewPage() {
         </div>
         
         <div className="ml-auto flex items-center gap-2">
-          <Badge 
-            variant="secondary" 
-            className={submission?.status === 'feedback_released' ? 'badge-fixed' : 'badge-review'}
-          >
-            {submission?.status === 'feedback_released' ? 'Published' : 'In Review'}
-          </Badge>
+          {getStatusBadge(submission?.status)}
           
-          {submission?.status !== 'feedback_released' && (
-            <Button 
-              className="rounded-full gap-2" 
-              onClick={handlePublishFeedback}
-              disabled={issues.length === 0}
-              data-testid="publish-btn"
-            >
-              <Send className="w-4 h-4" /> Publish Feedback
-            </Button>
+          {!isCompleted && (
+            <>
+              {/* Mark No Issues Button */}
+              <AlertDialog open={showNoIssuesDialog} onOpenChange={setShowNoIssuesDialog}>
+                <AlertDialogTrigger asChild>
+                  <Button 
+                    variant="outline"
+                    className="rounded-full gap-2"
+                    disabled={issues.length > 0}
+                    data-testid="no-issues-btn"
+                  >
+                    <ThumbsUp className="w-4 h-4" /> No Issues
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Mark as Fully Correct</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This will mark the submission as having no issues. The student will see that their code is correct.
+                      This counts as a completed review.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <div className="py-4">
+                    <Label>Optional Comment</Label>
+                    <Textarea
+                      value={noIssuesComment}
+                      onChange={(e) => setNoIssuesComment(e.target.value)}
+                      placeholder="Great work! Your code is well-structured..."
+                      className="mt-2"
+                      data-testid="no-issues-comment"
+                    />
+                  </div>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleMarkNoIssues} data-testid="confirm-no-issues-btn">
+                      <CheckCircle2 className="w-4 h-4 mr-2" /> Confirm
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+              
+              {/* Publish Feedback Button */}
+              <Button 
+                className="rounded-full gap-2" 
+                onClick={handlePublishFeedback}
+                disabled={issues.length === 0}
+                data-testid="publish-btn"
+              >
+                <Send className="w-4 h-4" /> Publish Feedback
+              </Button>
+            </>
           )}
         </div>
       </header>
@@ -281,9 +362,11 @@ export default function CodeReviewPage() {
               >
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium">Attempt {sub.attempt_number}</span>
-                  {sub.issues_count > 0 && (
+                  {sub.status === 'no_issues' ? (
+                    <CheckCircle2 className="w-4 h-4 text-green-500" />
+                  ) : sub.issues_count > 0 ? (
                     <Badge variant="secondary" className="text-xs">{sub.issues_count}</Badge>
-                  )}
+                  ) : null}
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
                   {new Date(sub.submission_time).toLocaleDateString()}
@@ -318,19 +401,21 @@ export default function CodeReviewPage() {
           </div>
           
           {/* Add Issue Button */}
-          <div className="p-3 border-t border-border bg-white flex items-center justify-between">
-            <span className="text-sm text-muted-foreground">
-              Selected: Lines {selectedLines.start}-{selectedLines.end}
-            </span>
-            <Button 
-              size="sm" 
-              className="rounded-full gap-2"
-              onClick={() => setShowIssueDialog(true)}
-              data-testid="add-issue-btn"
-            >
-              <Plus className="w-4 h-4" /> Add Issue
-            </Button>
-          </div>
+          {!isCompleted && (
+            <div className="p-3 border-t border-border bg-white flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">
+                Selected: Lines {selectedLines.start}-{selectedLines.end}
+              </span>
+              <Button 
+                size="sm" 
+                className="rounded-full gap-2"
+                onClick={() => setShowIssueDialog(true)}
+                data-testid="add-issue-btn"
+              >
+                <Plus className="w-4 h-4" /> Add Issue
+              </Button>
+            </div>
+          )}
         </div>
 
         {/* Issues Panel */}
@@ -343,7 +428,15 @@ export default function CodeReviewPage() {
           
           <ScrollArea className="flex-1">
             <div className="p-4 space-y-3">
-              {issues.length === 0 ? (
+              {submission?.status === 'no_issues' ? (
+                <div className="py-8 text-center">
+                  <CheckCircle2 className="w-12 h-12 text-green-500 mx-auto mb-3" />
+                  <p className="text-sm font-medium text-green-700">No Issues Found</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {submission?.marker_comment || 'Code is correct.'}
+                  </p>
+                </div>
+              ) : issues.length === 0 ? (
                 <div className="py-8 text-center">
                   <AlertCircle className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
                   <p className="text-sm text-muted-foreground">No issues added yet</p>
@@ -367,18 +460,20 @@ export default function CodeReviewPage() {
                           </p>
                         </div>
                       </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="opacity-0 group-hover:opacity-100 h-6 w-6 p-0"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeleteIssue(issue.id);
-                        }}
-                        data-testid={`delete-issue-${issue.id}`}
-                      >
-                        <Trash2 className="w-3 h-3 text-destructive" />
-                      </Button>
+                      {!isCompleted && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="opacity-0 group-hover:opacity-100 h-6 w-6 p-0"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteIssue(issue.id);
+                          }}
+                          data-testid={`delete-issue-${issue.id}`}
+                        >
+                          <Trash2 className="w-3 h-3 text-destructive" />
+                        </Button>
+                      )}
                     </div>
                     <p className="text-xs text-muted-foreground mt-2 line-clamp-2">{issue.explanation}</p>
                     <div className="mt-2">
