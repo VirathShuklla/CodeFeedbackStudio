@@ -154,6 +154,10 @@ class CodeFeedbackStudioTester:
             success, data = self.make_request('GET', '/auth/me', token=self.marker_token)
             self.log_test("Marker Auth Me", success and data.get('role') == 'marker',
                          "" if success else f"Failed: {data}")
+
+    def test_student_auth_me_endpoint(self):
+        """Test student /auth/me endpoint after student registration"""
+        print("\n🔍 Testing Student Auth Me Endpoint...")
         
         if not self.student_token:
             self.log_test("Student Auth Me Test Skipped", False, "No student token")
