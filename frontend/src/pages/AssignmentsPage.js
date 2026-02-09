@@ -38,7 +38,10 @@ import {
   Search,
   Calendar,
   AlertTriangle,
-  Ban
+  Ban,
+  BookOpen,
+  Users,
+  GraduationCap
 } from 'lucide-react';
 import Editor from '@monaco-editor/react';
 
@@ -50,6 +53,7 @@ export default function AssignmentsPage() {
   const [submissions, setSubmissions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCourseFilter, setSelectedCourseFilter] = useState('all');
   
   // Course dialog
   const [showCourseDialog, setShowCourseDialog] = useState(false);
@@ -93,6 +97,10 @@ export default function AssignmentsPage() {
   };
 
   const handleCreateCourse = async () => {
+    if (!newCourse.name.trim()) {
+      toast.error('Course name is required');
+      return;
+    }
     try {
       await api().post('/courses', newCourse);
       toast.success('Course created successfully');
@@ -105,6 +113,14 @@ export default function AssignmentsPage() {
   };
 
   const handleCreateAssignment = async () => {
+    if (!newAssignment.course_id) {
+      toast.error('Please select a course');
+      return;
+    }
+    if (!newAssignment.title.trim()) {
+      toast.error('Assignment title is required');
+      return;
+    }
     try {
       // Format the due_date as ISO string if provided
       const payload = { ...newAssignment };
@@ -186,9 +202,16 @@ export default function AssignmentsPage() {
     return submissions.filter(s => s.assignment_id === assignmentId);
   };
 
-  const filteredAssignments = assignments.filter(a => 
-    a.title.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const getAssignmentsForCourse = (courseId) => {
+    return assignments.filter(a => a.course_id === courseId);
+  };
+
+  // Filter assignments by course and search
+  const filteredAssignments = assignments.filter(a => {
+    const matchesSearch = a.title.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesCourse = selectedCourseFilter === 'all' || a.course_id === selectedCourseFilter;
+    return matchesSearch && matchesCourse;
+  });
 
   const formatDeadline = (dueDate) => {
     if (!dueDate) return null;
@@ -302,7 +325,7 @@ export default function AssignmentsPage() {
                 
                 <Dialog open={showAssignmentDialog} onOpenChange={setShowAssignmentDialog}>
                   <DialogTrigger asChild>
-                    <Button className="rounded-full gap-2" data-testid="create-assignment-btn">
+                    <Button className="rounded-full gap-2" data-testid="create-assignment-btn" disabled={courses.length === 0}>
                       <Plus className="w-4 h-4" /> Assignment
                     </Button>
                   </DialogTrigger>
@@ -318,7 +341,7 @@ export default function AssignmentsPage() {
                           value={newAssignment.course_id} 
                           onValueChange={(v) => setNewAssignment({ ...newAssignment, course_id: v })}
                         >
-                          <SelectTrigger data-testid="course-select">
+                          <SelectTrigger data-testid="assignment-course-select">
                             <SelectValue placeholder="Select a course" />
                           </SelectTrigger>
                           <SelectContent>
@@ -383,6 +406,100 @@ export default function AssignmentsPage() {
           </div>
         </div>
 
+        {/* Marker: Show Courses Section First */}
+        {isMarker && (
+          <div className="mb-8">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold font-['Manrope'] flex items-center gap-2">
+                <BookOpen className="w-5 h-5 text-primary" />
+                Your Courses ({courses.length})
+              </h2>
+            </div>
+            
+            {courses.length === 0 ? (
+              <Card className="card-default">
+                <CardContent className="py-8 text-center">
+                  <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mx-auto mb-3">
+                    <BookOpen className="w-6 h-6 text-muted-foreground" />
+                  </div>
+                  <p className="text-muted-foreground">No courses yet</p>
+                  <p className="text-sm text-muted-foreground mt-1">Create your first course to start adding assignments</p>
+                  <Button 
+                    className="mt-4 rounded-full"
+                    onClick={() => setShowCourseDialog(true)}
+                    data-testid="empty-create-course-btn"
+                  >
+                    <Plus className="w-4 h-4 mr-2" /> Create Course
+                  </Button>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                {courses.map((course) => {
+                  const courseAssignments = getAssignmentsForCourse(course.id);
+                  const pendingSubmissions = submissions.filter(s => 
+                    courseAssignments.some(a => a.id === s.assignment_id) && s.status === 'pending'
+                  ).length;
+                  
+                  return (
+                    <Card 
+                      key={course.id} 
+                      className={`card-interactive cursor-pointer ${selectedCourseFilter === course.id ? 'ring-2 ring-primary' : ''}`}
+                      onClick={() => setSelectedCourseFilter(selectedCourseFilter === course.id ? 'all' : course.id)}
+                      data-testid={`course-card-${course.id}`}
+                    >
+                      <CardContent className="p-4">
+                        <div className="flex items-start justify-between mb-2">
+                          <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                            <BookOpen className="w-5 h-5 text-primary" />
+                          </div>
+                          {pendingSubmissions > 0 && (
+                            <Badge variant="secondary" className="badge-review">
+                              {pendingSubmissions} pending
+                            </Badge>
+                          )}
+                        </div>
+                        <h3 className="font-semibold text-foreground line-clamp-1">
+                          {course.code ? `${course.code} - ` : ''}{course.name}
+                        </h3>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          {course.year && course.semester ? `${course.semester} ${course.year}` : course.year || course.semester || 'No term set'}
+                        </p>
+                        <div className="flex items-center gap-4 mt-3 text-xs text-muted-foreground">
+                          <span className="flex items-center gap-1">
+                            <FileText className="w-3 h-3" />
+                            {courseAssignments.length} assignments
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Users className="w-3 h-3" />
+                            {course.student_count} students
+                          </span>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Course Filter for Marker */}
+        {isMarker && courses.length > 0 && (
+          <div className="flex items-center gap-4 mb-6">
+            <h2 className="text-xl font-semibold font-['Manrope']">Assignments</h2>
+            {selectedCourseFilter !== 'all' && (
+              <Badge 
+                variant="secondary" 
+                className="cursor-pointer hover:bg-primary/20"
+                onClick={() => setSelectedCourseFilter('all')}
+              >
+                Filtered by course ✕
+              </Badge>
+            )}
+          </div>
+        )}
+
         {/* Assignments Grid */}
         {filteredAssignments.length === 0 ? (
           <Card className="card-default">
@@ -390,10 +507,24 @@ export default function AssignmentsPage() {
               <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mx-auto mb-4">
                 <FileText className="w-8 h-8 text-muted-foreground" />
               </div>
-              <p className="text-lg font-medium text-foreground">No assignments yet</p>
-              <p className="text-muted-foreground mt-1">
-                {isMarker ? 'Create your first assignment to get started' : 'Check back later for new assignments'}
+              <p className="text-lg font-medium text-foreground">
+                {selectedCourseFilter !== 'all' ? 'No assignments in this course' : 'No assignments yet'}
               </p>
+              <p className="text-muted-foreground mt-1">
+                {isMarker 
+                  ? (courses.length === 0 
+                      ? 'Create a course first, then add assignments' 
+                      : 'Create your first assignment to get started')
+                  : 'Check back later for new assignments'}
+              </p>
+              {isMarker && courses.length > 0 && (
+                <Button 
+                  className="mt-4 rounded-full"
+                  onClick={() => setShowAssignmentDialog(true)}
+                >
+                  <Plus className="w-4 h-4 mr-2" /> Create Assignment
+                </Button>
+              )}
             </CardContent>
           </Card>
         ) : (
@@ -424,6 +555,9 @@ export default function AssignmentsPage() {
                       </div>
                     </div>
                     <CardTitle className="text-lg font-semibold mt-3">{assignment.title}</CardTitle>
+                    {isMarker && (
+                      <p className="text-xs text-primary font-medium">{assignment.course_name}</p>
+                    )}
                     <CardDescription className="line-clamp-2">
                       {assignment.description || 'No description provided'}
                     </CardDescription>
