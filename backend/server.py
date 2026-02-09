@@ -347,7 +347,14 @@ async def get_courses_public():
         student_count = await db.users.count_documents({"course_id": c["id"], "role": "student"})
         marker = await db.users.find_one({"id": c["marker_id"]}, {"_id": 0})
         result.append(CourseResponse(
-            **c,
+            id=c["id"],
+            name=c["name"],
+            code=c.get("code", ""),
+            description=c.get("description", ""),
+            year=c.get("year"),
+            semester=c.get("semester", ""),
+            marker_id=c["marker_id"],
+            created_at=c["created_at"],
             marker_name=marker["full_name"] if marker else "Unknown",
             student_count=student_count
         ))
