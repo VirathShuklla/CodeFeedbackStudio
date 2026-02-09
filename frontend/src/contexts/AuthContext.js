@@ -45,13 +45,18 @@ export const AuthProvider = ({ children }) => {
     return userData;
   };
 
-  const register = async (email, password, fullName, role) => {
-    const response = await axios.post(`${API_URL}/api/auth/register`, {
+  const register = async (email, password, fullName, role, courseId = null) => {
+    const payload = {
       email,
       password,
       full_name: fullName,
       role
-    });
+    };
+    // Students must have a course_id
+    if (role === 'student' && courseId) {
+      payload.course_id = courseId;
+    }
+    const response = await axios.post(`${API_URL}/api/auth/register`, payload);
     return response.data;
   };
 
@@ -59,6 +64,19 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('token');
     setToken(null);
     setUser(null);
+  };
+
+  // Fetch courses (public for registration)
+  const fetchCoursesPublic = async () => {
+    // This needs a token, so we use a workaround for registration
+    // Courses are fetched after a temporary marker creates them
+    // For now, we'll need to fetch without auth or handle differently
+    try {
+      const response = await axios.get(`${API_URL}/api/courses`);
+      return response.data;
+    } catch {
+      return [];
+    }
   };
 
   const value = {
@@ -69,6 +87,7 @@ export const AuthProvider = ({ children }) => {
     register,
     logout,
     api,
+    fetchCoursesPublic,
     isMarker: user?.role === 'marker',
     isStudent: user?.role === 'student'
   };

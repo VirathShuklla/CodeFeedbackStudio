@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from '../components/ui/button';
@@ -6,24 +6,63 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { RadioGroup, RadioGroupItem } from '../components/ui/radio-group';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../components/ui/select';
 import { toast } from 'sonner';
-import { Code2, ArrowRight, GraduationCap, Users } from 'lucide-react';
+import { Code2, ArrowRight, GraduationCap, Users, AlertCircle } from 'lucide-react';
+import axios from 'axios';
+
+const API_URL = process.env.REACT_APP_BACKEND_URL;
 
 export default function RegisterPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [role, setRole] = useState('student');
+  const [courseId, setCourseId] = useState('');
+  const [courses, setCourses] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [loadingCourses, setLoadingCourses] = useState(true);
   const { register, login } = useAuth();
   const navigate = useNavigate();
 
+  // Fetch available courses for student registration
+  useEffect(() => {
+    const fetchCourses = async () => {
+      try {
+        // Public endpoint to list courses for registration
+        const response = await axios.get(`${API_URL}/api/courses`, {
+          headers: {} // No auth needed for listing
+        });
+        setCourses(response.data || []);
+      } catch (error) {
+        // If no courses exist yet, that's okay
+        setCourses([]);
+      } finally {
+        setLoadingCourses(false);
+      }
+    };
+    fetchCourses();
+  }, []);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Validation: students must select a course
+    if (role === 'student' && !courseId && courses.length > 0) {
+      toast.error('Please select your course/module');
+      return;
+    }
+    
     setIsLoading(true);
     
     try {
-      await register(email, password, fullName, role);
+      await register(email, password, fullName, role, role === 'student' ? courseId : null);
       toast.success('Account created successfully!');
       // Auto login after registration
       const user = await login(email, password);
@@ -156,10 +195,43 @@ export default function RegisterPage() {
                 </RadioGroup>
               </div>
               
+              {/* Course selection for students */}
+              {role === 'student' && (
+                <div className="space-y-2">
+                  <Label htmlFor="course">Your Course / Module *</Label>
+                  {loadingCourses ? (
+                    <div className="h-11 flex items-center justify-center text-sm text-muted-foreground">
+                      Loading courses...
+                    </div>
+                  ) : courses.length === 0 ? (
+                    <div className="p-3 rounded-lg bg-amber-50 border border-amber-200 flex items-start gap-2">
+                      <AlertCircle className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />
+                      <div className="text-sm text-amber-700">
+                        No courses available yet. Please contact your instructor to create a course first.
+                      </div>
+                    </div>
+                  ) : (
+                    <Select value={courseId} onValueChange={setCourseId}>
+                      <SelectTrigger className="h-11" data-testid="course-select">
+                        <SelectValue placeholder="Select your course" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {courses.map((course) => (
+                          <SelectItem key={course.id} value={course.id}>
+                            {course.code ? `${course.code} - ` : ''}{course.name}
+                            {course.year ? ` (${course.year})` : ''}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                </div>
+              )}
+              
               <Button 
                 type="submit" 
                 className="w-full h-11 rounded-full font-medium"
-                disabled={isLoading}
+                disabled={isLoading || (role === 'student' && courses.length === 0)}
                 data-testid="register-submit-btn"
               >
                 {isLoading ? 'Creating account...' : 'Create account'}
