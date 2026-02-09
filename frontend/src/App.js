@@ -4,11 +4,10 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import MarkerDashboard from './pages/MarkerDashboard';
+import MarkerCoursePage from './pages/MarkerCoursePage';
 import StudentDashboard from './pages/StudentDashboard';
-import AssignmentsPage from './pages/AssignmentsPage';
 import CodeReviewPage from './pages/CodeReviewPage';
 import StudentFeedbackPage from './pages/StudentFeedbackPage';
-import AnalyticsPage from './pages/AnalyticsPage';
 import './App.css';
 
 const ProtectedRoute = ({ children, requireRole }) => {
@@ -16,8 +15,8 @@ const ProtectedRoute = ({ children, requireRole }) => {
   
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="animate-pulse text-muted-foreground">Loading...</div>
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="text-muted-foreground">Loading...</div>
       </div>
     );
   }
@@ -38,8 +37,8 @@ const PublicRoute = ({ children }) => {
   
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="animate-pulse text-muted-foreground">Loading...</div>
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="text-muted-foreground">Loading...</div>
       </div>
     );
   }
@@ -60,13 +59,11 @@ const AppRoutes = () => {
       
       {/* Marker Routes */}
       <Route path="/marker" element={<ProtectedRoute requireRole="marker"><MarkerDashboard /></ProtectedRoute>} />
-      <Route path="/marker/assignments" element={<ProtectedRoute requireRole="marker"><AssignmentsPage /></ProtectedRoute>} />
+      <Route path="/marker/course/:courseId" element={<ProtectedRoute requireRole="marker"><MarkerCoursePage /></ProtectedRoute>} />
       <Route path="/marker/review/:submissionId" element={<ProtectedRoute requireRole="marker"><CodeReviewPage /></ProtectedRoute>} />
-      <Route path="/marker/analytics" element={<ProtectedRoute requireRole="marker"><AnalyticsPage /></ProtectedRoute>} />
       
       {/* Student Routes */}
       <Route path="/student" element={<ProtectedRoute requireRole="student"><StudentDashboard /></ProtectedRoute>} />
-      <Route path="/student/assignments" element={<ProtectedRoute requireRole="student"><AssignmentsPage /></ProtectedRoute>} />
       <Route path="/student/feedback/:submissionId" element={<ProtectedRoute requireRole="student"><StudentFeedbackPage /></ProtectedRoute>} />
       
       {/* Default redirect */}
@@ -81,7 +78,7 @@ function App() {
     <AuthProvider>
       <BrowserRouter>
         <AppRoutes />
-        <Toaster position="top-right" richColors />
+        <Toaster position="top-center" richColors />
       </BrowserRouter>
     </AuthProvider>
   );
