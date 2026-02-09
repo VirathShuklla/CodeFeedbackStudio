@@ -403,7 +403,14 @@ async def get_courses(current_user: dict = Depends(get_current_user)):
         # Get marker name
         marker = await db.users.find_one({"id": c["marker_id"]}, {"_id": 0})
         result.append(CourseResponse(
-            **c,
+            id=c["id"],
+            name=c["name"],
+            code=c.get("code", ""),
+            description=c.get("description", ""),
+            year=c.get("year"),
+            semester=c.get("semester", ""),
+            marker_id=c["marker_id"],
+            created_at=c["created_at"],
             marker_name=marker["full_name"] if marker else "Unknown",
             student_count=student_count
         ))
@@ -424,7 +431,14 @@ async def get_course(course_id: str, current_user: dict = Depends(get_current_us
     marker = await db.users.find_one({"id": course["marker_id"]}, {"_id": 0})
     
     return CourseResponse(
-        **course,
+        id=course["id"],
+        name=course["name"],
+        code=course.get("code", ""),
+        description=course.get("description", ""),
+        year=course.get("year"),
+        semester=course.get("semester", ""),
+        marker_id=course["marker_id"],
+        created_at=course["created_at"],
         marker_name=marker["full_name"] if marker else "Unknown",
         student_count=student_count
     )
