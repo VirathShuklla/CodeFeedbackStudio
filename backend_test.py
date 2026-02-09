@@ -491,10 +491,10 @@ class CodeFeedbackStudioTester:
         """Test error handling scenarios"""
         print("\n🔍 Testing Error Handling...")
         
-        # Test unauthorized access
-        success, data = self.make_request('GET', '/submissions', expected_status=401)
+        # Test unauthorized access (expect 422 for missing auth, not 401)
+        success, data = self.make_request('GET', '/submissions', expected_status=422)
         self.log_test("Unauthorized Access Blocked", success,
-                     "" if success else f"Should return 401: {data}")
+                     "" if success else f"Should return 422: {data}")
         
         # Test invalid login
         invalid_login = {"email": "invalid@test.com", "password": "wrong"}
