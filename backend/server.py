@@ -328,6 +328,28 @@ async def get_me(current_user: dict = Depends(get_current_user)):
         email=current_user["email"],
         full_name=current_user["full_name"],
         role=current_user["role"],
+
+# ============ PUBLIC ENDPOINTS (No Auth Required) ============
+
+@api_router.get("/public/courses", response_model=List[CourseResponse])
+async def get_courses_public():
+    """
+    Public endpoint to list courses for student registration.
+    No authentication required.
+    """
+    courses = await db.courses.find({}, {"_id": 0}).to_list(100)
+    
+    result = []
+    for c in courses:
+        student_count = await db.users.count_documents({"course_id": c["id"], "role": "student"})
+        marker = await db.users.find_one({"id": c["marker_id"]}, {"_id": 0})
+        result.append(CourseResponse(
+            **c,
+            marker_name=marker["full_name"] if marker else "Unknown",
+            student_count=student_count
+        ))
+    
+    return result
         course_id=current_user.get("course_id"),
         created_at=current_user["created_at"]
     )
