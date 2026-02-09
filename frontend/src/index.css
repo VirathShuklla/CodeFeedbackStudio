@@ -225,3 +225,8 @@
 .issue-gutter-minor {
     background-color: #3b82f6;
 }
+
+/* Hide Emergent watermark badge */
+#emergent-badge {
+    display: none !important;
+}
