@@ -6,31 +6,41 @@ CodeFeedback Studio is a web-based platform designed to improve how programming 
 ## User Personas
 
 ### Marker (Teacher/TA)
-- Views all student submissions for an assignment
+- Views submissions ONLY from their own courses
 - Reviews code in structured Monaco editor
 - Highlights specific lines and marks mistakes/issues
 - Attaches clear, targeted feedback with categories/severity
+- Can mark submissions as "No Issues Found" (fully correct)
 - Publishes feedback once grading is complete
-- Views dashboards and analytics
+- Views course-scoped dashboards and analytics
 
 ### Student
-- Submits code assignments
-- Tracks submission status (pending, in review, feedback ready)
+- Must enroll in a course during registration
+- Submits code assignments to their enrolled course
+- Tracks submission status (pending, in review, feedback ready, no issues)
 - Views feedback after marker releases it
 - Marks issues as "fixed" to track improvement
-- Can resubmit assignments to improve
+- Can resubmit assignments before deadline
 
 ## Core Requirements
 
 ### Authentication
 - JWT-based custom auth with email/password
 - Role-based access (student/marker)
+- Students MUST select a course during registration
 
-### Submission System
-- Single .py file upload or Monaco editor input
-- Submission history tracking
-- Max attempts per assignment (configurable)
-- Status tracking (pending → in_review → feedback_released)
+### Course & Class Structure
+- Markers create courses (name, code, year, semester)
+- Students enroll in exactly one course at registration
+- Submissions are linked to courses via assignments
+- Access control: markers see only their courses
+
+### Submission Deadline Mechanism
+- Markers set optional due_date per assignment (ISO 8601 with timezone)
+- Frontend: disabled submit button + "Submissions Closed" badge after deadline
+- Backend: 403 "Submission deadline has passed" response (authoritative)
+- 1-minute grace period for clock skew
+- Students cannot submit or resubmit after deadline
 
 ### Code Review (Marker)
 - Monaco Editor with Python syntax highlighting
@@ -38,39 +48,46 @@ CodeFeedback Studio is a web-based platform designed to improve how programming 
 - Structured feedback: Title, Category, Severity, Explanation
 - Issue categories: Logic Error, Style, Efficiency, Security, Best Practice, Documentation
 - Severity levels: Minor, Moderate, Critical
+- "No Issues Found" option for fully correct submissions
 - Publish feedback to release to students
 
 ### Feedback Viewing (Student)
 - View code with highlighted issues
 - See detailed feedback per issue
+- "No Issues" submissions show congratulatory message + marker comment
 - Mark issues as "fixed"
 - Track resolution progress
 
-### Analytics
-- Marker: Pending/In Review/Released counts, Resolution rate, Issues by category/severity
-- Student: Total submissions, Issues fixed/open, Progress tracking
+### Analytics (Marker-Only, Course-Scoped)
+- Total feedback given
+- Pending reviews (across all marker's courses)
+- Active courses count
+- Per-course breakdown: submissions, pending, completed, no-issues, avg turnaround
+- NO gamification data (student-only)
+- NO vanity metrics
 
-## What's Been Implemented (January 2026)
+## What's Been Implemented (February 2026)
 
 ### Backend (FastAPI + MongoDB)
-- User registration and JWT authentication
-- Course and assignment CRUD
-- Submission creation with history tracking
-- Feedback issue management (create, read, update, delete)
-- Issue categories auto-seeding
-- Publish feedback workflow
-- Mark issue as fixed
-- Analytics endpoints for marker and student
+- User registration with course enrollment for students
+- JWT authentication with role-based access
+- Course CRUD with marker ownership
+- Assignment CRUD with deadline support
+- Submission creation with deadline enforcement
+- Feedback issue management
+- "No Issues Found" endpoint (mark-no-issues)
+- Course-scoped marker analytics
+- Student progress analytics
 
 ### Frontend (React + Tailwind + Shadcn/UI)
-- Login/Register pages with role selection
-- Marker Dashboard with Bento Grid layout
+- Login/Register pages with course selection for students
+- Marker Dashboard with course-scoped metrics
 - Student Dashboard with progress tracking
-- Assignments page with course/assignment creation (marker)
-- Code submission via Monaco editor (student)
-- Code Review page with issue creation panel
-- Student Feedback page with issue list
-- Analytics page with Recharts visualizations
+- Assignments page with deadline display
+- Code submission with deadline warnings
+- Code Review page with "No Issues" option
+- Student Feedback page with "No Issues" display
+- Analytics page with course filter
 
 ## Technology Stack
 - **Frontend**: React, Monaco Editor, Tailwind CSS, Shadcn/UI, Recharts
@@ -80,26 +97,26 @@ CodeFeedback Studio is a web-based platform designed to improve how programming 
 ## Prioritized Backlog
 
 ### P0 (Critical - Done)
-- ✅ User authentication
-- ✅ Assignment submission
-- ✅ Code review interface
-- ✅ Feedback creation and publishing
-- ✅ Student feedback viewing
+- ✅ User authentication with course enrollment
+- ✅ Submission deadlines with backend enforcement
+- ✅ Course-scoped access control
+- ✅ "No Issues Found" feedback option
+- ✅ Course-scoped marker analytics
 
 ### P1 (Important)
 - Diff viewer comparing submissions
 - Email notifications on feedback release
-- File upload via .py file (in addition to editor)
-- Issue templates for markers
+- Assignment editing (update deadline)
+- Bulk issue templates
 
 ### P2 (Nice to Have)
 - Dark mode
 - Multi-file (.zip) submission support
+- Student gamification system (XP, badges, levels)
 - AI-assisted feedback suggestions
-- Gamification (badges, streaks)
 
 ## Next Action Items
-1. Add diff viewer to compare current vs previous submission
-2. Implement file upload functionality
-3. Add email notifications
-4. Consider AI feedback integration for future phase
+1. Implement diff viewer for submission comparisons
+2. Add email notifications system
+3. Build student gamification backend
+4. Consider AI feedback integration
