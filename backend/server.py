@@ -328,6 +328,9 @@ async def get_me(current_user: dict = Depends(get_current_user)):
         email=current_user["email"],
         full_name=current_user["full_name"],
         role=current_user["role"],
+        course_id=current_user.get("course_id"),
+        created_at=current_user["created_at"]
+    )
 
 # ============ PUBLIC ENDPOINTS (No Auth Required) ============
 
@@ -350,9 +353,6 @@ async def get_courses_public():
         ))
     
     return result
-        course_id=current_user.get("course_id"),
-        created_at=current_user["created_at"]
-    )
 
 # ============ COURSE ENDPOINTS ============
 
