@@ -526,6 +526,7 @@ class CodeFeedbackStudioTester:
             self.test_user_login()
             self.test_auth_me_endpoint()
             self.test_course_management()
+            self.test_student_auth_me_endpoint()
             self.test_assignment_management()
             self.test_issue_categories()
             self.test_submission_workflow()
