@@ -5,7 +5,7 @@ import { AppLayout } from '../components/layout/AppLayout';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
-import { Textarea } from '../components/ui/textarea';
+import { Badge } from '../components/ui/badge';
 import {
   Dialog,
   DialogContent,
@@ -14,19 +14,32 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '../components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../components/ui/select';
 import { toast } from 'sonner';
-import { Plus, ChevronRight, BookOpen, Clock } from 'lucide-react';
+import { Plus, ChevronRight, BookOpen, Clock, Users, Crown } from 'lucide-react';
 
 export default function MarkerDashboard() {
-  const { api } = useAuth();
+  const { api, user } = useAuth();
   const navigate = useNavigate();
   const [courses, setCourses] = useState([]);
+  const [allMarkers, setAllMarkers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({ pending: 0, reviewed: 0 });
   
   // Course creation
   const [showCourseDialog, setShowCourseDialog] = useState(false);
   const [newCourse, setNewCourse] = useState({ name: '', code: '', year: new Date().getFullYear(), semester: '' });
+  
+  // Collaborator management
+  const [showCollabDialog, setShowCollabDialog] = useState(false);
+  const [selectedCourse, setSelectedCourse] = useState(null);
+  const [selectedCollaborator, setSelectedCollaborator] = useState('');
 
   useEffect(() => {
     fetchData();
@@ -34,11 +47,13 @@ export default function MarkerDashboard() {
 
   const fetchData = async () => {
     try {
-      const [coursesRes, analyticsRes] = await Promise.all([
+      const [coursesRes, analyticsRes, markersRes] = await Promise.all([
         api().get('/courses'),
-        api().get('/analytics/marker')
+        api().get('/analytics/marker'),
+        api().get('/public/markers')
       ]);
       setCourses(coursesRes.data);
+      setAllMarkers(markersRes.data.filter(m => m.id !== user.id)); // Exclude self
       setStats({
         pending: analyticsRes.data.total_pending_reviews,
         reviewed: analyticsRes.data.total_feedback_given
@@ -66,10 +81,45 @@ export default function MarkerDashboard() {
     }
   };
 
-  const getPendingCount = (courseId) => {
-    // This would ideally come from the backend
-    return 0;
+  const openCollabDialog = (course) => {
+    setSelectedCourse(course);
+    setSelectedCollaborator('');
+    setShowCollabDialog(true);
   };
+
+  const handleAddCollaborator = async () => {
+    if (!selectedCollaborator) {
+      toast.error('Please select a collaborator');
+      return;
+    }
+    
+    try {
+      const newCollaborators = [...(selectedCourse.collaborator_ids || []), selectedCollaborator];
+      await api().put(`/courses/${selectedCourse.id}`, {
+        collaborator_ids: newCollaborators
+      });
+      toast.success('Collaborator added');
+      setShowCollabDialog(false);
+      fetchData();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to add collaborator');
+    }
+  };
+
+  const handleRemoveCollaborator = async (course, collabId) => {
+    try {
+      const newCollaborators = course.collaborator_ids.filter(id => id !== collabId);
+      await api().put(`/courses/${course.id}`, {
+        collaborator_ids: newCollaborators
+      });
+      toast.success('Collaborator removed');
+      fetchData();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to remove collaborator');
+    }
+  };
+
+  const isLeader = (course) => course.leader_id === user.id;
 
   if (loading) {
     return (
@@ -157,7 +207,7 @@ export default function MarkerDashboard() {
           </Dialog>
         </div>
 
-        {/* Stats Summary - Minimal */}
+        {/* Stats Summary */}
         <div className="grid grid-cols-2 gap-4 mb-8">
           <div className="card-clean p-5">
             <p className="text-sm text-muted-foreground">Pending Reviews</p>
@@ -178,32 +228,152 @@ export default function MarkerDashboard() {
           </div>
         ) : (
           <div className="space-y-3">
-            {courses.map((course) => (
-              <div
-                key={course.id}
-                className="card-hover p-5 flex items-center justify-between group"
-                onClick={() => navigate(`/marker/course/${course.id}`)}
-                data-testid={`course-card-${course.id}`}
-              >
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                    <BookOpen className="w-5 h-5 text-primary" />
+            {courses.map((course) => {
+              const leader = isLeader(course);
+              const availableCollaborators = allMarkers.filter(
+                m => !(course.collaborator_ids || []).includes(m.id)
+              );
+              
+              return (
+                <div
+                  key={course.id}
+                  className="card-clean p-5"
+                  data-testid={`course-card-${course.id}`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div 
+                      className="flex items-center gap-4 flex-1 cursor-pointer"
+                      onClick={() => navigate(`/marker/course/${course.id}`)}
+                    >
+                      <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                        <BookOpen className="w-5 h-5 text-primary" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-medium">
+                            {course.code ? `${course.code} – ` : ''}{course.name}
+                          </h3>
+                          {leader ? (
+                            <Badge variant="secondary" className="text-xs">
+                              <Crown className="w-3 h-3 mr-1" /> Leader
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="text-xs">Collaborator</Badge>
+                          )}
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          {course.semester && course.year ? `${course.semester} ${course.year}` : course.year || 'No term'}
+                          {' · '}{course.student_count} student{course.student_count !== 1 ? 's' : ''}
+                        </p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center gap-2">
+                      {/* Collaborators display */}
+                      {(course.collaborators?.length > 0 || leader) && (
+                        <div className="flex items-center gap-1 mr-2">
+                          {course.collaborators?.slice(0, 3).map((collab) => (
+                            <div 
+                              key={collab.id}
+                              className="w-7 h-7 rounded-full bg-slate-100 flex items-center justify-center text-xs font-medium border-2 border-white -ml-2 first:ml-0"
+                              title={collab.name}
+                            >
+                              {collab.name?.charAt(0)}
+                            </div>
+                          ))}
+                          {leader && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                openCollabDialog(course);
+                              }}
+                              className="h-7 w-7 p-0"
+                              data-testid={`add-collab-btn-${course.id}`}
+                            >
+                              <Plus className="w-4 h-4" />
+                            </Button>
+                          )}
+                        </div>
+                      )}
+                      
+                      <ChevronRight 
+                        className="w-5 h-5 text-muted-foreground/50 cursor-pointer hover:text-primary transition-colors"
+                        onClick={() => navigate(`/marker/course/${course.id}`)}
+                      />
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="font-medium">
-                      {course.code ? `${course.code} – ` : ''}{course.name}
-                    </h3>
-                    <p className="text-sm text-muted-foreground">
-                      {course.semester && course.year ? `${course.semester} ${course.year}` : course.year || 'No term'}
-                      {' · '}{course.student_count} student{course.student_count !== 1 ? 's' : ''}
-                    </p>
-                  </div>
+                  
+                  {/* Collaborator tags */}
+                  {leader && course.collaborators?.length > 0 && (
+                    <div className="mt-3 pt-3 border-t flex flex-wrap gap-2">
+                      {course.collaborators.map((collab) => (
+                        <Badge 
+                          key={collab.id} 
+                          variant="outline" 
+                          className="text-xs cursor-pointer hover:bg-red-50 hover:text-red-600 hover:border-red-200"
+                          onClick={() => handleRemoveCollaborator(course, collab.id)}
+                        >
+                          <Users className="w-3 h-3 mr-1" />
+                          {collab.name}
+                          <span className="ml-1 opacity-50">×</span>
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
                 </div>
-                <ChevronRight className="w-5 h-5 text-muted-foreground/50 group-hover:text-primary transition-colors" />
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
+
+        {/* Add Collaborator Dialog */}
+        <Dialog open={showCollabDialog} onOpenChange={setShowCollabDialog}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="font-['Outfit']">Add Collaborator</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <p className="text-sm text-muted-foreground">
+                Add a marker to collaborate on "{selectedCourse?.name}"
+              </p>
+              <div className="space-y-2">
+                <Label className="text-sm">Select Marker</Label>
+                <Select value={selectedCollaborator} onValueChange={setSelectedCollaborator}>
+                  <SelectTrigger data-testid="collab-select">
+                    <SelectValue placeholder="Choose a marker" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {allMarkers
+                      .filter(m => !(selectedCourse?.collaborator_ids || []).includes(m.id))
+                      .map((marker) => (
+                        <SelectItem key={marker.id} value={marker.id}>
+                          {marker.full_name} ({marker.email})
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+                {allMarkers.filter(m => !(selectedCourse?.collaborator_ids || []).includes(m.id)).length === 0 && (
+                  <p className="text-xs text-muted-foreground">
+                    No available markers to add.
+                  </p>
+                )}
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowCollabDialog(false)}>Cancel</Button>
+              <Button 
+                onClick={handleAddCollaborator} 
+                className="btn-primary"
+                disabled={!selectedCollaborator}
+                data-testid="add-collab-confirm-btn"
+              >
+                Add Collaborator
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </AppLayout>
   );
