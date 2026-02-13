@@ -6,6 +6,7 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Textarea } from '../components/ui/textarea';
+import { Badge } from '../components/ui/badge';
 import {
   Dialog,
   DialogContent,
@@ -15,7 +16,7 @@ import {
   DialogTrigger,
 } from '../components/ui/dialog';
 import { toast } from 'sonner';
-import { ArrowLeft, Plus, FileText, Clock, ChevronRight, Users } from 'lucide-react';
+import { ArrowLeft, Plus, FileText, Clock, ChevronRight, Users, Crown } from 'lucide-react';
 
 export default function MarkerCoursePage() {
   const { courseId } = useParams();
