@@ -6,6 +6,7 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Textarea } from '../components/ui/textarea';
 import { ScrollArea } from '../components/ui/scroll-area';
+import { Badge } from '../components/ui/badge';
 import {
   Select,
   SelectContent,
@@ -40,7 +41,8 @@ import {
   Info,
   Trash2,
   CheckCircle2,
-  ThumbsUp
+  ThumbsUp,
+  FileCode
 } from 'lucide-react';
 import Editor from '@monaco-editor/react';
 
@@ -54,6 +56,9 @@ export default function CodeReviewPage() {
   const [issues, setIssues] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
+  
+  // Multi-file handling
+  const [activeFileId, setActiveFileId] = useState(null);
   
   // Issue creation
   const [showIssueDialog, setShowIssueDialog] = useState(false);
@@ -80,21 +85,28 @@ export default function CodeReviewPage() {
       setSubmission(subRes.data);
       setIssues(issuesRes.data);
       setCategories(categoriesRes.data);
+      
+      // Set first file as active
+      if (subRes.data.files?.length > 0 && !activeFileId) {
+        setActiveFileId(subRes.data.files[0].id);
+      }
     } catch (error) {
       toast.error('Failed to load submission');
       navigate('/marker');
     } finally {
       setLoading(false);
     }
-  }, [api, submissionId, navigate]);
+  }, [api, submissionId, navigate, activeFileId]);
 
   useEffect(() => {
     fetchData();
   }, [fetchData]);
 
+  // Update decorations when active file or issues change
   useEffect(() => {
-    if (editorRef.current && issues.length > 0) {
-      const newDecorations = issues.map(issue => ({
+    if (editorRef.current && activeFileId) {
+      const fileIssues = issues.filter(i => i.file_id === activeFileId);
+      const newDecorations = fileIssues.map(issue => ({
         range: {
           startLineNumber: issue.line_start,
           startColumn: 1,
@@ -111,7 +123,7 @@ export default function CodeReviewPage() {
       const editor = editorRef.current;
       setDecorations(prev => editor.deltaDecorations(prev, newDecorations));
     }
-  }, [issues]);
+  }, [issues, activeFileId]);
 
   const handleEditorDidMount = (editor) => {
     editorRef.current = editor;
@@ -130,9 +142,15 @@ export default function CodeReviewPage() {
       return;
     }
     
+    if (!activeFileId) {
+      toast.error('No file selected');
+      return;
+    }
+    
     try {
       await api().post('/issues', {
         submission_id: submissionId,
+        file_id: activeFileId,
         ...newIssue,
         line_start: selectedLines.start,
         line_end: selectedLines.end
@@ -142,7 +160,7 @@ export default function CodeReviewPage() {
       setNewIssue({ category_id: '', title: '', explanation: '', severity: 'moderate', suggested_fix: '' });
       fetchData();
     } catch (error) {
-      toast.error('Failed to add issue');
+      toast.error(error.response?.data?.detail || 'Failed to add issue');
     }
   };
 
@@ -179,10 +197,15 @@ export default function CodeReviewPage() {
     }
   };
 
-  const scrollToLine = (lineNumber) => {
-    if (editorRef.current) {
-      editorRef.current.revealLineInCenter(lineNumber);
+  const scrollToLine = (lineNumber, fileId) => {
+    if (fileId !== activeFileId) {
+      setActiveFileId(fileId);
     }
+    setTimeout(() => {
+      if (editorRef.current) {
+        editorRef.current.revealLineInCenter(lineNumber);
+      }
+    }, 100);
   };
 
   const getSeverityIcon = (severity) => {
@@ -192,6 +215,9 @@ export default function CodeReviewPage() {
       default: return <Info className="w-4 h-4 text-blue-500" />;
     }
   };
+
+  const getIssuesForFile = (fileId) => issues.filter(i => i.file_id === fileId);
+  const activeFile = submission?.files?.find(f => f.id === activeFileId);
 
   if (loading) {
     return (
@@ -219,7 +245,9 @@ export default function CodeReviewPage() {
         <div className="flex items-center gap-2">
           <span className="font-medium">{submission?.student_name}</span>
           <span className="text-muted-foreground">·</span>
-          <span className="text-muted-foreground">{submission?.filename}</span>
+          <span className="text-xs bg-slate-100 px-2 py-0.5 rounded">
+            {submission?.files?.length || 0} file{(submission?.files?.length || 0) !== 1 ? 's' : ''}
+          </span>
           <span className="text-xs bg-slate-100 px-2 py-0.5 rounded">Attempt {submission?.attempt_number}</span>
         </div>
         
@@ -264,13 +292,47 @@ export default function CodeReviewPage() {
 
       {/* Main Content */}
       <div className="flex flex-1 overflow-hidden">
+        {/* File Sidebar */}
+        <div className="w-48 border-r bg-white flex flex-col">
+          <div className="p-3 border-b text-sm font-medium">Files</div>
+          <ScrollArea className="flex-1">
+            <div className="p-2 space-y-1">
+              {submission?.files?.map((file) => {
+                const fileIssueCount = getIssuesForFile(file.id).length;
+                return (
+                  <div
+                    key={file.id}
+                    className={`p-2 rounded-md cursor-pointer flex items-center justify-between text-sm transition-colors ${
+                      file.id === activeFileId 
+                        ? 'bg-primary/10 text-primary' 
+                        : 'hover:bg-slate-50'
+                    }`}
+                    onClick={() => setActiveFileId(file.id)}
+                    data-testid={`file-tab-${file.id}`}
+                  >
+                    <div className="flex items-center gap-2 truncate">
+                      <FileCode className="w-4 h-4 flex-shrink-0" />
+                      <span className="truncate">{file.filename}</span>
+                    </div>
+                    {fileIssueCount > 0 && (
+                      <Badge variant="destructive" className="text-xs h-5 px-1.5">
+                        {fileIssueCount}
+                      </Badge>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </ScrollArea>
+        </div>
+
         {/* Code Editor */}
         <div className="flex-1 flex flex-col">
           <div className="flex-1">
             <Editor
               height="100%"
               defaultLanguage="python"
-              value={submission?.code_content || ''}
+              value={activeFile?.content || ''}
               onMount={handleEditorDidMount}
               theme="vs-light"
               options={{
@@ -290,7 +352,8 @@ export default function CodeReviewPage() {
           {!isCompleted && (
             <div className="p-3 border-t bg-white flex items-center justify-between">
               <span className="text-sm text-muted-foreground">
-                Line{selectedLines.start !== selectedLines.end ? 's' : ''} {selectedLines.start}{selectedLines.start !== selectedLines.end ? `–${selectedLines.end}` : ''}
+                <span className="font-medium">{activeFile?.filename}</span>
+                {' · '}Line{selectedLines.start !== selectedLines.end ? 's' : ''} {selectedLines.start}{selectedLines.start !== selectedLines.end ? `–${selectedLines.end}` : ''}
               </span>
               <Button size="sm" onClick={() => setShowIssueDialog(true)} data-testid="add-issue-btn">
                 <Plus className="w-4 h-4 mr-1" /> Add Issue
@@ -322,8 +385,10 @@ export default function CodeReviewPage() {
                 issues.map((issue) => (
                   <div
                     key={issue.id}
-                    className="p-3 rounded-lg border hover:border-primary/30 cursor-pointer group transition-colors"
-                    onClick={() => scrollToLine(issue.line_start)}
+                    className={`p-3 rounded-lg border hover:border-primary/30 cursor-pointer group transition-colors ${
+                      issue.file_id === activeFileId ? '' : 'opacity-70'
+                    }`}
+                    onClick={() => scrollToLine(issue.line_start, issue.file_id)}
                     data-testid={`issue-item-${issue.id}`}
                   >
                     <div className="flex items-start justify-between gap-2">
@@ -332,7 +397,7 @@ export default function CodeReviewPage() {
                         <div>
                           <p className="text-sm font-medium line-clamp-1">{issue.title}</p>
                           <p className="text-xs text-muted-foreground">
-                            Line {issue.line_start}{issue.line_end !== issue.line_start ? `–${issue.line_end}` : ''}
+                            {issue.filename} · Line {issue.line_start}{issue.line_end !== issue.line_start ? `–${issue.line_end}` : ''}
                           </p>
                         </div>
                       </div>
@@ -367,6 +432,11 @@ export default function CodeReviewPage() {
           </DialogHeader>
           
           <div className="space-y-4 py-4">
+            <div className="p-2 bg-slate-50 rounded text-sm">
+              <span className="font-medium">{activeFile?.filename}</span>
+              {' · Lines '}{selectedLines.start}–{selectedLines.end}
+            </div>
+            
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
                 <Label className="text-sm">Category *</Label>
