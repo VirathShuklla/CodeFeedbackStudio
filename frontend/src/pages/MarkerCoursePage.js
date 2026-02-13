@@ -249,7 +249,9 @@ export default function MarkerCoursePage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
-                    <span className="status-pending">Pending</span>
+                    <span className={sub.status === 'pending' ? 'status-pending' : 'text-xs px-2 py-0.5 rounded bg-blue-100 text-blue-700'}>
+                      {sub.status === 'pending' ? 'Pending' : 'In Review'}
+                    </span>
                     <ChevronRight className="w-4 h-4 text-muted-foreground/50 group-hover:text-primary" />
                   </div>
                 </div>
