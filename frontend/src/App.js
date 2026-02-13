@@ -5,7 +5,10 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import MarkerDashboard from './pages/MarkerDashboard';
 import MarkerCoursePage from './pages/MarkerCoursePage';
+import MarkerAnalyticsPage from './pages/MarkerAnalyticsPage';
 import StudentDashboard from './pages/StudentDashboard';
+import StudentAnalyticsPage from './pages/StudentAnalyticsPage';
+import StudentBadgesPage from './pages/StudentBadgesPage';
 import CodeReviewPage from './pages/CodeReviewPage';
 import StudentFeedbackPage from './pages/StudentFeedbackPage';
 import './App.css';
@@ -61,10 +64,13 @@ const AppRoutes = () => {
       <Route path="/marker" element={<ProtectedRoute requireRole="marker"><MarkerDashboard /></ProtectedRoute>} />
       <Route path="/marker/course/:courseId" element={<ProtectedRoute requireRole="marker"><MarkerCoursePage /></ProtectedRoute>} />
       <Route path="/marker/review/:submissionId" element={<ProtectedRoute requireRole="marker"><CodeReviewPage /></ProtectedRoute>} />
+      <Route path="/marker/analytics" element={<ProtectedRoute requireRole="marker"><MarkerAnalyticsPage /></ProtectedRoute>} />
       
       {/* Student Routes */}
       <Route path="/student" element={<ProtectedRoute requireRole="student"><StudentDashboard /></ProtectedRoute>} />
       <Route path="/student/feedback/:submissionId" element={<ProtectedRoute requireRole="student"><StudentFeedbackPage /></ProtectedRoute>} />
+      <Route path="/student/analytics" element={<ProtectedRoute requireRole="student"><StudentAnalyticsPage /></ProtectedRoute>} />
+      <Route path="/student/badges" element={<ProtectedRoute requireRole="student"><StudentBadgesPage /></ProtectedRoute>} />
       
       {/* Default redirect */}
       <Route path="/" element={<Navigate to="/login" replace />} />
