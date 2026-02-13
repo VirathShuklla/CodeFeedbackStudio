@@ -125,21 +125,31 @@ export default function MarkerCoursePage() {
           
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-semibold font-['Outfit']">
-                {course?.code ? `${course.code} – ` : ''}{course?.name}
-              </h1>
+              <div className="flex items-center gap-2">
+                <h1 className="text-2xl font-semibold font-['Outfit']">
+                  {course?.code ? `${course.code} – ` : ''}{course?.name}
+                </h1>
+                {isLeader ? (
+                  <Badge variant="secondary" className="text-xs">
+                    <Crown className="w-3 h-3 mr-1" /> Leader
+                  </Badge>
+                ) : (
+                  <Badge variant="outline" className="text-xs">Collaborator</Badge>
+                )}
+              </div>
               <p className="text-sm text-muted-foreground mt-1">
                 {course?.semester && course?.year ? `${course.semester} ${course.year}` : ''}
                 {course?.student_count > 0 && ` · ${course.student_count} students`}
               </p>
             </div>
             
-            <Dialog open={showAssignmentDialog} onOpenChange={setShowAssignmentDialog}>
-              <DialogTrigger asChild>
-                <Button className="btn-primary gap-2" data-testid="create-assignment-btn">
-                  <Plus className="w-4 h-4" /> New Assignment
-                </Button>
-              </DialogTrigger>
+            {isLeader && (
+              <Dialog open={showAssignmentDialog} onOpenChange={setShowAssignmentDialog}>
+                <DialogTrigger asChild>
+                  <Button className="btn-primary gap-2" data-testid="create-assignment-btn">
+                    <Plus className="w-4 h-4" /> New Assignment
+                  </Button>
+                </DialogTrigger>
               <DialogContent className="sm:max-w-md">
                 <DialogHeader>
                   <DialogTitle className="font-['Outfit']">Create Assignment</DialogTitle>
