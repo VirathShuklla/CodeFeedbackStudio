@@ -106,6 +106,7 @@ export default function MarkerCoursePage() {
   }
 
   const pendingSubmissions = submissions.filter(s => s.status === 'pending');
+  const isLeader = course?.leader_id === user?.id;
 
   return (
     <AppLayout>
