@@ -178,13 +178,10 @@ export default function RegisterPage() {
                         <Checkbox
                           id={`course-${course.id}`}
                           checked={selectedCourses.includes(course.id)}
-                          onCheckedChange={() => toggleCourse(course.id)}
+                          onCheckedChange={(e) => e.stopPropagation()}
                           data-testid={`course-checkbox-${course.id}`}
                         />
-                        <label 
-                          htmlFor={`course-${course.id}`} 
-                          className="text-sm cursor-pointer flex-1"
-                        >
+                        <span className="text-sm flex-1">
                           <span className="font-medium">
                             {course.code ? `${course.code} – ` : ''}{course.name}
                           </span>
@@ -195,7 +192,7 @@ export default function RegisterPage() {
                           <span className="text-xs text-muted-foreground">
                             Led by {course.leader_name}
                           </span>
-                        </label>
+                        </span>
                       </div>
                     ))}
                   </div>
