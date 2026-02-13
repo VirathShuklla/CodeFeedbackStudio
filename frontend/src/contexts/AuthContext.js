@@ -45,17 +45,14 @@ export const AuthProvider = ({ children }) => {
     return userData;
   };
 
-  const register = async (email, password, fullName, role, courseId = null) => {
+  const register = async (email, password, fullName, role, courseIds = []) => {
     const payload = {
       email,
       password,
       full_name: fullName,
-      role
+      role,
+      course_ids: role === 'student' ? courseIds : []
     };
-    // Students must have a course_id
-    if (role === 'student' && courseId) {
-      payload.course_id = courseId;
-    }
     const response = await axios.post(`${API_URL}/api/auth/register`, payload);
     return response.data;
   };
@@ -66,17 +63,18 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
   };
 
-  // Fetch courses (public for registration)
-  const fetchCoursesPublic = async () => {
-    // This needs a token, so we use a workaround for registration
-    // Courses are fetched after a temporary marker creates them
-    // For now, we'll need to fetch without auth or handle differently
-    try {
-      const response = await axios.get(`${API_URL}/api/courses`);
-      return response.data;
-    } catch {
-      return [];
+  // Refresh user data
+  const refreshUser = async () => {
+    if (token) {
+      try {
+        const response = await api().get('/auth/me');
+        setUser(response.data);
+        return response.data;
+      } catch (error) {
+        console.error('Refresh user error:', error);
+      }
     }
+    return null;
   };
 
   const value = {
@@ -87,7 +85,7 @@ export const AuthProvider = ({ children }) => {
     register,
     logout,
     api,
-    fetchCoursesPublic,
+    refreshUser,
     isMarker: user?.role === 'marker',
     isStudent: user?.role === 'student'
   };
