@@ -85,7 +85,7 @@ export default function MarkerCoursePage() {
   };
 
   const getPendingCount = (assignmentId) => {
-    return submissions.filter(s => s.assignment_id === assignmentId && s.status === 'pending').length;
+    return submissions.filter(s => s.assignment_id === assignmentId && (s.status === 'pending' || s.status === 'in_review')).length;
   };
 
   const formatDeadline = (dueDate) => {
