@@ -1,122 +1,184 @@
 # CodeFeedback Studio - Product Requirements Document
 
-## Overview
-CodeFeedback Studio is a web-based platform designed to improve how programming assignments are reviewed and how students learn from feedback.
+## Original Problem Statement
+Build a full-stack application for managing and reviewing code for programming assignments with:
+- Two user roles: "Marker" (instructor) and "Student"
+- Course leadership model with Head Marker + Collaborating Markers
+- Multi-course enrollment for students
+- Multi-file Python submissions
+- GitHub PR-style code review with file-specific feedback
+- Analytics dashboards for both roles
+- Gamification system for students
 
-## User Personas
+## What's Been Implemented
 
-### Marker (Teacher/TA)
-- Views submissions ONLY from their own courses
-- Reviews code in structured Monaco editor
-- Highlights specific lines and marks mistakes/issues
-- Attaches clear, targeted feedback with categories/severity
-- Can mark submissions as "No Issues Found" (fully correct)
-- Publishes feedback once grading is complete
-- Views course-scoped dashboards and analytics
+### Phase 1: Core Architecture ✅
+- [x] Course Leadership model (leader_id + collaborator_ids)
+- [x] Multi-course enrollment for students
+- [x] Role-based permissions (Student, Marker, Leader)
+- [x] JWT authentication with role separation
+- [x] Public endpoints for courses and markers
 
-### Student
-- Must enroll in a course during registration
-- Submits code assignments to their enrolled course
-- Tracks submission status (pending, in review, feedback ready, no issues)
-- Views feedback after marker releases it
-- Marks issues as "fixed" to track improvement
-- Can resubmit assignments before deadline
+### Phase 2: Multi-File Submissions ✅
+- [x] Submit multiple .py files per assignment
+- [x] File upload via API (JSON with content)
+- [x] File navigation in code review UI
+- [x] Per-file issue tracking
 
-## Core Requirements
+### Phase 3: Code Review Experience ✅
+- [x] GitHub PR-style code review interface
+- [x] File sidebar with issue counts
+- [x] Monaco editor with syntax highlighting
+- [x] File-specific, line-specific issues
+- [x] Issue severity levels (minor, moderate, critical)
+- [x] Click-to-navigate from issue to code
+- [x] "No Issues" option for correct code
+- [x] Publish feedback workflow
+
+### Phase 4: Analytics ✅
+- [x] Marker analytics (per-course stats, pending reviews, turnaround time)
+- [x] Course leader analytics (collaborator activity)
+- [x] Student analytics (per-course progress, issues by category)
+- [x] Fix rate tracking
+
+### Phase 5: Gamification ✅
+- [x] XP system with awards for fixing issues
+- [x] Level progression (15 levels from Novice to Master)
+- [x] Badge definitions and progress tracking
+- [x] XP log for recent gains
+- [x] Badges page UI
+
+## Implementation Date: February 13, 2026
+
+## Tech Stack
+- **Frontend**: React 18, React Router, Tailwind CSS, Shadcn/UI, Monaco Editor
+- **Backend**: FastAPI, Pydantic, Motor (async MongoDB)
+- **Database**: MongoDB
+- **Authentication**: JWT
+
+## Database Schema
+
+### users
+```json
+{
+  "id": "uuid",
+  "email": "string",
+  "password_hash": "string",
+  "full_name": "string",
+  "role": "student | marker",
+  "course_ids": ["uuid"],  // For students
+  "xp": 0,
+  "badges": [],
+  "created_at": "datetime"
+}
+```
+
+### courses
+```json
+{
+  "id": "uuid",
+  "name": "string",
+  "code": "string",
+  "description": "string",
+  "year": 2026,
+  "semester": "string",
+  "leader_id": "uuid",      // Head marker
+  "collaborator_ids": ["uuid"],  // Collaborating markers
+  "created_at": "datetime"
+}
+```
+
+### submissions
+```json
+{
+  "id": "uuid",
+  "assignment_id": "uuid",
+  "student_id": "uuid",
+  "files": [
+    {"id": "uuid", "filename": "main.py", "content": "..."}
+  ],
+  "status": "pending | in_review | feedback_released | no_issues",
+  "attempt_number": 1,
+  "submission_time": "datetime",
+  "review_completed_at": "datetime",
+  "reviewed_by": "uuid"
+}
+```
+
+### feedback_issues
+```json
+{
+  "id": "uuid",
+  "submission_id": "uuid",
+  "file_id": "uuid",
+  "marker_id": "uuid",
+  "category_id": "uuid",
+  "line_start": 1,
+  "line_end": 5,
+  "title": "string",
+  "explanation": "string",
+  "severity": "minor | moderate | critical",
+  "suggested_fix": "string",
+  "student_status": "open | fixed",
+  "created_at": "datetime"
+}
+```
+
+## API Endpoints
 
 ### Authentication
-- JWT-based custom auth with email/password
-- Role-based access (student/marker)
-- Students MUST select a course during registration
+- POST `/api/auth/register` - Register user
+- POST `/api/auth/login` - Login
+- GET `/api/auth/me` - Current user
 
-### Course & Class Structure
-- Markers create courses (name, code, year, semester)
-- Students enroll in exactly one course at registration
-- Submissions are linked to courses via assignments
-- Access control: markers see only their courses
+### Public
+- GET `/api/public/courses` - List courses
+- GET `/api/public/markers` - List markers
 
-### Submission Deadline Mechanism
-- Markers set optional due_date per assignment (ISO 8601 with timezone)
-- Frontend: disabled submit button + "Submissions Closed" badge after deadline
-- Backend: 403 "Submission deadline has passed" response (authoritative)
-- 1-minute grace period for clock skew
-- Students cannot submit or resubmit after deadline
+### Courses
+- GET/POST `/api/courses` - List/Create courses
+- PUT `/api/courses/{id}` - Update (leader can modify collaborators)
 
-### Code Review (Marker)
-- Monaco Editor with Python syntax highlighting
-- Line-by-line annotation capability
-- Structured feedback: Title, Category, Severity, Explanation
-- Issue categories: Logic Error, Style, Efficiency, Security, Best Practice, Documentation
-- Severity levels: Minor, Moderate, Critical
-- "No Issues Found" option for fully correct submissions
-- Publish feedback to release to students
+### Students
+- GET `/api/students/courses` - Enrolled courses
+- POST/DELETE `/api/students/enroll/{course_id}` - Enroll/Unenroll
 
-### Feedback Viewing (Student)
-- View code with highlighted issues
-- See detailed feedback per issue
-- "No Issues" submissions show congratulatory message + marker comment
-- Mark issues as "fixed"
-- Track resolution progress
+### Assignments
+- GET/POST `/api/assignments` - List/Create
+- GET `/api/assignments/{id}/deadline-status` - Check deadline
 
-### Analytics (Marker-Only, Course-Scoped)
-- Total feedback given
-- Pending reviews (across all marker's courses)
-- Active courses count
-- Per-course breakdown: submissions, pending, completed, no-issues, avg turnaround
-- NO gamification data (student-only)
-- NO vanity metrics
+### Submissions
+- GET/POST `/api/submissions` - List/Create
+- POST `/api/submissions/{id}/publish` - Publish feedback
+- POST `/api/submissions/{id}/mark-no-issues` - Mark correct
 
-## What's Been Implemented (February 2026)
+### Issues
+- GET/POST `/api/issues` - List/Create
+- POST `/api/issues/{id}/mark-fixed` - Mark fixed (awards XP)
 
-### Backend (FastAPI + MongoDB)
-- User registration with course enrollment for students
-- JWT authentication with role-based access
-- Course CRUD with marker ownership
-- Assignment CRUD with deadline support
-- Submission creation with deadline enforcement
-- Feedback issue management
-- "No Issues Found" endpoint (mark-no-issues)
-- Course-scoped marker analytics
-- Student progress analytics
+### Analytics
+- GET `/api/analytics/marker` - Marker stats
+- GET `/api/analytics/student` - Student stats
+- GET `/api/gamification/stats` - XP/Badges
 
-### Frontend (React + Tailwind + Shadcn/UI)
-- Login/Register pages with course selection for students
-- Marker Dashboard with course-scoped metrics
-- Student Dashboard with progress tracking
-- Assignments page with deadline display
-- Code submission with deadline warnings
-- Code Review page with "No Issues" option
-- Student Feedback page with "No Issues" display
-- Analytics page with course filter
+## Test Credentials
+- Marker: `marker@test.com` / `password123`
+- Student: `student@test.com` / `password123`
 
-## Technology Stack
-- **Frontend**: React, Monaco Editor, Tailwind CSS, Shadcn/UI, Recharts
-- **Backend**: FastAPI (Python), MongoDB with Motor async driver
-- **Auth**: JWT with bcrypt password hashing
+## Backlog / Future Tasks
 
-## Prioritized Backlog
+### P1 - High Priority
+- [ ] Email notifications when feedback is released
+- [ ] Reusable feedback library for markers
+- [ ] Bulk feedback actions
 
-### P0 (Critical - Done)
-- ✅ User authentication with course enrollment
-- ✅ Submission deadlines with backend enforcement
-- ✅ Course-scoped access control
-- ✅ "No Issues Found" feedback option
-- ✅ Course-scoped marker analytics
+### P2 - Medium Priority
+- [ ] Student leaderboard
+- [ ] Course-wide badge unlocks
+- [ ] Code diff between submission attempts
+- [ ] Export analytics to CSV
 
-### P1 (Important)
-- Diff viewer comparing submissions
-- Email notifications on feedback release
-- Assignment editing (update deadline)
-- Bulk issue templates
-
-### P2 (Nice to Have)
-- Dark mode
-- Multi-file (.zip) submission support
-- Student gamification system (XP, badges, levels)
-- AI-assisted feedback suggestions
-
-## Next Action Items
-1. Implement diff viewer for submission comparisons
-2. Add email notifications system
-3. Build student gamification backend
-4. Consider AI feedback integration
+### P3 - Nice to Have
+- [ ] Support for additional file types (.js, .java)
+- [ ] Automated code analysis suggestions
+- [ ] Integration with GitHub Classroom
