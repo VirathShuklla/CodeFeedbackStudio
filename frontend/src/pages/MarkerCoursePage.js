@@ -73,7 +73,7 @@ export default function MarkerCoursePage() {
       await api().post('/assignments', payload);
       toast.success('Assignment created');
       setShowAssignmentDialog(false);
-      setNewAssignment({ title: '', description: '', due_date: '', max_attempts: 3 });
+      setNewAssignment({ title: '', description: '', due_date: '', max_attempts: -1 });
       fetchData();
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Failed to create assignment');
