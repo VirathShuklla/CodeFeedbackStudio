@@ -4,13 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '../components/ui/select';
+import { Checkbox } from '../components/ui/checkbox';
 import { toast } from 'sonner';
 import { Code2, ArrowRight, GraduationCap, Users } from 'lucide-react';
 import axios from 'axios';
@@ -22,7 +16,7 @@ export default function RegisterPage() {
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [role, setRole] = useState('student');
-  const [courseId, setCourseId] = useState('');
+  const [selectedCourses, setSelectedCourses] = useState([]);
   const [courses, setCourses] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [loadingCourses, setLoadingCourses] = useState(true);
@@ -43,18 +37,26 @@ export default function RegisterPage() {
     fetchCourses();
   }, []);
 
+  const toggleCourse = (courseId) => {
+    setSelectedCourses(prev => 
+      prev.includes(courseId) 
+        ? prev.filter(id => id !== courseId)
+        : [...prev, courseId]
+    );
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (role === 'student' && !courseId && courses.length > 0) {
-      toast.error('Please select your course');
+    if (role === 'student' && selectedCourses.length === 0 && courses.length > 0) {
+      toast.error('Please select at least one course');
       return;
     }
     
     setIsLoading(true);
     
     try {
-      await register(email, password, fullName, role, role === 'student' ? courseId : null);
+      await register(email, password, fullName, role, selectedCourses);
       toast.success('Account created!');
       const user = await login(email, password);
       navigate(user.role === 'marker' ? '/marker' : '/student');
@@ -67,7 +69,7 @@ export default function RegisterPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4" data-testid="register-page">
-      <div className="w-full max-w-sm">
+      <div className="w-full max-w-md">
         {/* Logo */}
         <div className="flex items-center justify-center gap-2.5 mb-8">
           <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center">
@@ -134,6 +136,7 @@ export default function RegisterPage() {
                       ? 'border-primary bg-primary/5' 
                       : 'border-border hover:border-primary/30'
                   }`}
+                  data-testid="role-student-btn"
                 >
                   <GraduationCap className={`w-5 h-5 mx-auto mb-1 ${role === 'student' ? 'text-primary' : 'text-muted-foreground'}`} />
                   <span className={`text-sm font-medium ${role === 'student' ? 'text-primary' : 'text-foreground'}`}>Student</span>
@@ -146,6 +149,7 @@ export default function RegisterPage() {
                       ? 'border-primary bg-primary/5' 
                       : 'border-border hover:border-primary/30'
                   }`}
+                  data-testid="role-marker-btn"
                 >
                   <Users className={`w-5 h-5 mx-auto mb-1 ${role === 'marker' ? 'text-primary' : 'text-muted-foreground'}`} />
                   <span className={`text-sm font-medium ${role === 'marker' ? 'text-primary' : 'text-foreground'}`}>Marker</span>
@@ -153,10 +157,10 @@ export default function RegisterPage() {
               </div>
             </div>
             
-            {/* Course Selection for Students */}
+            {/* Course Selection for Students - Multi-select */}
             {role === 'student' && (
               <div className="space-y-2">
-                <Label className="text-sm font-medium">Your Course</Label>
+                <Label className="text-sm font-medium">Select Your Courses</Label>
                 {loadingCourses ? (
                   <div className="h-11 flex items-center text-sm text-muted-foreground">Loading...</div>
                 ) : courses.length === 0 ? (
@@ -164,19 +168,42 @@ export default function RegisterPage() {
                     No courses available. Contact your instructor.
                   </p>
                 ) : (
-                  <Select value={courseId} onValueChange={setCourseId}>
-                    <SelectTrigger className="h-11" data-testid="course-select">
-                      <SelectValue placeholder="Select your course" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {courses.map((course) => (
-                        <SelectItem key={course.id} value={course.id}>
-                          {course.code ? `${course.code} – ` : ''}{course.name}
-                          {course.year ? ` (${course.year})` : ''}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <div className="space-y-2 max-h-48 overflow-y-auto border rounded-lg p-3" data-testid="course-list">
+                    {courses.map((course) => (
+                      <div 
+                        key={course.id} 
+                        className="flex items-center space-x-3 p-2 hover:bg-slate-50 rounded-md cursor-pointer"
+                        onClick={() => toggleCourse(course.id)}
+                      >
+                        <Checkbox
+                          id={`course-${course.id}`}
+                          checked={selectedCourses.includes(course.id)}
+                          onCheckedChange={() => toggleCourse(course.id)}
+                          data-testid={`course-checkbox-${course.id}`}
+                        />
+                        <label 
+                          htmlFor={`course-${course.id}`} 
+                          className="text-sm cursor-pointer flex-1"
+                        >
+                          <span className="font-medium">
+                            {course.code ? `${course.code} – ` : ''}{course.name}
+                          </span>
+                          {course.year && (
+                            <span className="text-muted-foreground ml-1">({course.year})</span>
+                          )}
+                          <br />
+                          <span className="text-xs text-muted-foreground">
+                            Led by {course.leader_name}
+                          </span>
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {selectedCourses.length > 0 && (
+                  <p className="text-xs text-muted-foreground">
+                    {selectedCourses.length} course{selectedCourses.length !== 1 ? 's' : ''} selected
+                  </p>
                 )}
               </div>
             )}
