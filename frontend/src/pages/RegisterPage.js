@@ -4,9 +4,8 @@ import { useAuth } from '../contexts/AuthContext';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
-import { Checkbox } from '../components/ui/checkbox';
 import { toast } from 'sonner';
-import { Code2, ArrowRight, GraduationCap, Users } from 'lucide-react';
+import { Code2, ArrowRight, GraduationCap, Users, Check } from 'lucide-react';
 import axios from 'axios';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
