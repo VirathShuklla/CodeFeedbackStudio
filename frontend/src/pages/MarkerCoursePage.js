@@ -209,6 +209,7 @@ export default function MarkerCoursePage() {
                 </DialogFooter>
               </DialogContent>
             </Dialog>
+            )}
           </div>
         </div>
 
