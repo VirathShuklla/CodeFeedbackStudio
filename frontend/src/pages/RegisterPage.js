@@ -168,32 +168,37 @@ export default function RegisterPage() {
                   </p>
                 ) : (
                   <div className="space-y-2 max-h-48 overflow-y-auto border rounded-lg p-3" data-testid="course-list">
-                    {courses.map((course) => (
-                      <div 
-                        key={course.id} 
-                        className="flex items-center space-x-3 p-2 hover:bg-slate-50 rounded-md cursor-pointer"
-                        onClick={() => toggleCourse(course.id)}
-                      >
-                        <Checkbox
-                          id={`course-${course.id}`}
-                          checked={selectedCourses.includes(course.id)}
-                          onCheckedChange={(e) => e.stopPropagation()}
-                          data-testid={`course-checkbox-${course.id}`}
-                        />
-                        <span className="text-sm flex-1">
-                          <span className="font-medium">
-                            {course.code ? `${course.code} – ` : ''}{course.name}
+                    {courses.map((course) => {
+                      const isSelected = selectedCourses.includes(course.id);
+                      return (
+                        <div 
+                          key={course.id} 
+                          className={`flex items-center space-x-3 p-2 rounded-md cursor-pointer transition-colors ${
+                            isSelected ? 'bg-primary/10' : 'hover:bg-slate-50'
+                          }`}
+                          onClick={() => toggleCourse(course.id)}
+                          data-testid={`course-item-${course.id}`}
+                        >
+                          <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
+                            isSelected ? 'bg-primary border-primary' : 'border-slate-300'
+                          }`}>
+                            {isSelected && <Check className="w-3 h-3 text-white" />}
+                          </div>
+                          <span className="text-sm flex-1">
+                            <span className="font-medium">
+                              {course.code ? `${course.code} – ` : ''}{course.name}
+                            </span>
+                            {course.year && (
+                              <span className="text-muted-foreground ml-1">({course.year})</span>
+                            )}
+                            <br />
+                            <span className="text-xs text-muted-foreground">
+                              Led by {course.leader_name}
+                            </span>
                           </span>
-                          {course.year && (
-                            <span className="text-muted-foreground ml-1">({course.year})</span>
-                          )}
-                          <br />
-                          <span className="text-xs text-muted-foreground">
-                            Led by {course.leader_name}
-                          </span>
-                        </span>
-                      </div>
-                    ))}
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
                 {selectedCourses.length > 0 && (
