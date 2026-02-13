@@ -192,11 +192,12 @@ export default function MarkerCoursePage() {
                         type="number"
                         value={newAssignment.max_attempts}
                         onChange={(e) => setNewAssignment({ ...newAssignment, max_attempts: parseInt(e.target.value) })}
-                        min={1}
-                        max={10}
+                        min={-1}
+                        max={100}
                         className="input-clean"
                         data-testid="max-attempts-input"
                       />
+                      <p className="text-xs text-muted-foreground">-1 = unlimited</p>
                     </div>
                   </div>
                 </div>
