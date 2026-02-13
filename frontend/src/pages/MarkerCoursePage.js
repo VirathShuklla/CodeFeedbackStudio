@@ -21,7 +21,7 @@ import { ArrowLeft, Plus, FileText, Clock, ChevronRight, Users, Crown } from 'lu
 export default function MarkerCoursePage() {
   const { courseId } = useParams();
   const navigate = useNavigate();
-  const { api } = useAuth();
+  const { api, user } = useAuth();
   
   const [course, setCourse] = useState(null);
   const [assignments, setAssignments] = useState([]);
@@ -34,7 +34,7 @@ export default function MarkerCoursePage() {
     title: '', 
     description: '', 
     due_date: '',
-    max_attempts: 3 
+    max_attempts: -1  // -1 means unlimited
   });
 
   useEffect(() => {
