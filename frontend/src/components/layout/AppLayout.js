@@ -1,4 +1,4 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { Button } from '../ui/button';
 import {
@@ -8,11 +8,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '../ui/dropdown-menu';
-import { Code2, LogOut, ChevronDown } from 'lucide-react';
+import { Code2, LogOut, ChevronDown, BarChart3, Award, BookOpen, Home } from 'lucide-react';
 
 export const AppLayout = ({ children }) => {
-  const { user, logout, isMarker } = useAuth();
+  const { user, logout, isMarker, isStudent } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleLogout = () => {
     logout();
@@ -22,6 +23,8 @@ export const AppLayout = ({ children }) => {
   const getInitials = (name) => {
     return name?.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2) || 'U';
   };
+
+  const isActive = (path) => location.pathname === path;
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -33,6 +36,69 @@ export const AppLayout = ({ children }) => {
           </div>
           <span className="text-base font-semibold font-['Outfit'] hidden sm:inline">CodeFeedback</span>
         </Link>
+
+        {/* Navigation Links */}
+        <nav className="ml-8 flex items-center gap-1">
+          {isMarker && (
+            <>
+              <Link to="/marker">
+                <Button 
+                  variant={isActive('/marker') ? 'secondary' : 'ghost'} 
+                  size="sm"
+                  className="gap-2"
+                >
+                  <Home className="w-4 h-4" />
+                  <span className="hidden sm:inline">Courses</span>
+                </Button>
+              </Link>
+              <Link to="/marker/analytics">
+                <Button 
+                  variant={isActive('/marker/analytics') ? 'secondary' : 'ghost'} 
+                  size="sm"
+                  className="gap-2"
+                >
+                  <BarChart3 className="w-4 h-4" />
+                  <span className="hidden sm:inline">Analytics</span>
+                </Button>
+              </Link>
+            </>
+          )}
+          
+          {isStudent && (
+            <>
+              <Link to="/student">
+                <Button 
+                  variant={isActive('/student') ? 'secondary' : 'ghost'} 
+                  size="sm"
+                  className="gap-2"
+                >
+                  <BookOpen className="w-4 h-4" />
+                  <span className="hidden sm:inline">Courses</span>
+                </Button>
+              </Link>
+              <Link to="/student/analytics">
+                <Button 
+                  variant={isActive('/student/analytics') ? 'secondary' : 'ghost'} 
+                  size="sm"
+                  className="gap-2"
+                >
+                  <BarChart3 className="w-4 h-4" />
+                  <span className="hidden sm:inline">Progress</span>
+                </Button>
+              </Link>
+              <Link to="/student/badges">
+                <Button 
+                  variant={isActive('/student/badges') ? 'secondary' : 'ghost'} 
+                  size="sm"
+                  className="gap-2"
+                >
+                  <Award className="w-4 h-4" />
+                  <span className="hidden sm:inline">Badges</span>
+                </Button>
+              </Link>
+            </>
+          )}
+        </nav>
 
         {/* User Menu */}
         <div className="ml-auto">
