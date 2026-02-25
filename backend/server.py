@@ -29,6 +29,15 @@ JWT_EXPIRATION_HOURS = 24
 # Create the main app
 app = FastAPI(title="CodeFeedback Studio API")
 
+# CORS Configuration - Must be added before routes
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allow all origins for development
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 # Create a router with the /api prefix
 api_router = APIRouter(prefix="/api")
 
