@@ -489,11 +489,15 @@ async def get_courses_public():
     
     result = []
     for c in courses:
+        # Skip courses without leader_id (old format)
+        if "leader_id" not in c:
+            continue
+            
         student_count = await db.users.count_documents({
             "role": "student",
             "course_ids": c["id"]
         })
-        leader = await db.users.find_one({"id": c["leader_id"]}, {"_id": 0})
+        leader = await db.users.find_one({"id": c.get("leader_id")}, {"_id": 0})
         result.append(CourseResponse(
             id=c["id"],
             name=c["name"],
@@ -501,10 +505,10 @@ async def get_courses_public():
             description=c.get("description", ""),
             year=c.get("year"),
             semester=c.get("semester", ""),
-            leader_id=c["leader_id"],
+            leader_id=c.get("leader_id", ""),
             leader_name=leader["full_name"] if leader else "Unknown",
             collaborator_ids=c.get("collaborator_ids", []),
-            created_at=c["created_at"],
+            created_at=c.get("created_at", ""),
             student_count=student_count
         ))
     
