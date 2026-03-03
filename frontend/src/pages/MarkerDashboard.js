@@ -22,10 +22,10 @@ import {
   SelectValue,
 } from '../components/ui/select';
 import { toast } from 'sonner';
-import { Plus, ChevronRight, BookOpen, Clock, Users, Crown } from 'lucide-react';
+import { Plus, ChevronRight, BookOpen, Clock, Users, Crown, Shield, BarChart3 } from 'lucide-react';
 
 export default function MarkerDashboard() {
-  const { api, user } = useAuth();
+  const { api, user, isModerator, isModuleLeader } = useAuth();
   const navigate = useNavigate();
   const [courses, setCourses] = useState([]);
   const [allMarkers, setAllMarkers] = useState([]);
@@ -50,7 +50,7 @@ export default function MarkerDashboard() {
       const [coursesRes, analyticsRes, markersRes] = await Promise.all([
         api().get('/courses'),
         api().get('/analytics/marker'),
-        api().get('/public/markers')
+        api().get('/public/users')
       ]);
       setCourses(coursesRes.data);
       setAllMarkers(markersRes.data.filter(m => m.id !== user.id)); // Exclude self
@@ -208,7 +208,7 @@ export default function MarkerDashboard() {
         </div>
 
         {/* Stats Summary */}
-        <div className="grid grid-cols-2 gap-4 mb-8">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           <div className="card-clean p-5">
             <p className="text-sm text-muted-foreground">Pending Reviews</p>
             <p className="text-3xl font-semibold mt-1 font-['Outfit']">{stats.pending}</p>
@@ -216,6 +216,28 @@ export default function MarkerDashboard() {
           <div className="card-clean p-5">
             <p className="text-sm text-muted-foreground">Feedback Given</p>
             <p className="text-3xl font-semibold mt-1 font-['Outfit']">{stats.reviewed}</p>
+          </div>
+          {isModerator && (
+            <div 
+              className="card-hover p-5 cursor-pointer"
+              onClick={() => navigate('/marker/moderation')}
+              data-testid="moderation-card"
+            >
+              <p className="text-sm text-muted-foreground flex items-center gap-1">
+                <Shield className="w-3.5 h-3.5" /> Moderation
+              </p>
+              <p className="text-lg font-semibold mt-1 font-['Outfit'] text-primary">View Queue</p>
+            </div>
+          )}
+          <div 
+            className="card-hover p-5 cursor-pointer"
+            onClick={() => navigate('/marker/analytics')}
+            data-testid="analytics-card"
+          >
+            <p className="text-sm text-muted-foreground flex items-center gap-1">
+              <BarChart3 className="w-3.5 h-3.5" /> Analytics
+            </p>
+            <p className="text-lg font-semibold mt-1 font-['Outfit'] text-primary">View Stats</p>
           </div>
         </div>
 

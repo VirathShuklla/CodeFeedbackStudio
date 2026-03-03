@@ -21,7 +21,9 @@ export default function LoginPage() {
     try {
       const user = await login(email, password);
       toast.success(`Welcome back, ${user.full_name}!`);
-      navigate(user.role === 'marker' ? '/marker' : '/student');
+      // All marker-level roles go to /marker
+      const hasMarkerAccess = ['marker', 'moderator', 'module_leader'].includes(user.role);
+      navigate(hasMarkerAccess ? '/marker' : '/student');
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Invalid credentials');
     } finally {

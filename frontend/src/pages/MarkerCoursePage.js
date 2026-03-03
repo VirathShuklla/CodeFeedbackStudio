@@ -15,8 +15,15 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '../components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../components/ui/select';
 import { toast } from 'sonner';
-import { ArrowLeft, Plus, FileText, Clock, ChevronRight, Users, Crown } from 'lucide-react';
+import { ArrowLeft, Plus, FileText, Clock, ChevronRight, Users, Crown, Upload, Shield, Calendar } from 'lucide-react';
 
 export default function MarkerCoursePage() {
   const { courseId } = useParams();
@@ -26,6 +33,7 @@ export default function MarkerCoursePage() {
   const [course, setCourse] = useState(null);
   const [assignments, setAssignments] = useState([]);
   const [submissions, setSubmissions] = useState([]);
+  const [allMarkers, setAllMarkers] = useState([]);
   const [loading, setLoading] = useState(true);
   
   // Assignment creation
@@ -34,8 +42,17 @@ export default function MarkerCoursePage() {
     title: '', 
     description: '', 
     due_date: '',
-    max_attempts: -1  // -1 means unlimited
+    max_attempts: -1,
+    total_marks: 100,
+    marks_release_date: ''
   });
+  
+  // Moderator management
+  const [showModeratorDialog, setShowModeratorDialog] = useState(false);
+  const [selectedModerator, setSelectedModerator] = useState('');
+  
+  // Marking scheme upload
+  const [uploadingScheme, setUploadingScheme] = useState(null);
 
   useEffect(() => {
     fetchData();
@@ -43,14 +60,16 @@ export default function MarkerCoursePage() {
 
   const fetchData = async () => {
     try {
-      const [courseRes, assignmentsRes, submissionsRes] = await Promise.all([
+      const [courseRes, assignmentsRes, submissionsRes, markersRes] = await Promise.all([
         api().get(`/courses/${courseId}`),
         api().get(`/assignments?course_id=${courseId}`),
-        api().get(`/submissions?course_id=${courseId}`)
+        api().get(`/submissions?course_id=${courseId}`),
+        api().get('/public/users')
       ]);
       setCourse(courseRes.data);
       setAssignments(assignmentsRes.data);
       setSubmissions(submissionsRes.data);
+      setAllMarkers(markersRes.data.filter(m => m.id !== user.id && m.role !== 'student'));
     } catch (error) {
       toast.error('Failed to load course');
       navigate('/marker');
@@ -68,15 +87,68 @@ export default function MarkerCoursePage() {
       const payload = { 
         ...newAssignment, 
         course_id: courseId,
-        due_date: newAssignment.due_date ? new Date(newAssignment.due_date).toISOString() : null
+        due_date: newAssignment.due_date ? new Date(newAssignment.due_date).toISOString() : null,
+        marks_release_date: newAssignment.marks_release_date ? new Date(newAssignment.marks_release_date).toISOString() : null
       };
       await api().post('/assignments', payload);
       toast.success('Assignment created');
       setShowAssignmentDialog(false);
-      setNewAssignment({ title: '', description: '', due_date: '', max_attempts: -1 });
+      setNewAssignment({ title: '', description: '', due_date: '', max_attempts: -1, total_marks: 100, marks_release_date: '' });
       fetchData();
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Failed to create assignment');
+    }
+  };
+
+  const handleUploadMarkingScheme = async (assignmentId, file) => {
+    if (!file) return;
+    
+    setUploadingScheme(assignmentId);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      await api().post(`/assignments/${assignmentId}/marking-scheme`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      toast.success('Marking scheme uploaded');
+      fetchData();
+    } catch (error) {
+      toast.error('Failed to upload marking scheme');
+    } finally {
+      setUploadingScheme(null);
+    }
+  };
+
+  const handleAddModerator = async () => {
+    if (!selectedModerator) {
+      toast.error('Please select a moderator');
+      return;
+    }
+    
+    try {
+      const newModerators = [...(course.moderator_ids || []), selectedModerator];
+      await api().put(`/courses/${courseId}`, {
+        moderator_ids: newModerators
+      });
+      toast.success('Moderator added');
+      setShowModeratorDialog(false);
+      setSelectedModerator('');
+      fetchData();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to add moderator');
+    }
+  };
+
+  const handleRemoveModerator = async (modId) => {
+    try {
+      const newModerators = course.moderator_ids.filter(id => id !== modId);
+      await api().put(`/courses/${courseId}`, {
+        moderator_ids: newModerators
+      });
+      toast.success('Moderator removed');
+      fetchData();
+    } catch (error) {
+      toast.error('Failed to remove moderator');
     }
   };
 
@@ -141,6 +213,25 @@ export default function MarkerCoursePage() {
                 {course?.semester && course?.year ? `${course.semester} ${course.year}` : ''}
                 {course?.student_count > 0 && ` · ${course.student_count} students`}
               </p>
+              
+              {/* Moderators display */}
+              {isLeader && (
+                <div className="flex items-center gap-2 mt-2">
+                  <Shield className="w-4 h-4 text-muted-foreground" />
+                  <span className="text-sm text-muted-foreground">
+                    {course?.moderators?.length || 0} moderator{(course?.moderators?.length || 0) !== 1 ? 's' : ''}
+                  </span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 px-2"
+                    onClick={() => setShowModeratorDialog(true)}
+                    data-testid="add-moderator-btn"
+                  >
+                    <Plus className="w-3 h-3" />
+                  </Button>
+                </div>
+              )}
             </div>
             
             {isLeader && (
@@ -198,6 +289,31 @@ export default function MarkerCoursePage() {
                         data-testid="max-attempts-input"
                       />
                       <p className="text-xs text-muted-foreground">-1 = unlimited</p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-2">
+                      <Label className="text-sm">Total Marks</Label>
+                      <Input
+                        type="number"
+                        value={newAssignment.total_marks}
+                        onChange={(e) => setNewAssignment({ ...newAssignment, total_marks: parseInt(e.target.value) })}
+                        min={1}
+                        max={1000}
+                        className="input-clean"
+                        data-testid="total-marks-input"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-sm">Release Marks At</Label>
+                      <Input
+                        type="datetime-local"
+                        value={newAssignment.marks_release_date}
+                        onChange={(e) => setNewAssignment({ ...newAssignment, marks_release_date: e.target.value })}
+                        className="input-clean"
+                        data-testid="release-date-input"
+                      />
+                      <p className="text-xs text-muted-foreground">Optional scheduled release</p>
                     </div>
                   </div>
                 </div>
@@ -283,7 +399,7 @@ export default function MarkerCoursePage() {
                     data-testid={`assignment-card-${assignment.id}`}
                   >
                     <div className="flex items-start justify-between">
-                      <div>
+                      <div className="flex-1">
                         <h3 className="font-medium">{assignment.title}</h3>
                         <div className="flex items-center gap-3 mt-2 text-sm text-muted-foreground">
                           <span className="flex items-center gap-1">
@@ -291,6 +407,41 @@ export default function MarkerCoursePage() {
                             {formatDeadline(assignment.due_date)}
                           </span>
                           <span>{assignmentSubs.length} submission{assignmentSubs.length !== 1 ? 's' : ''}</span>
+                          <span>·</span>
+                          <span>{assignment.total_marks || 100} marks</span>
+                        </div>
+                        
+                        {/* Marking scheme info */}
+                        <div className="flex items-center gap-3 mt-2">
+                          {assignment.marking_scheme_url ? (
+                            <a 
+                              href={`${process.env.REACT_APP_BACKEND_URL}${assignment.marking_scheme_url}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-xs text-primary hover:underline flex items-center gap-1"
+                            >
+                              <FileText className="w-3 h-3" /> View Marking Scheme
+                            </a>
+                          ) : isLeader && (
+                            <label className="text-xs text-muted-foreground flex items-center gap-1 cursor-pointer hover:text-primary">
+                              <Upload className="w-3 h-3" />
+                              {uploadingScheme === assignment.id ? 'Uploading...' : 'Upload Marking Scheme'}
+                              <input
+                                type="file"
+                                accept=".pdf,.doc,.docx"
+                                className="hidden"
+                                onChange={(e) => handleUploadMarkingScheme(assignment.id, e.target.files[0])}
+                                disabled={uploadingScheme === assignment.id}
+                              />
+                            </label>
+                          )}
+                          
+                          {assignment.marks_release_date && (
+                            <span className="text-xs text-muted-foreground flex items-center gap-1">
+                              <Calendar className="w-3 h-3" />
+                              Marks release: {formatDeadline(assignment.marks_release_date)}
+                            </span>
+                          )}
                         </div>
                       </div>
                       {pending > 0 && (
@@ -306,6 +457,71 @@ export default function MarkerCoursePage() {
             </div>
           )}
         </div>
+
+        {/* Add Moderator Dialog */}
+        <Dialog open={showModeratorDialog} onOpenChange={setShowModeratorDialog}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="font-['Outfit']">Manage Moderators</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              {/* Current moderators */}
+              {course?.moderators?.length > 0 && (
+                <div>
+                  <p className="text-sm font-medium mb-2">Current Moderators</p>
+                  <div className="space-y-2">
+                    {course.moderators.map((mod) => (
+                      <div key={mod.id} className="flex items-center justify-between p-2 border rounded">
+                        <div className="flex items-center gap-2">
+                          <Shield className="w-4 h-4 text-blue-500" />
+                          <span className="text-sm">{mod.name}</span>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 text-red-500 hover:text-red-600"
+                          onClick={() => handleRemoveModerator(mod.id)}
+                        >
+                          Remove
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {/* Add new moderator */}
+              <div className="space-y-2">
+                <Label className="text-sm">Add Moderator</Label>
+                <Select value={selectedModerator} onValueChange={setSelectedModerator}>
+                  <SelectTrigger data-testid="moderator-select">
+                    <SelectValue placeholder="Choose a marker" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {allMarkers
+                      .filter(m => !(course?.moderator_ids || []).includes(m.id) && !(course?.collaborator_ids || []).includes(m.id))
+                      .map((marker) => (
+                        <SelectItem key={marker.id} value={marker.id}>
+                          {marker.full_name} ({marker.email})
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowModeratorDialog(false)}>Close</Button>
+              <Button 
+                onClick={handleAddModerator} 
+                className="btn-primary"
+                disabled={!selectedModerator}
+                data-testid="add-moderator-confirm-btn"
+              >
+                Add Moderator
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </AppLayout>
   );

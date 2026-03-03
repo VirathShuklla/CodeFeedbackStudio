@@ -6,6 +6,7 @@ import RegisterPage from './pages/RegisterPage';
 import MarkerDashboard from './pages/MarkerDashboard';
 import MarkerCoursePage from './pages/MarkerCoursePage';
 import MarkerAnalyticsPage from './pages/MarkerAnalyticsPage';
+import ModerationPage from './pages/ModerationPage';
 import StudentDashboard from './pages/StudentDashboard';
 import StudentAnalyticsPage from './pages/StudentAnalyticsPage';
 import StudentBadgesPage from './pages/StudentBadgesPage';
@@ -13,7 +14,10 @@ import CodeReviewPage from './pages/CodeReviewPage';
 import StudentFeedbackPage from './pages/StudentFeedbackPage';
 import './App.css';
 
-const ProtectedRoute = ({ children, requireRole }) => {
+// Helper to check if user has marker-level access
+const hasMarkerAccess = (role) => ['marker', 'moderator', 'module_leader'].includes(role);
+
+const ProtectedRoute = ({ children, requireRole, requireMarkerAccess }) => {
   const { user, loading } = useAuth();
   
   if (loading) {
@@ -28,8 +32,13 @@ const ProtectedRoute = ({ children, requireRole }) => {
     return <Navigate to="/login" replace />;
   }
   
+  // Check for marker-level access (marker, moderator, module_leader)
+  if (requireMarkerAccess && !hasMarkerAccess(user.role)) {
+    return <Navigate to="/student" replace />;
+  }
+  
   if (requireRole && user.role !== requireRole) {
-    return <Navigate to={user.role === 'marker' ? '/marker' : '/student'} replace />;
+    return <Navigate to={hasMarkerAccess(user.role) ? '/marker' : '/student'} replace />;
   }
   
   return children;
@@ -47,7 +56,7 @@ const PublicRoute = ({ children }) => {
   }
   
   if (user) {
-    return <Navigate to={user.role === 'marker' ? '/marker' : '/student'} replace />;
+    return <Navigate to={hasMarkerAccess(user.role) ? '/marker' : '/student'} replace />;
   }
   
   return children;
@@ -60,11 +69,12 @@ const AppRoutes = () => {
       <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
       <Route path="/register" element={<PublicRoute><RegisterPage /></PublicRoute>} />
       
-      {/* Marker Routes */}
-      <Route path="/marker" element={<ProtectedRoute requireRole="marker"><MarkerDashboard /></ProtectedRoute>} />
-      <Route path="/marker/course/:courseId" element={<ProtectedRoute requireRole="marker"><MarkerCoursePage /></ProtectedRoute>} />
-      <Route path="/marker/review/:submissionId" element={<ProtectedRoute requireRole="marker"><CodeReviewPage /></ProtectedRoute>} />
-      <Route path="/marker/analytics" element={<ProtectedRoute requireRole="marker"><MarkerAnalyticsPage /></ProtectedRoute>} />
+      {/* Marker/Moderator/Leader Routes */}
+      <Route path="/marker" element={<ProtectedRoute requireMarkerAccess><MarkerDashboard /></ProtectedRoute>} />
+      <Route path="/marker/course/:courseId" element={<ProtectedRoute requireMarkerAccess><MarkerCoursePage /></ProtectedRoute>} />
+      <Route path="/marker/review/:submissionId" element={<ProtectedRoute requireMarkerAccess><CodeReviewPage /></ProtectedRoute>} />
+      <Route path="/marker/analytics" element={<ProtectedRoute requireMarkerAccess><MarkerAnalyticsPage /></ProtectedRoute>} />
+      <Route path="/marker/moderation" element={<ProtectedRoute requireMarkerAccess><ModerationPage /></ProtectedRoute>} />
       
       {/* Student Routes */}
       <Route path="/student" element={<ProtectedRoute requireRole="student"><StudentDashboard /></ProtectedRoute>} />

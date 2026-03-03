@@ -42,7 +42,9 @@ import {
   Trash2,
   CheckCircle2,
   ThumbsUp,
-  FileCode
+  FileCode,
+  Award,
+  BookOpen
 } from 'lucide-react';
 import Editor from '@monaco-editor/react';
 
@@ -68,23 +70,47 @@ export default function CodeReviewPage() {
     title: '',
     explanation: '',
     severity: 'moderate',
-    suggested_fix: ''
+    suggested_fix: '',
+    marks_deduction: 0
   });
   
   // No issues dialog
   const [showNoIssuesDialog, setShowNoIssuesDialog] = useState(false);
   const [decorations, setDecorations] = useState([]);
+  
+  // Grading
+  const [showGradeDialog, setShowGradeDialog] = useState(false);
+  const [gradeData, setGradeData] = useState({ marks: 0, feedback: '' });
+  const [assignment, setAssignment] = useState(null);
+  
+  // Templates
+  const [templates, setTemplates] = useState([]);
+  const [showTemplateDialog, setShowTemplateDialog] = useState(false);
 
   const fetchData = useCallback(async () => {
     try {
-      const [subRes, issuesRes, categoriesRes] = await Promise.all([
+      const [subRes, issuesRes, categoriesRes, templatesRes] = await Promise.all([
         api().get(`/submissions/${submissionId}`),
         api().get(`/issues?submission_id=${submissionId}`),
-        api().get('/categories')
+        api().get('/categories'),
+        api().get('/issue-templates')
       ]);
       setSubmission(subRes.data);
       setIssues(issuesRes.data);
       setCategories(categoriesRes.data);
+      setTemplates(templatesRes.data);
+      
+      // Fetch assignment for total marks
+      if (subRes.data.assignment_id) {
+        const assignmentRes = await api().get(`/assignments/${subRes.data.assignment_id}`);
+        setAssignment(assignmentRes.data);
+        // Pre-calculate suggested marks
+        const totalDeductions = issuesRes.data.reduce((sum, i) => sum + (i.marks_deduction || 0), 0);
+        setGradeData(prev => ({ 
+          ...prev, 
+          marks: Math.max(0, (assignmentRes.data.total_marks || 100) - totalDeductions) 
+        }));
+      }
       
       // Set first file as active
       if (subRes.data.files?.length > 0 && !activeFileId) {
@@ -153,11 +179,12 @@ export default function CodeReviewPage() {
         file_id: activeFileId,
         ...newIssue,
         line_start: selectedLines.start,
-        line_end: selectedLines.end
+        line_end: selectedLines.end,
+        marks_deduction: newIssue.marks_deduction || 0
       });
       toast.success('Issue added');
       setShowIssueDialog(false);
-      setNewIssue({ category_id: '', title: '', explanation: '', severity: 'moderate', suggested_fix: '' });
+      setNewIssue({ category_id: '', title: '', explanation: '', severity: 'moderate', suggested_fix: '', marks_deduction: 0 });
       fetchData();
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Failed to add issue');
@@ -182,6 +209,39 @@ export default function CodeReviewPage() {
     } catch (error) {
       toast.error('Failed to publish');
     }
+  };
+
+  const handleGradeSubmission = async () => {
+    if (gradeData.marks < 0 || gradeData.marks > (assignment?.total_marks || 100)) {
+      toast.error(`Marks must be between 0 and ${assignment?.total_marks || 100}`);
+      return;
+    }
+    
+    try {
+      await api().post(`/submissions/${submissionId}/grade`, {
+        marks: gradeData.marks,
+        feedback: gradeData.feedback
+      });
+      toast.success('Submission graded successfully');
+      setShowGradeDialog(false);
+      navigate('/marker');
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to grade');
+    }
+  };
+
+  const handleApplyTemplate = (template) => {
+    setNewIssue({
+      ...newIssue,
+      title: template.title,
+      explanation: template.explanation,
+      category_id: template.category_id,
+      severity: template.severity,
+      suggested_fix: template.suggested_fix,
+      marks_deduction: template.marks_deduction
+    });
+    setShowTemplateDialog(false);
+    setShowIssueDialog(true);
   };
 
   const handleMarkNoIssues = async () => {
@@ -253,6 +313,16 @@ export default function CodeReviewPage() {
         
         {!isCompleted && (
           <div className="ml-auto flex items-center gap-2">
+            {templates.length > 0 && (
+              <Button 
+                variant="outline"
+                onClick={() => setShowTemplateDialog(true)}
+                data-testid="templates-btn"
+              >
+                <BookOpen className="w-4 h-4 mr-2" /> Templates
+              </Button>
+            )}
+            
             <AlertDialog open={showNoIssuesDialog} onOpenChange={setShowNoIssuesDialog}>
               <Button 
                 variant="outline"
@@ -266,7 +336,7 @@ export default function CodeReviewPage() {
                 <AlertDialogHeader>
                   <AlertDialogTitle>Mark as Correct</AlertDialogTitle>
                   <AlertDialogDescription>
-                    This will mark the submission as having no issues. The student will be notified.
+                    This will mark the submission as having no issues and award full marks ({assignment?.total_marks || 100}). The student will be notified.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
@@ -277,6 +347,15 @@ export default function CodeReviewPage() {
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
+            
+            <Button 
+              variant="outline"
+              onClick={() => setShowGradeDialog(true)}
+              disabled={issues.length === 0}
+              data-testid="grade-btn"
+            >
+              <Award className="w-4 h-4 mr-2" /> Grade
+            </Button>
             
             <Button 
               onClick={handlePublishFeedback}
@@ -505,6 +584,19 @@ export default function CodeReviewPage() {
                 data-testid="issue-fix-input"
               />
             </div>
+            
+            <div className="space-y-2">
+              <Label className="text-sm">Marks Deduction</Label>
+              <Input
+                type="number"
+                value={newIssue.marks_deduction || 0}
+                onChange={(e) => setNewIssue({ ...newIssue, marks_deduction: parseInt(e.target.value) || 0 })}
+                min={0}
+                max={100}
+                className="input-clean w-24"
+                data-testid="marks-deduction-input"
+              />
+            </div>
           </div>
           
           <DialogFooter>
@@ -513,6 +605,88 @@ export default function CodeReviewPage() {
               Add Issue
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Grade Dialog */}
+      <Dialog open={showGradeDialog} onOpenChange={setShowGradeDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="font-['Outfit']">Grade Submission</DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="p-3 bg-slate-50 rounded-lg">
+              <p className="text-sm"><strong>Student:</strong> {submission?.student_name}</p>
+              <p className="text-sm"><strong>Issues found:</strong> {issues.length}</p>
+              <p className="text-sm"><strong>Total deductions:</strong> {issues.reduce((sum, i) => sum + (i.marks_deduction || 0), 0)} marks</p>
+            </div>
+            
+            <div className="space-y-2">
+              <Label className="text-sm">Marks (out of {assignment?.total_marks || 100})</Label>
+              <Input
+                type="number"
+                value={gradeData.marks}
+                onChange={(e) => setGradeData({ ...gradeData, marks: parseInt(e.target.value) || 0 })}
+                min={0}
+                max={assignment?.total_marks || 100}
+                className="input-clean"
+                data-testid="grade-marks-input"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label className="text-sm">Additional Feedback</Label>
+              <Textarea
+                value={gradeData.feedback}
+                onChange={(e) => setGradeData({ ...gradeData, feedback: e.target.value })}
+                placeholder="Overall comments for the student..."
+                className="input-clean min-h-[80px]"
+                data-testid="grade-feedback-input"
+              />
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowGradeDialog(false)}>Cancel</Button>
+            <Button onClick={handleGradeSubmission} className="btn-primary" data-testid="submit-grade-btn">
+              <Award className="w-4 h-4 mr-1" /> Submit Grade
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Templates Dialog */}
+      <Dialog open={showTemplateDialog} onOpenChange={setShowTemplateDialog}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="font-['Outfit']">Feedback Templates</DialogTitle>
+          </DialogHeader>
+          
+          <ScrollArea className="max-h-[400px]">
+            <div className="space-y-2 py-4">
+              {templates.length === 0 ? (
+                <p className="text-center text-muted-foreground py-4">No templates available</p>
+              ) : (
+                templates.map((template) => (
+                  <div
+                    key={template.id}
+                    className="p-3 border rounded-lg hover:border-primary/30 cursor-pointer transition-colors"
+                    onClick={() => handleApplyTemplate(template)}
+                    data-testid={`template-${template.id}`}
+                  >
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="font-medium text-sm">{template.title}</span>
+                      <Badge variant="outline" className="text-xs">
+                        -{template.marks_deduction} marks
+                      </Badge>
+                    </div>
+                    <p className="text-xs text-muted-foreground line-clamp-2">{template.explanation}</p>
+                  </div>
+                ))
+              )}
+            </div>
+          </ScrollArea>
         </DialogContent>
       </Dialog>
     </div>

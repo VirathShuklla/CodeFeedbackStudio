@@ -772,7 +772,7 @@ async def create_submission(submission_data: SubmissionCreate, current_user: dic
 @api_router.get("/submissions")
 async def get_submissions(
     assignment_id: Optional[str] = None, course_id: Optional[str] = None,
-    status: Optional[str] = None, for_moderation: bool = False,
+    status_filter: Optional[str] = None, for_moderation: bool = False,
     current_user: dict = Depends(get_current_user)
 ):
     query = {}
@@ -791,8 +791,8 @@ async def get_submissions(
     
     if assignment_id:
         query["assignment_id"] = assignment_id
-    if status:
-        query["status"] = status
+    if status_filter:
+        query["status"] = status_filter
     
     # Moderation filtering
     if for_moderation and current_user["role"] in ["moderator", "module_leader"]:

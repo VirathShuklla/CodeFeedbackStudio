@@ -86,8 +86,10 @@ export const AuthProvider = ({ children }) => {
     logout,
     api,
     refreshUser,
-    isMarker: user?.role === 'marker',
-    isStudent: user?.role === 'student'
+    isStudent: user?.role === 'student',
+    isMarker: user?.role === 'marker' || user?.role === 'moderator' || user?.role === 'module_leader',
+    isModerator: user?.role === 'moderator' || user?.role === 'module_leader',
+    isModuleLeader: user?.role === 'module_leader'
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

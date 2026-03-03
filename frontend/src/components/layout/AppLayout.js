@@ -8,10 +8,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '../ui/dropdown-menu';
-import { Code2, LogOut, ChevronDown, BarChart3, Award, BookOpen, Home } from 'lucide-react';
+import { Code2, LogOut, ChevronDown, BarChart3, Award, BookOpen, Home, Shield } from 'lucide-react';
 
 export const AppLayout = ({ children }) => {
-  const { user, logout, isMarker, isStudent } = useAuth();
+  const { user, logout, isMarker, isStudent, isModerator } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -51,6 +51,18 @@ export const AppLayout = ({ children }) => {
                   <span className="hidden sm:inline">Courses</span>
                 </Button>
               </Link>
+              {isModerator && (
+                <Link to="/marker/moderation">
+                  <Button 
+                    variant={isActive('/marker/moderation') ? 'secondary' : 'ghost'} 
+                    size="sm"
+                    className="gap-2"
+                  >
+                    <Shield className="w-4 h-4" />
+                    <span className="hidden sm:inline">Moderation</span>
+                  </Button>
+                </Link>
+              )}
               <Link to="/marker/analytics">
                 <Button 
                   variant={isActive('/marker/analytics') ? 'secondary' : 'ghost'} 
@@ -116,7 +128,9 @@ export const AppLayout = ({ children }) => {
               <div className="px-2 py-1.5">
                 <p className="text-sm font-medium">{user?.full_name}</p>
                 <p className="text-xs text-muted-foreground">{user?.email}</p>
-                <p className="text-xs text-muted-foreground capitalize mt-0.5">{user?.role}</p>
+                <p className="text-xs text-muted-foreground capitalize mt-0.5">
+                  {user?.role === 'module_leader' ? 'Module Leader' : user?.role}
+                </p>
               </div>
               <DropdownMenuSeparator />
               <DropdownMenuItem 
