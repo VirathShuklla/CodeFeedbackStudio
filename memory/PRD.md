@@ -1,52 +1,35 @@
 # CodeFeedback Studio - Product Requirements Document
 
 ## Original Problem Statement
-Build a full-stack application for managing and reviewing code for programming assignments with:
-- Two user roles: "Marker" (instructor) and "Student"
-- Course leadership model with Head Marker + Collaborating Markers
+Build a comprehensive code assessment and moderation platform for programming education with:
+- Four user roles: Student, Marker, Moderator, and Module Leader
+- Course leadership model with Module Leader + Collaborating Markers + Moderators
 - Multi-course enrollment for students
-- Multi-file Python submissions
-- GitHub PR-style code review with file-specific feedback
+- Multi-file Python submissions with resubmission support
+- GitHub PR-style code review with file-specific, line-specific feedback
+- Grading system with marking schemes and scheduled mark release
+- Full moderation workflow for quality assurance
 - Analytics dashboards for both roles
-- Gamification system for students
+- Gamification system for students and markers
 
 ## What's Been Implemented
 
-### Phase 1: Core Architecture ✅
-- [x] Course Leadership model (leader_id + collaborator_ids)
+### Phase 1 & 2: Core Architecture & Advanced Features ✅ (March 3, 2026)
+- [x] Four user roles (Student, Marker, Moderator, Module Leader)
+- [x] Role-based permissions and access control
+- [x] Course Leadership model (leader_id + collaborator_ids + moderator_ids)
 - [x] Multi-course enrollment for students
-- [x] Role-based permissions (Student, Marker, Leader)
 - [x] JWT authentication with role separation
-- [x] Public endpoints for courses and markers
-
-### Phase 2: Multi-File Submissions ✅
-- [x] Submit multiple .py files per assignment
-- [x] File upload via API (JSON with content)
-- [x] File navigation in code review UI
-- [x] Per-file issue tracking
-
-### Phase 3: Code Review Experience ✅
+- [x] Multi-file Python submissions
 - [x] GitHub PR-style code review interface
-- [x] File sidebar with issue counts
-- [x] Monaco editor with syntax highlighting
-- [x] File-specific, line-specific issues
-- [x] Issue severity levels (minor, moderate, critical)
-- [x] Click-to-navigate from issue to code
-- [x] "No Issues" option for correct code
-- [x] Publish feedback workflow
-
-### Phase 4: Analytics ✅
-- [x] Marker analytics (per-course stats, pending reviews, turnaround time)
-- [x] Course leader analytics (collaborator activity)
-- [x] Student analytics (per-course progress, issues by category)
-- [x] Fix rate tracking
-
-### Phase 5: Gamification ✅
-- [x] XP system with awards for fixing issues
-- [x] Level progression (15 levels from Novice to Master)
-- [x] Badge definitions and progress tracking
-- [x] XP log for recent gains
-- [x] Badges page UI
+- [x] Grading system with marks and feedback
+- [x] Marks deduction per issue
+- [x] Scheduled mark release dates
+- [x] Marking scheme upload (PDF)
+- [x] Moderation workflow (raise/approve/reject issues)
+- [x] Feedback templates for markers
+- [x] Student gamification (XP, badges, levels)
+- [x] Marker gamification (badges)
 
 ## Implementation Date: February 13, 2026
 
@@ -65,9 +48,10 @@ Build a full-stack application for managing and reviewing code for programming a
   "email": "string",
   "password_hash": "string",
   "full_name": "string",
-  "role": "student | marker",
+  "role": "student | marker | moderator | module_leader",
   "course_ids": ["uuid"],  // For students
   "xp": 0,
+  "level": 1,
   "badges": [],
   "created_at": "datetime"
 }
@@ -82,8 +66,25 @@ Build a full-stack application for managing and reviewing code for programming a
   "description": "string",
   "year": 2026,
   "semester": "string",
-  "leader_id": "uuid",      // Head marker
+  "leader_id": "uuid",           // Module leader
   "collaborator_ids": ["uuid"],  // Collaborating markers
+  "moderator_ids": ["uuid"],     // Course moderators
+  "created_at": "datetime"
+}
+```
+
+### assignments
+```json
+{
+  "id": "uuid",
+  "course_id": "uuid",
+  "title": "string",
+  "description": "string",
+  "due_date": "datetime",
+  "max_attempts": -1,  // -1 = unlimited
+  "total_marks": 100,
+  "marks_release_date": "datetime",
+  "marking_scheme_url": "string",
   "created_at": "datetime"
 }
 ```
@@ -98,6 +99,9 @@ Build a full-stack application for managing and reviewing code for programming a
     {"id": "uuid", "filename": "main.py", "content": "..."}
   ],
   "status": "pending | in_review | feedback_released | no_issues",
+  "marks": 0,
+  "grade_feedback": "string",
+  "moderation_status": "pending | approved | flagged",
   "attempt_number": 1,
   "submission_time": "datetime",
   "review_completed_at": "datetime",
@@ -119,7 +123,23 @@ Build a full-stack application for managing and reviewing code for programming a
   "explanation": "string",
   "severity": "minor | moderate | critical",
   "suggested_fix": "string",
+  "marks_deduction": 5,
   "student_status": "open | fixed",
+  "created_at": "datetime"
+}
+```
+
+### moderation_issues
+```json
+{
+  "id": "uuid",
+  "submission_id": "uuid",
+  "marker_id": "uuid",
+  "moderator_id": "uuid",
+  "issue_description": "string",
+  "severity": "minor | moderate | critical",
+  "status": "open | approved | rejected",
+  "leader_response": "string",
   "created_at": "datetime"
 }
 ```
@@ -127,17 +147,17 @@ Build a full-stack application for managing and reviewing code for programming a
 ## API Endpoints
 
 ### Authentication
-- POST `/api/auth/register` - Register user
+- POST `/api/auth/register` - Register user (roles: student, marker, moderator, module_leader)
 - POST `/api/auth/login` - Login
 - GET `/api/auth/me` - Current user
 
 ### Public
 - GET `/api/public/courses` - List courses
-- GET `/api/public/markers` - List markers
+- GET `/api/public/users` - List all users (for collaborator/moderator selection)
 
 ### Courses
 - GET/POST `/api/courses` - List/Create courses
-- PUT `/api/courses/{id}` - Update (leader can modify collaborators)
+- PUT `/api/courses/{id}` - Update (leader can modify collaborators/moderators)
 
 ### Students
 - GET `/api/students/courses` - Enrolled courses
@@ -145,16 +165,30 @@ Build a full-stack application for managing and reviewing code for programming a
 
 ### Assignments
 - GET/POST `/api/assignments` - List/Create
+- POST `/api/assignments/{id}/marking-scheme` - Upload marking scheme PDF
 - GET `/api/assignments/{id}/deadline-status` - Check deadline
 
-### Submissions
+### Submissions & Grading
 - GET/POST `/api/submissions` - List/Create
+- POST `/api/submissions/{id}/grade` - Grade with marks and feedback
 - POST `/api/submissions/{id}/publish` - Publish feedback
-- POST `/api/submissions/{id}/mark-no-issues` - Mark correct
+- POST `/api/submissions/{id}/mark-no-issues` - Mark as correct
 
 ### Issues
-- GET/POST `/api/issues` - List/Create
+- GET/POST `/api/issues` - List/Create (with marks_deduction)
 - POST `/api/issues/{id}/mark-fixed` - Mark fixed (awards XP)
+- DELETE `/api/issues/{id}` - Delete issue (leader only)
+
+### Moderation
+- GET `/api/submissions?for_moderation=true` - Get submissions for moderation
+- POST `/api/moderation/issues` - Raise moderation issue
+- POST `/api/moderation/issues/{id}/approve` - Approve issue (leader)
+- POST `/api/moderation/issues/{id}/reject` - Reject issue (leader)
+- POST `/api/moderation/submissions/{id}/confirm` - Confirm no issues
+- GET `/api/moderation/issues` - List moderation issues
+
+### Templates
+- GET/POST `/api/issue-templates` - List/Create reusable feedback templates
 
 ### Analytics
 - GET `/api/analytics/marker` - Marker stats
@@ -162,14 +196,23 @@ Build a full-stack application for managing and reviewing code for programming a
 - GET `/api/gamification/stats` - XP/Badges
 
 ## Test Credentials
+Create new accounts via registration page:
+- Module Leader: `leader@test.com` / `password123`
+- Moderator: `moderator@test.com` / `password123`
 - Marker: `marker@test.com` / `password123`
 - Student: `student@test.com` / `password123`
 
 ## Backlog / Future Tasks
 
-### P1 - High Priority
-- [ ] Email notifications when feedback is released
-- [ ] Reusable feedback library for markers
+### P0 - Critical (Phase 3)
+- [ ] Analytics dashboards for students (progress tracking)
+- [ ] Analytics dashboards for markers (class-wide stats)
+- [ ] Marker evaluation and scaling system
+- [ ] Moderation tracking reports
+
+### P1 - High Priority (Phase 4)
+- [ ] Email notifications when feedback/marks are released
+- [ ] Email notifications for moderation issues
 - [ ] Bulk feedback actions
 
 ### P2 - Medium Priority
