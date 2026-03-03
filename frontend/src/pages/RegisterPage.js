@@ -5,7 +5,7 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { toast } from 'sonner';
-import { Code2, ArrowRight, GraduationCap, Users, Check, Shield, Crown } from 'lucide-react';
+import { Code2, ArrowRight, GraduationCap, Users, Check } from 'lucide-react';
 import axios from 'axios';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
@@ -152,34 +152,6 @@ export default function RegisterPage() {
                 >
                   <Users className={`w-5 h-5 mx-auto mb-1 ${role === 'marker' ? 'text-primary' : 'text-muted-foreground'}`} />
                   <span className={`text-sm font-medium ${role === 'marker' ? 'text-primary' : 'text-foreground'}`}>Marker</span>
-                </button>
-              </div>
-              <div className="grid grid-cols-2 gap-3 mt-2">
-                <button
-                  type="button"
-                  onClick={() => setRole('moderator')}
-                  className={`p-3 rounded-lg border-2 transition-all ${
-                    role === 'moderator' 
-                      ? 'border-blue-500 bg-blue-50' 
-                      : 'border-border hover:border-blue-300'
-                  }`}
-                  data-testid="role-moderator-btn"
-                >
-                  <Shield className={`w-5 h-5 mx-auto mb-1 ${role === 'moderator' ? 'text-blue-500' : 'text-muted-foreground'}`} />
-                  <span className={`text-sm font-medium ${role === 'moderator' ? 'text-blue-600' : 'text-foreground'}`}>Moderator</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setRole('module_leader')}
-                  className={`p-3 rounded-lg border-2 transition-all ${
-                    role === 'module_leader' 
-                      ? 'border-amber-500 bg-amber-50' 
-                      : 'border-border hover:border-amber-300'
-                  }`}
-                  data-testid="role-leader-btn"
-                >
-                  <Crown className={`w-5 h-5 mx-auto mb-1 ${role === 'module_leader' ? 'text-amber-500' : 'text-muted-foreground'}`} />
-                  <span className={`text-sm font-medium ${role === 'module_leader' ? 'text-amber-600' : 'text-foreground'}`}>Module Leader</span>
                 </button>
               </div>
             </div>

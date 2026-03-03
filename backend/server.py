@@ -51,7 +51,7 @@ security = HTTPBearer()
 # ============ MODELS ============
 
 # Roles: student, marker, moderator, module_leader
-VALID_ROLES = ["student", "marker", "moderator", "module_leader"]
+VALID_ROLES = ["student", "marker"]  # Registration roles only - moderator/module_leader assigned through course management
 
 class UserCreate(BaseModel):
     email: EmailStr
@@ -89,6 +89,7 @@ class CourseUpdate(BaseModel):
     semester: Optional[str] = None
     collaborator_ids: Optional[List[str]] = None
     moderator_ids: Optional[List[str]] = None
+    leader_id: Optional[str] = None  # For leadership transfer
 
 class CourseResponse(BaseModel):
     id: str
@@ -516,7 +517,14 @@ async def create_course(course_data: CourseCreate, current_user: dict = Depends(
         "collaborator_ids": [], "moderator_ids": [], "created_at": now
     }
     await db.courses.insert_one(course_doc)
-    return {**course_doc, "leader_name": current_user["full_name"], "student_count": 0}
+    # Return without _id
+    return {
+        "id": course_id, "name": course_data.name, "code": course_data.code or "",
+        "description": course_data.description or "", "year": course_data.year,
+        "semester": course_data.semester or "", "leader_id": current_user["id"],
+        "leader_name": current_user["full_name"], "collaborator_ids": [], "moderator_ids": [],
+        "collaborators": [], "moderators": [], "created_at": now, "student_count": 0
+    }
 
 @api_router.get("/courses")
 async def get_courses(current_user: dict = Depends(get_current_user)):
@@ -563,7 +571,28 @@ async def get_course(course_id: str, current_user: dict = Depends(get_current_us
         raise HTTPException(status_code=404, detail="Course not found")
     leader = await db.users.find_one({"id": course.get("leader_id")}, {"_id": 0})
     student_count = await db.users.count_documents({"role": "student", "course_ids": course_id})
-    return {**course, "leader_name": leader["full_name"] if leader else "Unknown", "student_count": student_count}
+    
+    # Get collaborator details
+    collaborators = []
+    for cid in course.get("collaborator_ids", []):
+        collab = await db.users.find_one({"id": cid}, {"_id": 0, "id": 1, "full_name": 1, "email": 1})
+        if collab:
+            collaborators.append({"id": collab["id"], "name": collab["full_name"], "email": collab.get("email", "")})
+    
+    # Get moderator details
+    moderators = []
+    for mid in course.get("moderator_ids", []):
+        mod = await db.users.find_one({"id": mid}, {"_id": 0, "id": 1, "full_name": 1, "email": 1, "role": 1})
+        if mod:
+            moderators.append({"id": mod["id"], "name": mod["full_name"], "email": mod.get("email", ""), "role": mod.get("role", "marker")})
+    
+    return {
+        **course, 
+        "leader_name": leader["full_name"] if leader else "Unknown", 
+        "student_count": student_count,
+        "collaborators": collaborators,
+        "moderators": moderators
+    }
 
 @api_router.put("/courses/{course_id}")
 async def update_course(course_id: str, course_data: CourseUpdate, current_user: dict = Depends(require_marker)):
@@ -582,9 +611,35 @@ async def update_course(course_id: str, course_data: CourseUpdate, current_user:
         update_doc["collaborator_ids"] = course_data.collaborator_ids
     if course_data.moderator_ids is not None:
         update_doc["moderator_ids"] = course_data.moderator_ids
-        # Update role of moderators
+        # Update role of moderators to 'moderator' if they are currently 'marker'
         for mod_id in course_data.moderator_ids:
-            await db.users.update_one({"id": mod_id}, {"$set": {"role": "moderator"}})
+            user = await db.users.find_one({"id": mod_id}, {"_id": 0, "role": 1})
+            if user and user.get("role") == "marker":
+                await db.users.update_one({"id": mod_id}, {"$set": {"role": "moderator"}})
+    
+    # Handle leadership transfer
+    if course_data.leader_id is not None and course_data.leader_id != course.get("leader_id"):
+        new_leader = await db.users.find_one({"id": course_data.leader_id}, {"_id": 0})
+        if not new_leader:
+            raise HTTPException(status_code=400, detail="New leader not found")
+        if new_leader.get("role") == "student":
+            raise HTTPException(status_code=400, detail="Students cannot be course leaders")
+        
+        # Update new leader's role to module_leader
+        await db.users.update_one({"id": course_data.leader_id}, {"$set": {"role": "module_leader"}})
+        
+        # Add current leader as collaborator (unless they're already)
+        current_collaborators = course.get("collaborator_ids", [])
+        if current_user["id"] not in current_collaborators:
+            current_collaborators.append(current_user["id"])
+        
+        # Remove new leader from collaborators/moderators if they were there
+        current_collaborators = [c for c in current_collaborators if c != course_data.leader_id]
+        current_moderators = [m for m in course.get("moderator_ids", []) if m != course_data.leader_id]
+        
+        update_doc["leader_id"] = course_data.leader_id
+        update_doc["collaborator_ids"] = current_collaborators
+        update_doc["moderator_ids"] = current_moderators
     
     if update_doc:
         await db.courses.update_one({"id": course_id}, {"$set": update_doc})

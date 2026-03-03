@@ -51,6 +51,14 @@ export default function MarkerCoursePage() {
   const [showModeratorDialog, setShowModeratorDialog] = useState(false);
   const [selectedModerator, setSelectedModerator] = useState('');
   
+  // Collaborator management
+  const [showCollaboratorDialog, setShowCollaboratorDialog] = useState(false);
+  const [selectedCollaborator, setSelectedCollaborator] = useState('');
+  
+  // Module Leader transfer
+  const [showLeaderDialog, setShowLeaderDialog] = useState(false);
+  const [selectedNewLeader, setSelectedNewLeader] = useState('');
+  
   // Marking scheme upload
   const [uploadingScheme, setUploadingScheme] = useState(null);
 
@@ -152,6 +160,59 @@ export default function MarkerCoursePage() {
     }
   };
 
+  const handleAddCollaborator = async () => {
+    if (!selectedCollaborator) {
+      toast.error('Please select a marker');
+      return;
+    }
+    
+    try {
+      const newCollaborators = [...(course.collaborator_ids || []), selectedCollaborator];
+      await api().put(`/courses/${courseId}`, {
+        collaborator_ids: newCollaborators
+      });
+      toast.success('Collaborator added');
+      setShowCollaboratorDialog(false);
+      setSelectedCollaborator('');
+      fetchData();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to add collaborator');
+    }
+  };
+
+  const handleRemoveCollaborator = async (collabId) => {
+    try {
+      const newCollaborators = course.collaborator_ids.filter(id => id !== collabId);
+      await api().put(`/courses/${courseId}`, {
+        collaborator_ids: newCollaborators
+      });
+      toast.success('Collaborator removed');
+      fetchData();
+    } catch (error) {
+      toast.error('Failed to remove collaborator');
+    }
+  };
+
+  const handleTransferLeadership = async () => {
+    if (!selectedNewLeader) {
+      toast.error('Please select a new module leader');
+      return;
+    }
+    
+    try {
+      await api().put(`/courses/${courseId}`, {
+        leader_id: selectedNewLeader
+      });
+      toast.success('Leadership transferred successfully');
+      setShowLeaderDialog(false);
+      setSelectedNewLeader('');
+      // Refresh data - user may no longer have access
+      navigate('/marker');
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to transfer leadership');
+    }
+  };
+
   const getSubmissionsForAssignment = (assignmentId) => {
     return submissions.filter(s => s.assignment_id === assignmentId);
   };
@@ -214,21 +275,52 @@ export default function MarkerCoursePage() {
                 {course?.student_count > 0 && ` · ${course.student_count} students`}
               </p>
               
-              {/* Moderators display */}
+              {/* Team Management - Leader only */}
               {isLeader && (
-                <div className="flex items-center gap-2 mt-2">
-                  <Shield className="w-4 h-4 text-muted-foreground" />
-                  <span className="text-sm text-muted-foreground">
-                    {course?.moderators?.length || 0} moderator{(course?.moderators?.length || 0) !== 1 ? 's' : ''}
-                  </span>
+                <div className="flex flex-wrap items-center gap-4 mt-3">
+                  {/* Collaborators */}
+                  <div className="flex items-center gap-2">
+                    <Users className="w-4 h-4 text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground">
+                      {course?.collaborators?.length || 0} collaborator{(course?.collaborators?.length || 0) !== 1 ? 's' : ''}
+                    </span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 px-2"
+                      onClick={() => setShowCollaboratorDialog(true)}
+                      data-testid="add-collaborator-btn"
+                    >
+                      <Plus className="w-3 h-3" />
+                    </Button>
+                  </div>
+                  
+                  {/* Moderators */}
+                  <div className="flex items-center gap-2">
+                    <Shield className="w-4 h-4 text-blue-500" />
+                    <span className="text-sm text-muted-foreground">
+                      {course?.moderators?.length || 0} moderator{(course?.moderators?.length || 0) !== 1 ? 's' : ''}
+                    </span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 px-2"
+                      onClick={() => setShowModeratorDialog(true)}
+                      data-testid="add-moderator-btn"
+                    >
+                      <Plus className="w-3 h-3" />
+                    </Button>
+                  </div>
+                  
+                  {/* Transfer Leadership */}
                   <Button
-                    variant="ghost"
+                    variant="outline"
                     size="sm"
-                    className="h-6 px-2"
-                    onClick={() => setShowModeratorDialog(true)}
-                    data-testid="add-moderator-btn"
+                    className="h-6 text-xs"
+                    onClick={() => setShowLeaderDialog(true)}
+                    data-testid="transfer-leader-btn"
                   >
-                    <Plus className="w-3 h-3" />
+                    <Crown className="w-3 h-3 mr-1" /> Transfer Leadership
                   </Button>
                 </div>
               )}
@@ -518,6 +610,128 @@ export default function MarkerCoursePage() {
                 data-testid="add-moderator-confirm-btn"
               >
                 Add Moderator
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Add Collaborator Dialog */}
+        <Dialog open={showCollaboratorDialog} onOpenChange={setShowCollaboratorDialog}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="font-['Outfit']">Manage Collaborators</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              {/* Current collaborators */}
+              {course?.collaborators?.length > 0 && (
+                <div>
+                  <p className="text-sm font-medium mb-2">Current Collaborators</p>
+                  <div className="space-y-2">
+                    {course.collaborators.map((collab) => (
+                      <div key={collab.id} className="flex items-center justify-between p-2 border rounded">
+                        <div className="flex items-center gap-2">
+                          <Users className="w-4 h-4 text-slate-500" />
+                          <span className="text-sm">{collab.name}</span>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 text-red-500 hover:text-red-600"
+                          onClick={() => handleRemoveCollaborator(collab.id)}
+                        >
+                          Remove
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {/* Add new collaborator */}
+              <div className="space-y-2">
+                <Label className="text-sm">Add Collaborator</Label>
+                <Select value={selectedCollaborator} onValueChange={setSelectedCollaborator}>
+                  <SelectTrigger data-testid="collaborator-select">
+                    <SelectValue placeholder="Choose a marker" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {allMarkers
+                      .filter(m => !(course?.moderator_ids || []).includes(m.id) && !(course?.collaborator_ids || []).includes(m.id))
+                      .map((marker) => (
+                        <SelectItem key={marker.id} value={marker.id}>
+                          {marker.full_name} ({marker.email})
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowCollaboratorDialog(false)}>Close</Button>
+              <Button 
+                onClick={handleAddCollaborator} 
+                className="btn-primary"
+                disabled={!selectedCollaborator}
+                data-testid="add-collaborator-confirm-btn"
+              >
+                Add Collaborator
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Transfer Leadership Dialog */}
+        <Dialog open={showLeaderDialog} onOpenChange={setShowLeaderDialog}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="font-['Outfit']">Transfer Module Leadership</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                <p className="text-sm text-amber-800">
+                  <strong>Warning:</strong> Transferring leadership will make the selected marker the new Module Leader of this course. You will remain as a collaborator unless they remove you.
+                </p>
+              </div>
+              
+              <div className="space-y-2">
+                <Label className="text-sm">Select New Module Leader</Label>
+                <Select value={selectedNewLeader} onValueChange={setSelectedNewLeader}>
+                  <SelectTrigger data-testid="new-leader-select">
+                    <SelectValue placeholder="Choose a marker" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {/* Show collaborators and moderators as potential leaders */}
+                    {[...(course?.collaborators || []), ...(course?.moderators || [])]
+                      .filter((person, idx, arr) => arr.findIndex(p => p.id === person.id) === idx) // Remove duplicates
+                      .map((person) => (
+                        <SelectItem key={person.id} value={person.id}>
+                          {person.name} ({person.role || 'marker'})
+                        </SelectItem>
+                      ))}
+                    {/* Also show other markers not in the course */}
+                    {allMarkers
+                      .filter(m => 
+                        !(course?.collaborator_ids || []).includes(m.id) && 
+                        !(course?.moderator_ids || []).includes(m.id)
+                      )
+                      .map((marker) => (
+                        <SelectItem key={marker.id} value={marker.id}>
+                          {marker.full_name} (external)
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowLeaderDialog(false)}>Cancel</Button>
+              <Button 
+                onClick={handleTransferLeadership} 
+                className="bg-amber-500 hover:bg-amber-600"
+                disabled={!selectedNewLeader}
+                data-testid="transfer-leader-confirm-btn"
+              >
+                <Crown className="w-4 h-4 mr-1" /> Transfer Leadership
               </Button>
             </DialogFooter>
           </DialogContent>

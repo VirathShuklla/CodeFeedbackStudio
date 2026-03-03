@@ -2,8 +2,10 @@
 
 ## Original Problem Statement
 Build a comprehensive code assessment and moderation platform for programming education with:
-- Four user roles: Student, Marker, Moderator, and Module Leader
+- Two registration roles: Student and Marker
+- Role elevation through course management (Marker → Module Leader when creating courses)
 - Course leadership model with Module Leader + Collaborating Markers + Moderators
+- Ability for leaders to transfer leadership to other markers
 - Multi-course enrollment for students
 - Multi-file Python submissions with resubmission support
 - GitHub PR-style code review with file-specific, line-specific feedback
@@ -15,7 +17,9 @@ Build a comprehensive code assessment and moderation platform for programming ed
 ## What's Been Implemented
 
 ### Phase 1 & 2: Core Architecture & Advanced Features ✅ (March 3, 2026)
-- [x] Four user roles (Student, Marker, Moderator, Module Leader)
+- [x] Two registration roles (Student, Marker)
+- [x] Role elevation: Marker → Module Leader when creating course
+- [x] Course team management: add collaborators, moderators, transfer leadership
 - [x] Role-based permissions and access control
 - [x] Course Leadership model (leader_id + collaborator_ids + moderator_ids)
 - [x] Multi-course enrollment for students
