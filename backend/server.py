@@ -699,7 +699,16 @@ async def create_assignment(assignment_data: AssignmentCreate, current_user: dic
         "marking_scheme_url": None, "created_at": now
     }
     await db.assignments.insert_one(assignment_doc)
-    return {**assignment_doc, "course_name": course["name"], "is_past_deadline": False}
+    # Return without _id which gets added by MongoDB
+    return {
+        "id": assignment_id, "course_id": assignment_data.course_id,
+        "title": assignment_data.title, "description": assignment_data.description or "",
+        "due_date": assignment_data.due_date, "max_attempts": assignment_data.max_attempts,
+        "total_marks": assignment_data.total_marks,
+        "marks_release_date": assignment_data.marks_release_date,
+        "marking_scheme_url": None, "created_at": now,
+        "course_name": course["name"], "is_past_deadline": False
+    }
 
 @api_router.post("/assignments/{assignment_id}/marking-scheme")
 async def upload_marking_scheme(assignment_id: str, file: UploadFile = File(...), current_user: dict = Depends(require_marker)):
@@ -760,7 +769,8 @@ async def create_category(category_data: IssueCategoryCreate, current_user: dict
     category_id = str(uuid.uuid4())
     category_doc = {"id": category_id, "name": category_data.name, "description": category_data.description or ""}
     await db.issue_categories.insert_one(category_doc)
-    return category_doc
+    # Return without _id
+    return {"id": category_id, "name": category_data.name, "description": category_data.description or ""}
 
 @api_router.get("/categories")
 async def get_categories(current_user: dict = Depends(get_current_user)):
@@ -774,7 +784,8 @@ async def get_categories(current_user: dict = Depends(get_current_user)):
             {"id": str(uuid.uuid4()), "name": "Best Practice", "description": "Violation of best practices"},
         ]
         await db.issue_categories.insert_many(default_categories)
-        return default_categories
+        # Exclude _id from returned documents
+        return [{"id": c["id"], "name": c["name"], "description": c["description"]} for c in default_categories]
     return categories
 
 # ============ SUBMISSION ENDPOINTS ============
@@ -822,7 +833,16 @@ async def create_submission(submission_data: SubmissionCreate, current_user: dic
     if total_subs == 1:
         await award_badge(current_user["id"], "first_submission", "student")
     
-    return {**submission_doc, "student_name": current_user["full_name"], "issues_count": 0}
+    # Return without _id
+    return {
+        "id": submission_id, "assignment_id": submission_data.assignment_id,
+        "student_id": current_user["id"], "files": files, "status": "pending",
+        "attempt_number": attempt, "previous_submission_id": prev_subs[0]["id"] if prev_subs else None,
+        "submission_time": now, "is_latest_attempt": True, "marks": None,
+        "marks_released": False, "moderation_status": None,
+        "review_completed_at": None, "reviewed_by": None,
+        "student_name": current_user["full_name"], "issues_count": 0
+    }
 
 @api_router.get("/submissions")
 async def get_submissions(
@@ -993,7 +1013,19 @@ async def create_issue(issue_data: FeedbackIssueCreate, current_user: dict = Dep
     await db.feedback_issues.insert_one(issue_doc)
     await db.submissions.update_one({"id": issue_data.submission_id}, {"$set": {"status": "in_review"}})
     
-    return {**issue_doc, "filename": filename, "marker_name": current_user["full_name"], "category_name": category["name"] if category else "Unknown"}
+    # Return without _id
+    return {
+        "id": issue_id, "submission_id": issue_data.submission_id,
+        "file_id": issue_data.file_id, "marker_id": current_user["id"],
+        "category_id": issue_data.category_id, "line_start": issue_data.line_start,
+        "line_end": issue_data.line_end, "title": issue_data.title,
+        "explanation": issue_data.explanation, "severity": issue_data.severity or "moderate",
+        "suggested_fix": issue_data.suggested_fix or "", "reference_links": issue_data.reference_links or [],
+        "student_status": "open", "verification_criteria": issue_data.verification_criteria or "",
+        "marks_deduction": issue_data.marks_deduction or 0, "created_at": now,
+        "filename": filename, "marker_name": current_user["full_name"], 
+        "category_name": category["name"] if category else "Unknown"
+    }
 
 @api_router.get("/issues")
 async def get_issues(submission_id: Optional[str] = None, current_user: dict = Depends(get_current_user)):
@@ -1128,7 +1160,15 @@ async def create_moderation_issue(issue_data: ModerationIssueCreate, current_use
     
     moderator = await db.users.find_one({"id": current_user["id"]}, {"_id": 0})
     marker = await db.users.find_one({"id": submission.get("reviewed_by")}, {"_id": 0})
-    return {**issue_doc, "moderator_name": moderator["full_name"], "marker_name": marker["full_name"] if marker else "Unknown"}
+    # Return without _id
+    return {
+        "id": issue_id, "submission_id": issue_data.submission_id,
+        "moderator_id": current_user["id"], "marker_id": submission.get("reviewed_by"),
+        "issue_description": issue_data.issue_description,
+        "severity": issue_data.severity, "status": "open",
+        "leader_response": None, "created_at": now,
+        "moderator_name": moderator["full_name"], "marker_name": marker["full_name"] if marker else "Unknown"
+    }
 
 @api_router.post("/moderation/issues/{issue_id}/approve")
 async def approve_moderation(issue_id: str, current_user: dict = Depends(require_module_leader)):
