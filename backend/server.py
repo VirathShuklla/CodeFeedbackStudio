@@ -1280,6 +1280,69 @@ async def get_all_badges(current_user: dict = Depends(get_current_user)):
         return {"earned": [MARKER_BADGES[b] for b in user_badges if b in MARKER_BADGES],
                 "available": [{"id": k, **v} for k, v in MARKER_BADGES.items()]}
 
+@api_router.get("/gamification/stats")
+async def get_gamification_stats(current_user: dict = Depends(get_current_user)):
+    """Get comprehensive gamification stats for current user"""
+    xp = current_user.get("xp", 0)
+    level, title, xp_to_next = get_level_info(xp)
+    user_badges = current_user.get("badges", [])
+    
+    # Get recent XP gains from notifications
+    recent_gains = await db.notifications.find(
+        {"user_id": current_user["id"], "type": "badge_earned"},
+        {"_id": 0}
+    ).sort("created_at", -1).limit(5).to_list(5)
+    
+    recent_xp_gains = [
+        {"reason": n.get("title", "Badge earned"), "xp_gained": 50, "date": n.get("created_at")}
+        for n in recent_gains
+    ]
+    
+    if current_user["role"] == "student":
+        # Student-specific stats
+        submissions = await db.submissions.find(
+            {"student_id": current_user["id"]}, {"_id": 0}
+        ).to_list(100)
+        
+        issues = await db.feedback_issues.find(
+            {"submission_id": {"$in": [s["id"] for s in submissions]}}, {"_id": 0}
+        ).to_list(500)
+        
+        issues_fixed = len([i for i in issues if i.get("student_status") == "fixed"])
+        
+        return {
+            "xp": xp,
+            "total_xp": xp,
+            "level": level,
+            "level_title": title,
+            "xp_to_next_level": xp_to_next,
+            "badges": user_badges,
+            "badges_earned": [{"id": b, **STUDENT_BADGES.get(b, {})} for b in user_badges if b in STUDENT_BADGES],
+            "issues_fixed": issues_fixed,
+            "submissions_count": len(submissions),
+            "recent_xp_gains": recent_xp_gains
+        }
+    else:
+        # Marker-specific stats
+        reviews = await db.submissions.count_documents({"reviewed_by": current_user["id"]})
+        pending = await db.submissions.count_documents({
+            "status": "pending",
+            "reviewed_by": {"$exists": False}
+        })
+        
+        return {
+            "xp": xp,
+            "total_xp": xp,
+            "level": level,
+            "level_title": title,
+            "xp_to_next_level": xp_to_next,
+            "badges": user_badges,
+            "badges_earned": [{"id": b, **MARKER_BADGES.get(b, {})} for b in user_badges if b in MARKER_BADGES],
+            "total_reviews": reviews,
+            "pending_reviews": pending,
+            "recent_xp_gains": recent_xp_gains
+        }
+
 # ============ HEALTH ============
 
 @api_router.get("/")
