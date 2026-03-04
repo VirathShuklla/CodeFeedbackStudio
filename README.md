@@ -1,284 +1,295 @@
-# 🎓 CodeFeedback Studio
+# CodeFeedback Studio
 
-A comprehensive code assessment and moderation management system for programming education.
+A comprehensive code assessment and moderation platform for programming education. Features GitHub-style code review, multi-role team management, and gamification systems for both students and markers.
 
----
-
-## ✨ Features
-
-### 👥 Role-Based System
-| Role | Permissions |
-|------|-------------|
-| **Module Leader** | Full control: create courses, assignments, manage markers/moderators, approve/reject moderation issues |
-| **Moderator** | Review submissions (all failed + 10% random sample), raise issues against markers |
-| **Marker** | Review student submissions, provide feedback, grade assignments |
-| **Student** | Enroll in courses, submit assignments, view feedback, earn XP/badges |
-
-### 📝 Marking & Grading
-- ✅ Upload marking scheme (PDF) per assignment
-- ✅ Grade submissions with marks and feedback
-- ✅ Scheduled mark release (immediate or at specified time)
-- ✅ "No Issues" option for correct submissions
-
-### 🔍 Moderation Workflow
-- ✅ Moderators review all failed submissions
-- ✅ Moderators review 10% random sample of passed submissions
-- ✅ Raise issues against marker's grading
-- ✅ Module leaders approve/reject flagged issues
-- ✅ Leaders can view which marker created issues
-- ✅ Leaders can discard issues (markers cannot discard their own)
-
-### 📁 Multi-File Submissions
-- ✅ Submit multiple Python files per assignment
-- ✅ File-specific, line-specific feedback
-- ✅ Click-to-navigate from issue to code
-- ✅ GitHub PR-style code review interface
-
-### 🎮 Gamification System
-
-#### Student Badges
-| Badge | How to Earn | XP |
-|-------|-------------|-----|
-| 🚀 **First Steps** | Submit your first assignment | +50 |
-| 🐛 **Bug Squasher** | Fix 10 issues | +100 |
-| ⚡ **Quick Learner** | Fix an issue within 24 hours | +75 |
-| ⭐ **Perfectionist** | Get a submission with no issues | +150 |
-| 📅 **Consistent Performer** | Submit 5 assignments on time | +100 |
-| 📈 **Rapid Improver** | Improve score by 20% on resubmission | +125 |
-
-#### Marker Badges
-| Badge | How to Earn | XP |
-|-------|-------------|-----|
-| ✅ **First Review** | Complete your first code review | +50 |
-| ⚡ **Speed Reviewer** | Review 10 submissions within deadline | +100 |
-| 🔍 **Thorough Reviewer** | Provide detailed feedback on 20 submissions | +150 |
-| 🏆 **Mentor** | Help 5 students achieve perfect scores | +200 |
-| 🎯 **Consistent Marker** | Maintain 95% moderation approval rate | +175 |
-| ⏰ **On-Time Champion** | Review all assignments before deadline | +150 |
-| 📄 **Feedback Master** | Create 10 reusable feedback templates | +100 |
-
-#### XP System
-- **Quick Fix** (within 24 hours): Full XP
-- **Delayed Fix**: Half XP
-- Minor Issue: 10 XP | Moderate: 25 XP | Critical: 50 XP
-
-#### Levels
-| Level | Title | XP Required |
-|-------|-------|-------------|
-| 1 | Novice | 0 |
-| 2 | Beginner | 100 |
-| 3 | Learner | 300 |
-| 4 | Practitioner | 600 |
-| 5 | Competent | 1,000 |
-| 6 | Proficient | 1,500 |
-| 7 | Advanced | 2,200 |
-| 8 | Expert | 3,000 |
-| 9 | Master | 4,000 |
-| 10 | Grandmaster | 5,200 |
-
-### 📊 Feedback Templates
-- Save common issues as reusable templates
-- Pre-defined marks deduction
-- Quick apply during reviews
-
-### 🔔 Notifications
-- In-app notifications for:
-  - Marks released
-  - Badge earned
-  - Moderation issues raised/resolved
+![CodeFeedback Studio](https://img.shields.io/badge/version-2.0-blue) ![License](https://img.shields.io/badge/license-MIT-green)
 
 ---
 
-## 🛠 Tech Stack
+## Features
 
-| Component | Technology |
-|-----------|------------|
-| **Frontend** | React 18, Tailwind CSS, Shadcn/UI, Monaco Editor |
-| **Backend** | FastAPI, Pydantic, Motor (async MongoDB) |
-| **Database** | MongoDB |
-| **Auth** | JWT Tokens |
+### For Students
+- **Multi-file Submissions**: Upload multiple Python files per assignment
+- **Real-time Feedback**: View inline, file-specific feedback from markers
+- **Issue Tracking**: Mark issues as fixed and earn XP rewards
+- **Gamification**: Earn badges, level up, and track progress
+- **Progress Analytics**: View your submission history and improvement trends
 
----
+### For Markers
+- **GitHub-style Code Review**: Navigate files, select lines, add contextual feedback
+- **Grading System**: Assign marks with deductions per issue
+- **Feedback Templates**: Create reusable feedback for common issues
+- **Gamification**: Earn badges for reviewing speed, thoroughness, and mentorship
+- **Analytics Dashboard**: Track reviews, turnaround time, and common issues
 
-## 📊 Current Implementation Status
-
-### ✅ Phase 1 & 2 (Complete)
-- **User Roles**: All 4 roles (Student, Marker, Moderator, Module Leader) fully implemented
-- **Course Management**: Create courses, assign moderators, add collaborators
-- **Assignments**: Create with total marks, max attempts, scheduled release dates
-- **Submissions**: Multi-file upload with resubmission support
-- **Code Review**: GitHub PR-style interface with line-specific feedback
-- **Grading**: Grade submissions with marks and feedback, marks deduction per issue
-- **Moderation**: Full workflow - review submissions, raise issues, leader approval/rejection
-- **Gamification**: Student XP/badges system implemented
-
-### 🔄 Phase 3 (Upcoming)
-- Analytics dashboards for students and markers
-- Marker evaluation and scaling system
-- Moderation tracking reports
-
-### 📋 Phase 4 (Future)
-- Email notifications (using Resend or similar)
-- Advanced reporting features
-- Integration with external code platforms
+### For Module Leaders
+- **Course Management**: Create courses and manage teams
+- **Team Collaboration**: Add markers as collaborators or moderators
+- **Moderation Workflow**: Review flagged submissions and resolve disputes
+- **Leadership Transfer**: Delegate leadership to other markers
 
 ---
 
-## 📦 Local Setup
+## Gamification System
+
+### Student Badges & XP
+
+| Badge | Description | XP Reward |
+|-------|-------------|-----------|
+| **First Steps** | Submit your first assignment | +50 XP |
+| **Bug Squasher** | Fix 10 issues across submissions | +100 XP |
+| **Quick Learner** | Fix an issue within 24 hours | +75 XP |
+| **Perfectionist** | Get a submission with no issues | +150 XP |
+| **Rapid Improver** | Improve score by 20% on resubmission | +125 XP |
+| **Consistent Performer** | Submit 5 assignments on time | +100 XP |
+| **Error Hunter** | Fix 10 distinct runtime errors | +150 XP |
+| **Exception Architect** | Fix 5 unhandled exception issues | +125 XP |
+| **Complexity Reducer** | Reduce complexity in 5 submissions | +150 XP |
+| **DRY Advocate** | Remove 10+ duplicated code blocks | +125 XP |
+| **Coding Master** | Earn all student badges | +500 XP |
+
+**Student Levels:**
+1. Novice Coder (0 XP)
+2. Apprentice (100 XP)
+3. Junior Developer (250 XP)
+4. Developer (500 XP)
+5. Senior Developer (800 XP)
+6. Lead Developer (1200 XP)
+7. Architect (1800 XP)
+8. Senior Architect (2500 XP)
+9. Principal Engineer (3500 XP)
+10. Code Master (5000 XP)
+
+### Marker Badges & XP
+
+| Badge | Description | XP Reward |
+|-------|-------------|-----------|
+| **First Review** | Complete your first code review | +50 XP |
+| **Speed Reviewer** | Review 10 submissions within deadline | +100 XP |
+| **On-Time Champion** | Review all assignments before deadline | +150 XP |
+| **Thorough Reviewer** | Detailed feedback on 20 submissions | +150 XP |
+| **Feedback Master** | Create 10 reusable feedback templates | +100 XP |
+| **Mentor** | Help 5 students achieve perfect scores | +200 XP |
+| **Consistent Marker** | Maintain 95% moderation approval rate | +175 XP |
+| **Marking Master** | Earn all marker badges | +500 XP |
+
+**Marker Levels:**
+1. Apprentice Marker (0 XP)
+2. Junior Marker (100 XP)
+3. Marker (250 XP)
+4. Senior Marker (500 XP)
+5. Lead Marker (800 XP)
+6. Expert Marker (1200 XP)
+7. Master Marker (1800 XP)
+8. Principal Marker (2500 XP)
+9. Distinguished Marker (3500 XP)
+10. Legendary Marker (5000 XP)
+
+---
+
+## Local Development Setup
 
 ### Prerequisites
-- Node.js 18+
-- Python 3.11+
-- MongoDB 6.0+
-- Yarn
 
-### Step 1: Start MongoDB
+- **Python 3.11+** - [Download](https://www.python.org/downloads/)
+- **Node.js 18+** - [Download](https://nodejs.org/)
+- **MongoDB** - [Download](https://www.mongodb.com/try/download/community) or use [MongoDB Atlas](https://www.mongodb.com/cloud/atlas)
 
-```bash
-# Using Docker (recommended)
-docker run -d -p 27017:27017 --name mongodb mongo:latest
+### Backend Setup
 
-# Or start local MongoDB service
-```
+1. **Navigate to backend directory:**
+   ```bash
+   cd backend
+   ```
 
-### Step 2: Backend Setup
+2. **Create virtual environment:**
+   ```bash
+   python -m venv venv
+   
+   # Windows
+   venv\Scripts\activate
+   
+   # Mac/Linux
+   source venv/bin/activate
+   ```
 
-```bash
-cd backend
+3. **Install dependencies:**
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-# Create virtual environment
-python -m venv venv
+4. **Create `.env` file** (UTF-8 encoding, no BOM):
+   
+   **On Mac/Linux:**
+   ```bash
+   cat > .env << EOF
+   MONGO_URL=mongodb://localhost:27017
+   DB_NAME=codefeedback_studio
+   JWT_SECRET=your-super-secret-key-change-in-production
+   EOF
+   ```
+   
+   **On Windows (PowerShell):**
+   ```powershell
+   [System.IO.File]::WriteAllLines("$PWD\.env", @(
+       "MONGO_URL=mongodb://localhost:27017",
+       "DB_NAME=codefeedback_studio",
+       "JWT_SECRET=your-super-secret-key-change-in-production"
+   ), [System.Text.UTF8Encoding]::new($false))
+   ```
+   
+   **Or manually create `.env` with Notepad/VS Code (Save as UTF-8):**
+   ```
+   MONGO_URL=mongodb://localhost:27017
+   DB_NAME=codefeedback_studio
+   JWT_SECRET=your-super-secret-key-change-in-production
+   ```
 
-# Activate (Windows)
-venv\Scripts\activate
+5. **Start MongoDB** (if running locally):
+   ```bash
+   mongod
+   ```
 
-# Activate (macOS/Linux)
-source venv/bin/activate
+6. **Run the backend:**
+   ```bash
+   uvicorn server:app --reload --port 8001
+   ```
+   
+   Backend will be available at: `http://localhost:8001`
 
-# Install dependencies
-pip install -r requirements.txt
+### Frontend Setup
 
-# Create .env file
-echo "MONGO_URL=mongodb://localhost:27017" > .env
-echo "DB_NAME=codefeedback_studio" >> .env
-echo "JWT_SECRET=your-secret-key" >> .env
+1. **Navigate to frontend directory:**
+   ```bash
+   cd frontend
+   ```
 
-# Start server
-uvicorn server:app --reload --port 8001
-```
+2. **Install dependencies:**
+   ```bash
+   yarn install
+   # or
+   npm install
+   ```
 
-### Step 3: Frontend Setup
+3. **Create `.env` file:**
+   ```bash
+   echo "REACT_APP_BACKEND_URL=http://localhost:8001" > .env
+   ```
+   
+   **On Windows (PowerShell):**
+   ```powershell
+   [System.IO.File]::WriteAllText("$PWD\.env", "REACT_APP_BACKEND_URL=http://localhost:8001", [System.Text.UTF8Encoding]::new($false))
+   ```
 
-```bash
-cd frontend
+4. **For local development, update craco config:**
+   
+   If you encounter Babel plugin errors, rename the config files:
+   ```bash
+   mv craco.config.js craco.config.cloud.js
+   mv craco.config.local.js craco.config.js
+   ```
 
-# Install dependencies
-yarn install
+5. **Start the frontend:**
+   ```bash
+   yarn start
+   # or
+   npm start
+   ```
+   
+   Frontend will be available at: `http://localhost:3000`
 
-# IMPORTANT: For local development
-# Delete the 'plugins' folder if it exists
-rm -rf plugins  # macOS/Linux
-rmdir /s /q plugins  # Windows
+### Troubleshooting
 
-# Replace craco config (if craco.config.local.js exists)
-mv craco.config.js craco.config.cloud.js
-mv craco.config.local.js craco.config.js
+**`.env` file encoding issues (Windows):**
+- Error: `UnicodeDecodeError: 'utf-8' codec can't decode byte 0xff`
+- Solution: The `.env` file was saved with UTF-16 encoding. Re-save it as UTF-8 without BOM using the PowerShell commands above or manually in VS Code/Notepad.
 
-# Create .env
-echo "REACT_APP_BACKEND_URL=http://localhost:8001" > .env
+**MongoDB connection errors:**
+- Ensure MongoDB is running: `mongod --dbpath /path/to/data`
+- For MongoDB Atlas, update `MONGO_URL` with your connection string
 
-# Start
-yarn start
-```
-
-### Step 4: Access Application
-
-Open http://localhost:3000
-
----
-
-## 📖 API Reference
-
-### Authentication
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/auth/register` | Register (roles: student, marker, moderator, module_leader) |
-| POST | `/api/auth/login` | Login |
-| GET | `/api/auth/me` | Current user |
-
-### Courses
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/public/courses` | List all courses (public) |
-| POST | `/api/courses` | Create course (becomes module_leader) |
-| PUT | `/api/courses/{id}` | Update course (add moderators/collaborators) |
-
-### Assignments
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/assignments` | Create assignment |
-| POST | `/api/assignments/{id}/marking-scheme` | Upload marking scheme PDF |
-| GET | `/api/assignments` | List assignments |
-
-### Submissions & Grading
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/submissions` | Submit code (student) |
-| POST | `/api/submissions/{id}/grade` | Grade submission (marker) |
-| POST | `/api/submissions/{id}/release-marks` | Release marks |
-| POST | `/api/submissions/{id}/mark-no-issues` | Mark as correct |
-
-### Moderation
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/submissions?for_moderation=true` | Get submissions for moderation |
-| POST | `/api/moderation/issues` | Raise moderation issue |
-| POST | `/api/moderation/issues/{id}/approve` | Approve issue (leader) |
-| POST | `/api/moderation/issues/{id}/reject` | Reject issue (leader) |
-| POST | `/api/moderation/submissions/{id}/confirm` | Confirm no issues |
-
-### Feedback
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/issues` | Create feedback issue |
-| POST | `/api/issues/{id}/mark-fixed` | Mark as fixed (student) |
-| DELETE | `/api/issues/{id}` | Delete issue (leader only) |
-
-### Templates
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/issue-templates` | Create reusable template |
-| GET | `/api/issue-templates` | List templates |
-
-### Gamification
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/gamification/badges` | Get all badges |
-| GET | `/api/analytics/student` | Student analytics + XP |
-| GET | `/api/analytics/marker` | Marker analytics |
+**CORS errors:**
+- Ensure backend is running on port 8001
+- Check that `REACT_APP_BACKEND_URL` matches the backend URL
 
 ---
 
-## 🔧 Troubleshooting
+## User Roles
 
-### CORS Error
-Make sure your backend has CORS enabled. The server.py includes:
-```python
-app.add_middleware(CORSMiddleware, allow_origins=["*"], ...)
+| Role | Description | How to Become |
+|------|-------------|---------------|
+| **Student** | Submit code, receive feedback, earn badges | Register as Student |
+| **Marker** | Review code, provide feedback, grade submissions | Register as Marker |
+| **Module Leader** | Manage courses, teams, and moderation | Create a course (auto-promoted) |
+| **Moderator** | Review submissions for quality assurance | Assigned by Module Leader |
+
+---
+
+## API Documentation
+
+Once the backend is running, access the interactive API docs at:
+- **Swagger UI**: `http://localhost:8001/docs`
+- **ReDoc**: `http://localhost:8001/redoc`
+
+### Key Endpoints
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/auth/register` | POST | Register new user (student/marker) |
+| `/api/auth/login` | POST | Login and get JWT token |
+| `/api/courses` | GET/POST | List or create courses |
+| `/api/assignments` | GET/POST | List or create assignments |
+| `/api/submissions` | GET/POST | List or submit code |
+| `/api/issues` | GET/POST | List or create feedback issues |
+| `/api/gamification/stats` | GET | Get user's XP, level, and badges |
+| `/api/gamification/badges` | GET | Get all badges (earned and available) |
+
+---
+
+## Tech Stack
+
+- **Backend**: FastAPI, Python 3.11+, Motor (async MongoDB)
+- **Frontend**: React 18, Tailwind CSS, shadcn/ui
+- **Database**: MongoDB
+- **Authentication**: JWT
+
+---
+
+## Project Structure
+
+```
+CodeFeedbackStudio/
+├── backend/
+│   ├── server.py          # Main FastAPI application
+│   ├── requirements.txt   # Python dependencies
+│   ├── .env              # Environment variables
+│   └── uploads/          # Uploaded marking schemes
+├── frontend/
+│   ├── src/
+│   │   ├── pages/        # React page components
+│   │   ├── components/   # Reusable UI components
+│   │   └── contexts/     # React contexts (Auth)
+│   ├── package.json      # Node dependencies
+│   └── .env             # Frontend environment variables
+└── README.md
 ```
 
-### "Internal Server Error"
-Check MongoDB is running and .env file exists with correct values.
+---
 
-### Frontend Build Error ("traverse")
-Delete the `plugins` folder and use `craco.config.local.js`.
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/amazing-feature`
+3. Commit your changes: `git commit -m 'Add amazing feature'`
+4. Push to the branch: `git push origin feature/amazing-feature`
+5. Open a Pull Request
 
 ---
 
-## 📄 License
+## License
 
-MIT License
+MIT License - see [LICENSE](LICENSE) for details.
 
 ---
 
-Built with ❤️ for programming education
+Built with love for programming education

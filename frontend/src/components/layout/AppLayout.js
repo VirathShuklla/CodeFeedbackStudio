@@ -8,7 +8,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '../ui/dropdown-menu';
-import { Code2, LogOut, ChevronDown, BarChart3, Award, BookOpen, Home, Shield } from 'lucide-react';
+import { Code2, LogOut, ChevronDown, BarChart3, Award, BookOpen, Home, Shield, Trophy } from 'lucide-react';
 
 export const AppLayout = ({ children }) => {
   const { user, logout, isMarker, isStudent, isModerator } = useAuth();
@@ -63,6 +63,16 @@ export const AppLayout = ({ children }) => {
                   </Button>
                 </Link>
               )}
+              <Link to="/marker/badges">
+                <Button 
+                  variant={isActive('/marker/badges') ? 'secondary' : 'ghost'} 
+                  size="sm"
+                  className="gap-2"
+                >
+                  <Trophy className="w-4 h-4" />
+                  <span className="hidden sm:inline">Badges</span>
+                </Button>
+              </Link>
               <Link to="/marker/analytics">
                 <Button 
                   variant={isActive('/marker/analytics') ? 'secondary' : 'ghost'} 

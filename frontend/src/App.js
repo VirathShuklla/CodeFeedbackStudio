@@ -6,6 +6,7 @@ import RegisterPage from './pages/RegisterPage';
 import MarkerDashboard from './pages/MarkerDashboard';
 import MarkerCoursePage from './pages/MarkerCoursePage';
 import MarkerAnalyticsPage from './pages/MarkerAnalyticsPage';
+import MarkerBadgesPage from './pages/MarkerBadgesPage';
 import ModerationPage from './pages/ModerationPage';
 import StudentDashboard from './pages/StudentDashboard';
 import StudentAnalyticsPage from './pages/StudentAnalyticsPage';
@@ -74,6 +75,7 @@ const AppRoutes = () => {
       <Route path="/marker/course/:courseId" element={<ProtectedRoute requireMarkerAccess><MarkerCoursePage /></ProtectedRoute>} />
       <Route path="/marker/review/:submissionId" element={<ProtectedRoute requireMarkerAccess><CodeReviewPage /></ProtectedRoute>} />
       <Route path="/marker/analytics" element={<ProtectedRoute requireMarkerAccess><MarkerAnalyticsPage /></ProtectedRoute>} />
+      <Route path="/marker/badges" element={<ProtectedRoute requireMarkerAccess><MarkerBadgesPage /></ProtectedRoute>} />
       <Route path="/marker/moderation" element={<ProtectedRoute requireMarkerAccess><ModerationPage /></ProtectedRoute>} />
       
       {/* Student Routes */}

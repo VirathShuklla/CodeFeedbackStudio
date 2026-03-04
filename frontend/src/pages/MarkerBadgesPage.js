@@ -10,167 +10,131 @@ import {
   Trophy, 
   Target,
   Zap,
-  Shield,
-  Code,
-  Bug,
-  Sparkles,
-  Lock,
-  Rocket,
-  Calendar,
-  TrendingUp,
+  Clock,
   CheckCircle2,
-  Clock
+  FileText,
+  Search,
+  Lock,
+  TrendingUp,
+  Users,
+  Sparkles
 } from 'lucide-react';
 
-// Student Badge definitions with rich details
-const STUDENT_BADGE_DEFINITIONS = {
+// Marker Badge definitions with rich details
+const MARKER_BADGE_DEFINITIONS = {
   // Getting Started
-  first_submission: {
-    name: 'First Steps',
-    description: 'Submit your first assignment',
+  first_review: {
+    name: 'First Review',
+    description: 'Complete your first code review',
     category: 'Getting Started',
-    icon: Rocket,
+    icon: CheckCircle2,
     xp: 50,
+    color: 'text-emerald-500',
+    bg: 'bg-emerald-100',
+    gradient: 'from-emerald-400 to-emerald-600'
+  },
+  
+  // Speed & Efficiency
+  speed_reviewer: {
+    name: 'Speed Reviewer',
+    description: 'Review 10 submissions within deadline',
+    category: 'Speed & Efficiency',
+    icon: Zap,
+    xp: 100,
+    color: 'text-amber-500',
+    bg: 'bg-amber-100',
+    gradient: 'from-amber-400 to-orange-500'
+  },
+  on_time_champion: {
+    name: 'On-Time Champion',
+    description: 'Review all assignments before deadline for a course',
+    category: 'Speed & Efficiency',
+    icon: Clock,
+    xp: 150,
     color: 'text-blue-500',
     bg: 'bg-blue-100',
     gradient: 'from-blue-400 to-blue-600'
   },
   
-  // Bug Fixing
-  bug_squasher: {
-    name: 'Bug Squasher',
-    description: 'Fix 10 issues across your submissions',
-    category: 'Bug Fixing',
-    icon: Bug,
-    xp: 100,
-    color: 'text-red-500',
-    bg: 'bg-red-100',
-    gradient: 'from-red-400 to-red-600'
-  },
-  quick_learner: {
-    name: 'Quick Learner',
-    description: 'Fix an issue within 24 hours of feedback',
-    category: 'Bug Fixing',
-    icon: Zap,
-    xp: 75,
-    color: 'text-amber-500',
-    bg: 'bg-amber-100',
-    gradient: 'from-amber-400 to-orange-500'
-  },
-  
-  // Excellence
-  perfectionist: {
-    name: 'Perfectionist',
-    description: 'Get a submission marked with no issues',
-    category: 'Excellence',
-    icon: Star,
+  // Quality & Thoroughness
+  thorough_reviewer: {
+    name: 'Thorough Reviewer',
+    description: 'Provide detailed feedback on 20 submissions',
+    category: 'Quality & Thoroughness',
+    icon: Search,
     xp: 150,
-    color: 'text-yellow-500',
-    bg: 'bg-yellow-100',
-    gradient: 'from-yellow-400 to-amber-500'
-  },
-  improver: {
-    name: 'Rapid Improver',
-    description: 'Improve your score by 20% on a resubmission',
-    category: 'Excellence',
-    icon: TrendingUp,
-    xp: 125,
-    color: 'text-emerald-500',
-    bg: 'bg-emerald-100',
-    gradient: 'from-emerald-400 to-green-500'
-  },
-  
-  // Consistency
-  consistent: {
-    name: 'Consistent Performer',
-    description: 'Submit 5 assignments on time',
-    category: 'Consistency',
-    icon: Calendar,
-    xp: 100,
     color: 'text-purple-500',
     bg: 'bg-purple-100',
     gradient: 'from-purple-400 to-purple-600'
   },
-  
-  // Debugging Mastery
-  error_hunter: {
-    name: 'Error Hunter',
-    description: 'Fix 10 distinct runtime errors across 3+ assignments',
-    category: 'Debugging Mastery',
-    icon: Target,
-    xp: 150,
-    color: 'text-rose-500',
-    bg: 'bg-rose-100',
-    gradient: 'from-rose-400 to-rose-600'
-  },
-  exception_architect: {
-    name: 'Exception Architect',
-    description: 'Fix 5 unhandled exception issues with proper handling',
-    category: 'Debugging Mastery',
-    icon: Shield,
-    xp: 125,
-    color: 'text-orange-500',
-    bg: 'bg-orange-100',
-    gradient: 'from-orange-400 to-orange-600'
-  },
-  
-  // Code Quality
-  complexity_reducer: {
-    name: 'Complexity Reducer',
-    description: 'Reduce cyclomatic complexity by 20% in 5 submissions',
-    category: 'Code Quality',
-    icon: Code,
-    xp: 150,
+  feedback_master: {
+    name: 'Feedback Master',
+    description: 'Create 10 reusable feedback templates',
+    category: 'Quality & Thoroughness',
+    icon: FileText,
+    xp: 100,
     color: 'text-indigo-500',
     bg: 'bg-indigo-100',
     gradient: 'from-indigo-400 to-indigo-600'
   },
-  dry_advocate: {
-    name: 'DRY Advocate',
-    description: 'Remove 10+ duplicated code blocks across 4 assignments',
-    category: 'Code Quality',
-    icon: Sparkles,
-    xp: 125,
+  
+  // Impact & Mentoring
+  mentor: {
+    name: 'Mentor',
+    description: 'Help 5 students achieve perfect scores',
+    category: 'Impact & Mentoring',
+    icon: Users,
+    xp: 200,
+    color: 'text-pink-500',
+    bg: 'bg-pink-100',
+    gradient: 'from-pink-400 to-rose-500'
+  },
+  consistent_marker: {
+    name: 'Consistent Marker',
+    description: 'Maintain 95% moderation approval rate',
+    category: 'Impact & Mentoring',
+    icon: Target,
+    xp: 175,
     color: 'text-teal-500',
     bg: 'bg-teal-100',
     gradient: 'from-teal-400 to-teal-600'
   },
   
   // Mastery
-  coding_master: {
-    name: 'Coding Master',
-    description: 'Earn all student badges',
+  marking_master: {
+    name: 'Marking Master',
+    description: 'Earn all marker badges',
     category: 'Mastery',
     icon: Trophy,
     xp: 500,
-    color: 'text-yellow-600',
+    color: 'text-yellow-500',
     bg: 'bg-yellow-100',
     gradient: 'from-yellow-400 to-amber-500'
   }
 };
 
-// Level definitions for students
-const STUDENT_LEVELS = [
-  { level: 1, title: 'Novice Coder', minXp: 0 },
-  { level: 2, title: 'Apprentice', minXp: 100 },
-  { level: 3, title: 'Junior Developer', minXp: 250 },
-  { level: 4, title: 'Developer', minXp: 500 },
-  { level: 5, title: 'Senior Developer', minXp: 800 },
-  { level: 6, title: 'Lead Developer', minXp: 1200 },
-  { level: 7, title: 'Architect', minXp: 1800 },
-  { level: 8, title: 'Senior Architect', minXp: 2500 },
-  { level: 9, title: 'Principal Engineer', minXp: 3500 },
-  { level: 10, title: 'Code Master', minXp: 5000 }
+// Level definitions for markers
+const MARKER_LEVELS = [
+  { level: 1, title: 'Apprentice Marker', minXp: 0 },
+  { level: 2, title: 'Junior Marker', minXp: 100 },
+  { level: 3, title: 'Marker', minXp: 250 },
+  { level: 4, title: 'Senior Marker', minXp: 500 },
+  { level: 5, title: 'Lead Marker', minXp: 800 },
+  { level: 6, title: 'Expert Marker', minXp: 1200 },
+  { level: 7, title: 'Master Marker', minXp: 1800 },
+  { level: 8, title: 'Principal Marker', minXp: 2500 },
+  { level: 9, title: 'Distinguished Marker', minXp: 3500 },
+  { level: 10, title: 'Legendary Marker', minXp: 5000 }
 ];
 
-function getStudentLevel(xp) {
-  let currentLevel = STUDENT_LEVELS[0];
-  let nextLevel = STUDENT_LEVELS[1];
+function getMarkerLevel(xp) {
+  let currentLevel = MARKER_LEVELS[0];
+  let nextLevel = MARKER_LEVELS[1];
   
-  for (let i = 0; i < STUDENT_LEVELS.length; i++) {
-    if (xp >= STUDENT_LEVELS[i].minXp) {
-      currentLevel = STUDENT_LEVELS[i];
-      nextLevel = STUDENT_LEVELS[i + 1] || null;
+  for (let i = 0; i < MARKER_LEVELS.length; i++) {
+    if (xp >= MARKER_LEVELS[i].minXp) {
+      currentLevel = MARKER_LEVELS[i];
+      nextLevel = MARKER_LEVELS[i + 1] || null;
     }
   }
   
@@ -183,21 +147,34 @@ function getStudentLevel(xp) {
   return { ...currentLevel, progress, xpToNext, nextLevel };
 }
 
-export default function StudentBadgesPage() {
+export default function MarkerBadgesPage() {
   const { api, user } = useAuth();
-  const [gamification, setGamification] = useState(null);
+  const [badgeData, setBadgeData] = useState({ earned: [], available: [] });
+  const [stats, setStats] = useState({ xp: 0, badges: [] });
   const [loading, setLoading] = useState(true);
 
   const fetchData = useCallback(async () => {
     try {
-      const response = await api().get('/gamification/stats');
-      setGamification(response.data);
+      const [badgesRes, analyticsRes] = await Promise.all([
+        api().get('/gamification/badges'),
+        api().get('/analytics/marker')
+      ]);
+      setBadgeData(badgesRes.data);
+      
+      // Get user XP from analytics or user object
+      const userXp = user?.xp || 0;
+      setStats({
+        xp: userXp,
+        badges: badgesRes.data.earned || [],
+        totalReviews: analyticsRes.data.total_feedback_given || 0,
+        pendingReviews: analyticsRes.data.total_pending_reviews || 0
+      });
     } catch (error) {
       toast.error('Failed to load badges');
     } finally {
       setLoading(false);
     }
-  }, [api]);
+  }, [api, user]);
 
   useEffect(() => {
     fetchData();
@@ -205,7 +182,7 @@ export default function StudentBadgesPage() {
 
   // Group badges by category
   const badgesByCategory = {};
-  Object.entries(STUDENT_BADGE_DEFINITIONS).forEach(([id, badge]) => {
+  Object.entries(MARKER_BADGE_DEFINITIONS).forEach(([id, badge]) => {
     if (!badgesByCategory[badge.category]) {
       badgesByCategory[badge.category] = [];
     }
@@ -214,15 +191,13 @@ export default function StudentBadgesPage() {
 
   // Check if badge is earned
   const isEarned = (badgeId) => {
-    return gamification?.badges?.includes(badgeId) || 
-           gamification?.badges_earned?.some(b => b.id === badgeId);
+    return badgeData.earned?.some(b => b.id === badgeId || b === badgeId) || 
+           stats.badges?.includes(badgeId);
   };
 
-  const totalXp = gamification?.total_xp || gamification?.xp || user?.xp || 0;
-  const levelInfo = getStudentLevel(totalXp);
-  const earnedBadges = gamification?.badges || [];
-  const earnedCount = earnedBadges.length;
-  const totalBadges = Object.keys(STUDENT_BADGE_DEFINITIONS).length;
+  const levelInfo = getMarkerLevel(stats.xp);
+  const earnedCount = badgeData.earned?.length || 0;
+  const totalBadges = Object.keys(MARKER_BADGE_DEFINITIONS).length;
 
   if (loading) {
     return (
@@ -236,12 +211,11 @@ export default function StudentBadgesPage() {
 
   return (
     <AppLayout>
-      <div className="max-w-4xl mx-auto px-6 py-8" data-testid="student-badges-page">
+      <div className="max-w-4xl mx-auto px-6 py-8" data-testid="marker-badges-page">
         {/* Hero Section */}
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-900 via-purple-900 to-indigo-900 p-8 mb-8">
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-8 mb-8">
           <div className="absolute inset-0 bg-grid-white/5" />
-          <div className="absolute top-0 right-0 w-64 h-64 bg-purple-500/20 rounded-full blur-3xl" />
-          <div className="absolute bottom-0 left-0 w-48 h-48 bg-blue-500/20 rounded-full blur-3xl" />
+          <div className="absolute top-0 right-0 w-64 h-64 bg-primary/20 rounded-full blur-3xl" />
           
           <div className="relative z-10">
             <div className="flex items-center justify-between">
@@ -253,28 +227,28 @@ export default function StudentBadgesPage() {
                 <h1 className="text-3xl font-bold text-white font-['Outfit']">
                   {levelInfo.title}
                 </h1>
-                <p className="text-purple-200 mt-2">
+                <p className="text-slate-300 mt-2">
                   {earnedCount} of {totalBadges} badges earned
                 </p>
               </div>
               
               <div className="text-right">
                 <div className="text-5xl font-bold text-white font-['Outfit']">
-                  {totalXp}
+                  {stats.xp}
                 </div>
-                <div className="text-purple-300 text-sm">Total XP</div>
+                <div className="text-slate-400 text-sm">Total XP</div>
               </div>
             </div>
             
             {/* Level Progress */}
             <div className="mt-6">
-              <div className="flex justify-between text-sm text-purple-200 mb-2">
+              <div className="flex justify-between text-sm text-slate-300 mb-2">
                 <span>Progress to {levelInfo.nextLevel?.title || 'Max Level'}</span>
                 <span>{levelInfo.xpToNext} XP needed</span>
               </div>
-              <div className="h-3 bg-purple-950/50 rounded-full overflow-hidden">
+              <div className="h-3 bg-slate-700 rounded-full overflow-hidden">
                 <div 
-                  className="h-full bg-gradient-to-r from-purple-400 to-pink-400 rounded-full transition-all duration-500"
+                  className="h-full bg-gradient-to-r from-primary to-blue-400 rounded-full transition-all duration-500"
                   style={{ width: `${levelInfo.progress}%` }}
                 />
               </div>
@@ -284,48 +258,22 @@ export default function StudentBadgesPage() {
 
         {/* Quick Stats */}
         <div className="grid grid-cols-3 gap-4 mb-8">
-          <div className="card-clean p-4 text-center hover:shadow-lg transition-shadow">
+          <div className="card-clean p-4 text-center">
+            <CheckCircle2 className="w-6 h-6 text-emerald-500 mx-auto mb-2" />
+            <div className="text-2xl font-bold">{stats.totalReviews}</div>
+            <div className="text-xs text-muted-foreground">Reviews Completed</div>
+          </div>
+          <div className="card-clean p-4 text-center">
             <Award className="w-6 h-6 text-amber-500 mx-auto mb-2" />
             <div className="text-2xl font-bold">{earnedCount}</div>
             <div className="text-xs text-muted-foreground">Badges Earned</div>
           </div>
-          <div className="card-clean p-4 text-center hover:shadow-lg transition-shadow">
-            <CheckCircle2 className="w-6 h-6 text-emerald-500 mx-auto mb-2" />
-            <div className="text-2xl font-bold">{gamification?.issues_fixed || 0}</div>
-            <div className="text-xs text-muted-foreground">Issues Fixed</div>
-          </div>
-          <div className="card-clean p-4 text-center hover:shadow-lg transition-shadow">
-            <Clock className="w-6 h-6 text-blue-500 mx-auto mb-2" />
-            <div className="text-2xl font-bold">{gamification?.submissions_count || 0}</div>
-            <div className="text-xs text-muted-foreground">Submissions</div>
+          <div className="card-clean p-4 text-center">
+            <TrendingUp className="w-6 h-6 text-primary mx-auto mb-2" />
+            <div className="text-2xl font-bold">{stats.pendingReviews}</div>
+            <div className="text-xs text-muted-foreground">Pending Reviews</div>
           </div>
         </div>
-
-        {/* Recent XP Gains */}
-        {gamification?.recent_xp_gains?.length > 0 && (
-          <div className="mb-8">
-            <h2 className="text-lg font-semibold font-['Outfit'] mb-4 flex items-center gap-2">
-              <span className="w-1.5 h-5 bg-emerald-500 rounded-full" />
-              Recent Activity
-            </h2>
-            <div className="space-y-2">
-              {gamification.recent_xp_gains.slice(0, 5).map((gain, idx) => (
-                <div 
-                  key={idx} 
-                  className="flex items-center justify-between p-4 bg-gradient-to-r from-emerald-50 to-green-50 rounded-xl border border-emerald-100 hover:shadow-md transition-shadow"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center">
-                      <Zap className="w-5 h-5 text-emerald-600" />
-                    </div>
-                    <span className="font-medium">{gain.reason}</span>
-                  </div>
-                  <span className="text-lg font-bold text-emerald-600">+{gain.xp_gained} XP</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
 
         {/* Badges by Category */}
         {Object.entries(badgesByCategory).map(([category, badges]) => (
@@ -345,7 +293,7 @@ export default function StudentBadgesPage() {
                     key={badge.id}
                     className={`group relative overflow-hidden rounded-xl border transition-all duration-300 ${
                       earned 
-                        ? 'bg-white shadow-lg border-primary/20 hover:shadow-xl hover:scale-[1.02]' 
+                        ? 'bg-white shadow-lg border-primary/20 hover:shadow-xl' 
                         : 'bg-slate-50/50 border-slate-200 opacity-60 hover:opacity-80'
                     }`}
                     data-testid={`badge-${badge.id}`}
@@ -398,7 +346,7 @@ export default function StudentBadgesPage() {
         <div className="text-center py-8 border-t">
           <Trophy className="w-8 h-8 text-amber-400 mx-auto mb-3" />
           <p className="text-muted-foreground">
-            Keep coding and fixing issues to earn more badges!
+            Keep reviewing to earn more badges and level up!
           </p>
         </div>
       </div>
