@@ -951,6 +951,26 @@ async def get_assignment(assignment_id: str, current_user: dict = Depends(get_cu
         "results_published": results_published
     }
 
+
+@api_router.delete("/assignments/{assignment_id}")
+async def delete_assignment(assignment_id: str, current_user: dict = Depends(require_marker)):
+    assignment = await db.assignments.find_one({"id": assignment_id}, {"_id": 0})
+    if not assignment:
+        raise HTTPException(status_code=404, detail="Assignment not found")
+    
+    # Only course leader can delete
+    course = await db.courses.find_one({"id": assignment["course_id"]}, {"_id": 0})
+    if not course or course.get("leader_id") != current_user["id"]:
+        raise HTTPException(status_code=403, detail="Only the module leader can delete assignments")
+    
+    # Delete related submissions and feedback
+    await db.feedback_issues.delete_many({"submission_id": {"$in": [s["id"] async for s in db.submissions.find({"assignment_id": assignment_id}, {"id": 1})]}})
+    await db.submissions.delete_many({"assignment_id": assignment_id})
+    await db.assignments.delete_one({"id": assignment_id})
+    
+    return {"message": "Assignment deleted successfully"}
+
+
 # ============ ISSUE CATEGORIES ============
 
 @api_router.post("/categories")

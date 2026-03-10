@@ -27,7 +27,7 @@ import { toast } from 'sonner';
 import { 
   ArrowLeft, Plus, FileText, Clock, ChevronRight, Users, Crown, 
   Upload, Shield, Calendar, Eye, EyeOff, CheckCircle2, AlertTriangle,
-  Send
+  Send, Trash2
 } from 'lucide-react';
 
 export default function MarkerCoursePage() {
@@ -75,6 +75,10 @@ export default function MarkerCoursePage() {
   
   // Marking scheme upload
   const [uploadingScheme, setUploadingScheme] = useState(null);
+  
+  // Delete assignment
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [assignmentToDelete, setAssignmentToDelete] = useState(null);
 
   useEffect(() => {
     fetchData();
@@ -195,6 +199,19 @@ export default function MarkerCoursePage() {
       toast.error('Failed to upload marking scheme');
     } finally {
       setUploadingScheme(null);
+    }
+  };
+
+  const handleDeleteAssignment = async () => {
+    if (!assignmentToDelete) return;
+    try {
+      await api().delete(`/assignments/${assignmentToDelete.id}`);
+      toast.success('Assignment deleted');
+      setShowDeleteDialog(false);
+      setAssignmentToDelete(null);
+      fetchData();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to delete assignment');
     }
   };
 
@@ -711,6 +728,19 @@ export default function MarkerCoursePage() {
                           </Button>
                         )}
                         
+                        {/* Delete Button - Leader only */}
+                        {isLeader && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
+                            onClick={() => { setAssignmentToDelete(assignment); setShowDeleteDialog(true); }}
+                            data-testid={`delete-assignment-btn-${assignment.id}`}
+                          >
+                            <Trash2 className="w-3 h-3 mr-1" /> Delete
+                          </Button>
+                        )}
+                        
                         {/* Access warning */}
                         {!canAccess && assignment.has_deadline && (
                           <span className="text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1">
@@ -997,6 +1027,33 @@ export default function MarkerCoursePage() {
                 data-testid="transfer-leader-confirm-btn"
               >
                 <Crown className="w-4 h-4 mr-1" /> Transfer Leadership
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Delete Assignment Confirmation Dialog */}
+        <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="font-['Outfit'] text-destructive">Delete Assignment</DialogTitle>
+            </DialogHeader>
+            <div className="py-4">
+              <p className="text-sm text-muted-foreground">
+                Are you sure you want to delete <strong className="text-foreground">{assignmentToDelete?.title}</strong>?
+              </p>
+              <p className="text-sm text-destructive mt-2">
+                This will permanently delete the assignment and all related submissions and feedback.
+              </p>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>Cancel</Button>
+              <Button 
+                onClick={handleDeleteAssignment}
+                className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+                data-testid="confirm-delete-btn"
+              >
+                <Trash2 className="w-4 h-4 mr-1" /> Delete
               </Button>
             </DialogFooter>
           </DialogContent>

@@ -23,6 +23,7 @@ Build a comprehensive code assessment and moderation platform ("CodeFeedback Stu
 - [x] Role assignment (Leader, Collaborator, Moderator)
 - [x] Multi-file code submissions
 - [x] GitHub-style code review interface
+- [x] **Delete assignment** (Module Leader only)
 
 ### Assignment Workflow ✅ (Completed December 2025)
 - [x] **Schedule Release** (Yes/No toggle)
@@ -48,7 +49,7 @@ Build a comprehensive code assessment and moderation platform ("CodeFeedback Stu
 ### UI/UX ✅
 - [x] Dark mode toggle (light mode default)
 - [x] Improved dark mode contrast and readability
-- [x] 6-second animated loading screen
+- [x] **Minimalistic 6-second loading screen** with gradient logo, pulse animation, progress bar
 - [x] Clean, minimal card-based design
 
 ### Documentation ✅
@@ -68,6 +69,7 @@ Build a comprehensive code assessment and moderation platform ("CodeFeedback Stu
 | `/api/courses` | GET/POST | List or create courses |
 | `/api/assignments` | GET/POST | List or create assignments |
 | `/api/assignments/{id}` | GET | Get single assignment |
+| `/api/assignments/{id}` | DELETE | Delete assignment (Leader only) |
 | `/api/assignments/{id}/review-status` | GET | Get review progress |
 | `/api/assignments/{id}/publish-results` | POST | Schedule results publication |
 | `/api/submissions` | GET/POST | List or submit code |
