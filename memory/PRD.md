@@ -42,6 +42,14 @@ Build a comprehensive code assessment and moderation platform for programming ed
 - [x] Progress tracking and quick stats
 - [x] Badge categories: Getting Started, Bug Fixing, Excellence, Consistency, Debugging Mastery, Code Quality, Mastery
 - [x] Marker categories: Getting Started, Speed & Efficiency, Quality & Thoroughness, Impact & Mentoring, Mastery
+- [x] Marker XP awarding (+25 XP per graded submission, +15 XP for "no issues")
+
+### UI/UX Improvements ✅ (March 10, 2026)
+- [x] Dark mode with system-aware toggle
+- [x] Animated loading screen on first visit
+- [x] Assignment creation with Yes/No toggles for deadline/release date
+- [x] Improved CSS with dark mode support
+- [x] Database reset capability for testing
 
 ## Implementation Date: February 13, 2026
 

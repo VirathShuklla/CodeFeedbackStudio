@@ -46,6 +46,8 @@ export default function MarkerCoursePage() {
     total_marks: 100,
     marks_release_date: ''
   });
+  const [hasDeadline, setHasDeadline] = useState(false);
+  const [hasReleaseDate, setHasReleaseDate] = useState(false);
   
   // Moderator management
   const [showModeratorDialog, setShowModeratorDialog] = useState(false);
@@ -91,17 +93,32 @@ export default function MarkerCoursePage() {
       toast.error('Assignment title is required');
       return;
     }
+    
+    // Validate deadline if enabled
+    if (hasDeadline && !newAssignment.due_date) {
+      toast.error('Please enter a deadline or disable the deadline option');
+      return;
+    }
+    
+    // Validate release date if enabled
+    if (hasReleaseDate && !newAssignment.marks_release_date) {
+      toast.error('Please enter a release date or disable the release date option');
+      return;
+    }
+    
     try {
       const payload = { 
         ...newAssignment, 
         course_id: courseId,
-        due_date: newAssignment.due_date ? new Date(newAssignment.due_date).toISOString() : null,
-        marks_release_date: newAssignment.marks_release_date ? new Date(newAssignment.marks_release_date).toISOString() : null
+        due_date: hasDeadline && newAssignment.due_date ? new Date(newAssignment.due_date).toISOString() : null,
+        marks_release_date: hasReleaseDate && newAssignment.marks_release_date ? new Date(newAssignment.marks_release_date).toISOString() : null
       };
       await api().post('/assignments', payload);
       toast.success('Assignment created');
       setShowAssignmentDialog(false);
       setNewAssignment({ title: '', description: '', due_date: '', max_attempts: -1, total_marks: 100, marks_release_date: '' });
+      setHasDeadline(false);
+      setHasReleaseDate(false);
       fetchData();
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Failed to create assignment');
@@ -360,14 +377,40 @@ export default function MarkerCoursePage() {
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-2">
-                      <Label className="text-sm">Deadline</Label>
-                      <Input
-                        type="datetime-local"
-                        value={newAssignment.due_date}
-                        onChange={(e) => setNewAssignment({ ...newAssignment, due_date: e.target.value })}
-                        className="input-clean"
-                        data-testid="due-date-input"
-                      />
+                      <Label className="text-sm">Set a Deadline?</Label>
+                      <div className="flex gap-2">
+                        <Button 
+                          type="button"
+                          variant={hasDeadline ? 'default' : 'outline'} 
+                          size="sm"
+                          onClick={() => setHasDeadline(true)}
+                          data-testid="deadline-yes-btn"
+                        >
+                          Yes
+                        </Button>
+                        <Button 
+                          type="button"
+                          variant={!hasDeadline ? 'default' : 'outline'} 
+                          size="sm"
+                          onClick={() => {
+                            setHasDeadline(false);
+                            setNewAssignment({ ...newAssignment, due_date: '' });
+                          }}
+                          data-testid="deadline-no-btn"
+                        >
+                          No
+                        </Button>
+                      </div>
+                      {hasDeadline && (
+                        <Input
+                          type="datetime-local"
+                          value={newAssignment.due_date}
+                          onChange={(e) => setNewAssignment({ ...newAssignment, due_date: e.target.value })}
+                          className="input-clean mt-2"
+                          required
+                          data-testid="due-date-input"
+                        />
+                      )}
                     </div>
                     <div className="space-y-2">
                       <Label className="text-sm">Max Attempts</Label>
@@ -397,15 +440,40 @@ export default function MarkerCoursePage() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label className="text-sm">Release Marks At</Label>
-                      <Input
-                        type="datetime-local"
-                        value={newAssignment.marks_release_date}
-                        onChange={(e) => setNewAssignment({ ...newAssignment, marks_release_date: e.target.value })}
-                        className="input-clean"
-                        data-testid="release-date-input"
-                      />
-                      <p className="text-xs text-muted-foreground">Optional scheduled release</p>
+                      <Label className="text-sm">Schedule Mark Release?</Label>
+                      <div className="flex gap-2">
+                        <Button 
+                          type="button"
+                          variant={hasReleaseDate ? 'default' : 'outline'} 
+                          size="sm"
+                          onClick={() => setHasReleaseDate(true)}
+                          data-testid="release-yes-btn"
+                        >
+                          Yes
+                        </Button>
+                        <Button 
+                          type="button"
+                          variant={!hasReleaseDate ? 'default' : 'outline'} 
+                          size="sm"
+                          onClick={() => {
+                            setHasReleaseDate(false);
+                            setNewAssignment({ ...newAssignment, marks_release_date: '' });
+                          }}
+                          data-testid="release-no-btn"
+                        >
+                          No
+                        </Button>
+                      </div>
+                      {hasReleaseDate && (
+                        <Input
+                          type="datetime-local"
+                          value={newAssignment.marks_release_date}
+                          onChange={(e) => setNewAssignment({ ...newAssignment, marks_release_date: e.target.value })}
+                          className="input-clean mt-2"
+                          required
+                          data-testid="release-date-input"
+                        />
+                      )}
                     </div>
                   </div>
                 </div>

@@ -934,14 +934,19 @@ async def grade_submission(submission_id: str, grade_data: GradeSubmissionReques
     if not release_date or datetime.now(timezone.utc) >= parse_iso_datetime(release_date):
         await db.submissions.update_one({"id": submission_id}, {"$set": {"marks_released": True}})
     
-    # Award marker badges
+    # Award marker badges and XP
     reviews_count = await db.submissions.count_documents({"reviewed_by": current_user["id"]})
+    
+    # Award XP for completing review
+    xp_gained = 25  # Base XP for grading
+    await db.users.update_one({"id": current_user["id"]}, {"$inc": {"xp": xp_gained}})
+    
     if reviews_count == 1:
         await award_badge(current_user["id"], "first_review", "marker")
     if reviews_count >= 10:
         await award_badge(current_user["id"], "speed_reviewer", "marker")
     
-    return {"message": "Graded successfully", "marks": grade_data.marks}
+    return {"message": "Graded successfully", "marks": grade_data.marks, "xp_gained": xp_gained}
 
 @api_router.post("/submissions/{submission_id}/release-marks")
 async def release_marks(submission_id: str, current_user: dict = Depends(require_marker)):
@@ -971,7 +976,17 @@ async def mark_no_issues(submission_id: str, request: MarkNoIssuesRequest, curre
             "marks_released": True, "moderation_status": "pending"
         }}
     )
-    return {"message": "Marked as correct", "status": "no_issues"}
+    
+    # Award marker XP for quick review
+    xp_gained = 15
+    await db.users.update_one({"id": current_user["id"]}, {"$inc": {"xp": xp_gained}})
+    
+    # Check for first review badge
+    reviews_count = await db.submissions.count_documents({"reviewed_by": current_user["id"]})
+    if reviews_count == 1:
+        await award_badge(current_user["id"], "first_review", "marker")
+    
+    return {"message": "Marked as correct", "status": "no_issues", "xp_gained": xp_gained}
 
 @api_router.post("/submissions/{submission_id}/publish")
 async def publish_feedback(submission_id: str, current_user: dict = Depends(require_marker)):

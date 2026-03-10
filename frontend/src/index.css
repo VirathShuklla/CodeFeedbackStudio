@@ -30,6 +30,28 @@
         --success: 142 71% 45%;
         --warning: 38 92% 50%;
     }
+    
+    .dark {
+        --background: 222 47% 11%;
+        --foreground: 210 40% 98%;
+        --card: 222 47% 14%;
+        --card-foreground: 210 40% 98%;
+        --popover: 222 47% 14%;
+        --popover-foreground: 210 40% 98%;
+        --primary: 230 80% 60%;
+        --primary-foreground: 0 0% 100%;
+        --secondary: 217 33% 20%;
+        --secondary-foreground: 210 40% 98%;
+        --muted: 217 33% 20%;
+        --muted-foreground: 215 20% 65%;
+        --accent: 217 33% 20%;
+        --accent-foreground: 210 40% 98%;
+        --destructive: 0 62% 55%;
+        --destructive-foreground: 0 0% 100%;
+        --border: 217 33% 25%;
+        --input: 217 33% 25%;
+        --ring: 230 80% 60%;
+    }
 }
 
 @layer base {
@@ -68,7 +90,7 @@
     
     /* Card styles */
     .card-clean {
-        @apply bg-white rounded-xl border border-border/60 shadow-sm;
+        @apply bg-white dark:bg-slate-800 rounded-xl border border-border/60 shadow-sm;
     }
     
     .card-hover {
@@ -77,25 +99,25 @@
     
     /* Status badges */
     .status-pending {
-        @apply bg-amber-50 text-amber-700 border border-amber-200 rounded-full px-3 py-1 text-xs font-medium;
+        @apply bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-700 rounded-full px-3 py-1 text-xs font-medium;
     }
     
     .status-reviewed {
-        @apply bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full px-3 py-1 text-xs font-medium;
+        @apply bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-700 rounded-full px-3 py-1 text-xs font-medium;
     }
     
     .status-closed {
-        @apply bg-slate-100 text-slate-600 border border-slate-200 rounded-full px-3 py-1 text-xs font-medium;
+        @apply bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600 rounded-full px-3 py-1 text-xs font-medium;
     }
     
     /* Header */
     .header-clean {
-        @apply bg-white/90 backdrop-blur-md border-b border-border/50 sticky top-0 z-50;
+        @apply bg-white/90 dark:bg-slate-800/90 backdrop-blur-md border-b border-border/50 sticky top-0 z-50;
     }
     
     /* Input focus */
     .input-clean {
-        @apply rounded-lg border-border bg-white px-4 py-2.5 text-sm ring-offset-background 
+        @apply rounded-lg border-border bg-white dark:bg-slate-700 dark:text-white px-4 py-2.5 text-sm ring-offset-background 
                placeholder:text-muted-foreground/60 
                focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary
                transition-all duration-200;
@@ -103,15 +125,15 @@
     
     /* Severity styles */
     .severity-critical {
-        @apply bg-red-50 text-red-700 border-red-200;
+        @apply bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400 border-red-200 dark:border-red-700;
     }
     
     .severity-moderate {
-        @apply bg-amber-50 text-amber-700 border-amber-200;
+        @apply bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-700;
     }
     
     .severity-minor {
-        @apply bg-blue-50 text-blue-700 border-blue-200;
+        @apply bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-700;
     }
 }
 

@@ -1,6 +1,9 @@
+import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from './components/ui/sonner';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { ThemeProvider } from './contexts/ThemeContext';
+import LoadingScreen from './components/LoadingScreen';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import MarkerDashboard from './pages/MarkerDashboard';
@@ -92,13 +95,31 @@ const AppRoutes = () => {
 };
 
 function App() {
+  const [showLoading, setShowLoading] = useState(true);
+
+  // Show loading screen on first visit
+  useEffect(() => {
+    const hasVisited = sessionStorage.getItem('hasVisited');
+    if (hasVisited) {
+      setShowLoading(false);
+    }
+  }, []);
+
+  const handleLoadingComplete = () => {
+    sessionStorage.setItem('hasVisited', 'true');
+    setShowLoading(false);
+  };
+
   return (
-    <AuthProvider>
-      <BrowserRouter>
-        <AppRoutes />
-        <Toaster position="top-center" richColors />
-      </BrowserRouter>
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        {showLoading && <LoadingScreen onComplete={handleLoadingComplete} />}
+        <BrowserRouter>
+          <AppRoutes />
+          <Toaster position="top-center" richColors />
+        </BrowserRouter>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
 

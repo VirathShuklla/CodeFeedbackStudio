@@ -1,5 +1,6 @@
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { useTheme } from '../../contexts/ThemeContext';
 import { Button } from '../ui/button';
 import {
   DropdownMenu,
@@ -8,10 +9,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '../ui/dropdown-menu';
-import { Code2, LogOut, ChevronDown, BarChart3, Award, BookOpen, Home, Shield, Trophy } from 'lucide-react';
+import { Code2, LogOut, ChevronDown, BarChart3, Award, BookOpen, Home, Shield, Trophy, Moon, Sun } from 'lucide-react';
 
 export const AppLayout = ({ children }) => {
   const { user, logout, isMarker, isStudent, isModerator } = useAuth();
+  const { isDark, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -27,14 +29,14 @@ export const AppLayout = ({ children }) => {
   const isActive = (path) => location.pathname === path;
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 transition-colors">
       {/* Header - Clean & Minimal */}
-      <header className="header-clean h-14 flex items-center px-6" data-testid="app-header">
+      <header className="header-clean h-14 flex items-center px-6 dark:bg-slate-800 dark:border-slate-700" data-testid="app-header">
         <Link to={isMarker ? '/marker' : '/student'} className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
             <Code2 className="w-4 h-4 text-white" />
           </div>
-          <span className="text-base font-semibold font-['Outfit'] hidden sm:inline">CodeFeedback</span>
+          <span className="text-base font-semibold font-['Outfit'] hidden sm:inline dark:text-white">CodeFeedback</span>
         </Link>
 
         {/* Navigation Links */}
@@ -122,8 +124,18 @@ export const AppLayout = ({ children }) => {
           )}
         </nav>
 
-        {/* User Menu */}
-        <div className="ml-auto">
+        {/* Dark Mode Toggle & User Menu */}
+        <div className="ml-auto flex items-center gap-2">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={toggleTheme}
+            className="w-9 h-9 p-0"
+            data-testid="theme-toggle"
+          >
+            {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+          </Button>
+          
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="gap-2 h-9 px-2" data-testid="user-menu-trigger">
@@ -136,12 +148,17 @@ export const AppLayout = ({ children }) => {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48">
               <div className="px-2 py-1.5">
-                <p className="text-sm font-medium">{user?.full_name}</p>
+                <p className="text-sm font-medium dark:text-white">{user?.full_name}</p>
                 <p className="text-xs text-muted-foreground">{user?.email}</p>
                 <p className="text-xs text-muted-foreground capitalize mt-0.5">
                   {user?.role === 'module_leader' ? 'Module Leader' : user?.role}
                 </p>
               </div>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={toggleTheme} className="gap-2 cursor-pointer">
+                {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+                {isDark ? 'Light Mode' : 'Dark Mode'}
+              </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem 
                 className="gap-2 text-destructive focus:text-destructive cursor-pointer" 
