@@ -7,19 +7,19 @@
 @layer base {
     :root {
         --background: 0 0% 99%;
-        --foreground: 240 10% 10%;
+        --foreground: 222 47% 11%;
         --card: 0 0% 100%;
-        --card-foreground: 240 10% 10%;
+        --card-foreground: 222 47% 11%;
         --popover: 0 0% 100%;
-        --popover-foreground: 240 10% 10%;
+        --popover-foreground: 222 47% 11%;
         --primary: 230 80% 55%;
         --primary-foreground: 0 0% 100%;
         --secondary: 240 5% 96%;
-        --secondary-foreground: 240 10% 10%;
+        --secondary-foreground: 222 47% 11%;
         --muted: 240 5% 96%;
-        --muted-foreground: 240 5% 45%;
+        --muted-foreground: 215 16% 47%;
         --accent: 240 5% 96%;
-        --accent-foreground: 240 10% 10%;
+        --accent-foreground: 222 47% 11%;
         --destructive: 0 72% 51%;
         --destructive-foreground: 0 0% 100%;
         --border: 240 6% 90%;
@@ -32,25 +32,25 @@
     }
     
     .dark {
-        --background: 222 47% 11%;
-        --foreground: 210 40% 98%;
-        --card: 222 47% 14%;
-        --card-foreground: 210 40% 98%;
-        --popover: 222 47% 14%;
-        --popover-foreground: 210 40% 98%;
-        --primary: 230 80% 60%;
+        --background: 222 47% 8%;
+        --foreground: 210 40% 96%;
+        --card: 222 47% 11%;
+        --card-foreground: 210 40% 96%;
+        --popover: 222 47% 11%;
+        --popover-foreground: 210 40% 96%;
+        --primary: 217 91% 60%;
         --primary-foreground: 0 0% 100%;
-        --secondary: 217 33% 20%;
-        --secondary-foreground: 210 40% 98%;
-        --muted: 217 33% 20%;
-        --muted-foreground: 215 20% 65%;
+        --secondary: 217 33% 17%;
+        --secondary-foreground: 210 40% 96%;
+        --muted: 217 33% 17%;
+        --muted-foreground: 215 25% 70%;
         --accent: 217 33% 20%;
-        --accent-foreground: 210 40% 98%;
-        --destructive: 0 62% 55%;
+        --accent-foreground: 210 40% 96%;
+        --destructive: 0 72% 55%;
         --destructive-foreground: 0 0% 100%;
-        --border: 217 33% 25%;
-        --input: 217 33% 25%;
-        --ring: 230 80% 60%;
+        --border: 217 33% 22%;
+        --input: 217 33% 22%;
+        --ring: 217 91% 60%;
     }
 }
 
@@ -88,9 +88,9 @@
         @apply hover:bg-accent rounded-lg px-4 py-2 transition-all duration-200;
     }
     
-    /* Card styles */
+    /* Card styles - using CSS variables for dark mode */
     .card-clean {
-        @apply bg-white dark:bg-slate-800 rounded-xl border border-border/60 shadow-sm;
+        @apply bg-card text-card-foreground rounded-xl border border-border/60 shadow-sm;
     }
     
     .card-hover {
@@ -112,12 +112,12 @@
     
     /* Header */
     .header-clean {
-        @apply bg-white/90 dark:bg-slate-800/90 backdrop-blur-md border-b border-border/50 sticky top-0 z-50;
+        @apply bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-border/50 sticky top-0 z-50;
     }
     
     /* Input focus */
     .input-clean {
-        @apply rounded-lg border-border bg-white dark:bg-slate-700 dark:text-white px-4 py-2.5 text-sm ring-offset-background 
+        @apply rounded-lg border-border bg-background text-foreground px-4 py-2.5 text-sm ring-offset-background 
                placeholder:text-muted-foreground/60 
                focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary
                transition-all duration-200;
@@ -172,6 +172,10 @@
     background-color: #fafafa !important;
 }
 
+.dark .monaco-editor .margin {
+    background-color: #1e293b !important;
+}
+
 /* Scrollbar */
 ::-webkit-scrollbar {
     width: 6px;
@@ -189,6 +193,131 @@
 
 ::-webkit-scrollbar-thumb:hover {
     background: hsl(240, 5%, 65%);
+}
+
+.dark ::-webkit-scrollbar-thumb {
+    background: hsl(217, 33%, 35%);
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+    background: hsl(217, 33%, 45%);
+}
+
+/* Dark mode text improvements */
+.dark .text-muted-foreground {
+    color: hsl(215 25% 75%);
+}
+
+.dark h1, .dark h2, .dark h3, .dark h4, .dark h5, .dark h6 {
+    color: hsl(210 40% 98%);
+}
+
+.dark p {
+    color: hsl(210 40% 92%);
+}
+
+/* Dark mode card improvements */
+.dark .card-clean {
+    background: hsl(222 47% 12%);
+    border-color: hsl(217 33% 25%);
+}
+
+.dark .card-hover:hover {
+    border-color: hsl(217 91% 50% / 0.4);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* Dark mode background */
+.dark {
+    background-color: hsl(222 47% 8%);
+}
+
+.dark .bg-slate-50 {
+    background-color: hsl(222 47% 8%);
+}
+
+/* Dark mode input improvements */
+.dark input, .dark textarea, .dark select {
+    background: hsl(222 47% 14%) !important;
+    border-color: hsl(217 33% 25%) !important;
+    color: hsl(210 40% 96%) !important;
+}
+
+.dark input::placeholder, .dark textarea::placeholder {
+    color: hsl(215 25% 50%) !important;
+}
+
+.dark input:focus, .dark textarea:focus {
+    border-color: hsl(217 91% 60%) !important;
+    box-shadow: 0 0 0 2px hsl(217 91% 60% / 0.2) !important;
+}
+
+/* Dark mode button improvements */
+.dark .btn-primary {
+    background: hsl(217 91% 55%);
+    color: white;
+}
+
+.dark .btn-primary:hover {
+    background: hsl(217 91% 50%);
+}
+
+/* Dark mode dialog/modal */
+.dark [role="dialog"] {
+    background: hsl(222 47% 11%) !important;
+    border-color: hsl(217 33% 22%) !important;
+}
+
+/* Dark mode select dropdown */
+.dark [role="listbox"] {
+    background: hsl(222 47% 13%) !important;
+    border-color: hsl(217 33% 25%) !important;
+}
+
+.dark [role="option"]:hover {
+    background: hsl(217 33% 20%) !important;
+}
+
+/* Dark mode tabs */
+.dark [role="tablist"] {
+    background: hsl(222 47% 10%);
+}
+
+.dark [role="tab"][data-state="active"] {
+    background: hsl(217 91% 55%);
+    color: white;
+}
+
+/* Dark mode header */
+.dark .header-clean {
+    background: hsl(222 47% 10%) !important;
+    border-color: hsl(217 33% 20%) !important;
+}
+
+/* Dark mode stat cards */
+.dark .bg-white {
+    background: hsl(222 47% 12%) !important;
+}
+
+/* Dark mode welcome toast */
+.dark [data-sonner-toast] {
+    background: hsl(222 47% 14%) !important;
+    border-color: hsl(217 33% 25%) !important;
+    color: hsl(210 40% 96%) !important;
+}
+
+/* Dark mode badge */
+.dark .bg-secondary {
+    background: hsl(217 33% 20%) !important;
+}
+
+/* Dark mode border fixes */
+.dark .border {
+    border-color: hsl(217 33% 25%);
+}
+
+.dark .border-border {
+    border-color: hsl(217 33% 22%);
 }
 
 /* Code highlights */

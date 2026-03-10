@@ -111,9 +111,11 @@ class AssignmentCreate(BaseModel):
     course_id: str
     title: str
     description: Optional[str] = ""
-    due_date: Optional[str] = None
+    has_deadline: bool = False  # Yes/No for deadline
+    due_date: Optional[str] = None  # Deadline for submissions
+    has_schedule_release: bool = False  # Yes/No for scheduled release
+    schedule_release_date: Optional[str] = None  # When students can see assignment
     max_attempts: int = -1
-    marks_release_date: Optional[str] = None  # Scheduled release
     total_marks: int = 100
 
 class AssignmentResponse(BaseModel):
@@ -122,13 +124,20 @@ class AssignmentResponse(BaseModel):
     course_name: Optional[str] = None
     title: str
     description: str
-    due_date: Optional[str]
+    has_deadline: bool = False
+    due_date: Optional[str] = None
+    has_schedule_release: bool = False
+    schedule_release_date: Optional[str] = None  # When students can see assignment
     is_past_deadline: bool = False
+    is_released: bool = True  # Whether students can see this assignment
     max_attempts: int
     total_marks: int = 100
-    marks_release_date: Optional[str] = None
+    results_publish_date: Optional[str] = None  # When results are published to all
+    results_published: bool = False
     marking_scheme_url: Optional[str] = None
     created_at: str
+    submissions_reviewed: int = 0
+    total_submissions: int = 0
 
 class SubmissionFileCreate(BaseModel):
     filename: str
@@ -690,24 +699,48 @@ async def create_assignment(assignment_data: AssignmentCreate, current_user: dic
     
     assignment_id = str(uuid.uuid4())
     now = datetime.now(timezone.utc).isoformat()
+    
+    # Determine if assignment is released to students
+    is_released = True
+    schedule_release_date = None
+    if assignment_data.has_schedule_release and assignment_data.schedule_release_date:
+        schedule_release_date = assignment_data.schedule_release_date
+        release_dt = datetime.fromisoformat(schedule_release_date.replace('Z', '+00:00'))
+        is_released = datetime.now(timezone.utc) >= release_dt
+    
+    # Handle deadline
+    due_date = None
+    if assignment_data.has_deadline and assignment_data.due_date:
+        due_date = assignment_data.due_date
+    
     assignment_doc = {
         "id": assignment_id, "course_id": assignment_data.course_id,
         "title": assignment_data.title, "description": assignment_data.description or "",
-        "due_date": assignment_data.due_date, "max_attempts": assignment_data.max_attempts,
+        "has_deadline": assignment_data.has_deadline,
+        "due_date": due_date,
+        "has_schedule_release": assignment_data.has_schedule_release,
+        "schedule_release_date": schedule_release_date,
+        "max_attempts": assignment_data.max_attempts,
         "total_marks": assignment_data.total_marks,
-        "marks_release_date": assignment_data.marks_release_date,
+        "results_publish_date": None,  # Set when publishing results
+        "results_published": False,
         "marking_scheme_url": None, "created_at": now
     }
     await db.assignments.insert_one(assignment_doc)
-    # Return without _id which gets added by MongoDB
     return {
         "id": assignment_id, "course_id": assignment_data.course_id,
         "title": assignment_data.title, "description": assignment_data.description or "",
-        "due_date": assignment_data.due_date, "max_attempts": assignment_data.max_attempts,
+        "has_deadline": assignment_data.has_deadline,
+        "due_date": due_date,
+        "has_schedule_release": assignment_data.has_schedule_release,
+        "schedule_release_date": schedule_release_date,
+        "max_attempts": assignment_data.max_attempts,
         "total_marks": assignment_data.total_marks,
-        "marks_release_date": assignment_data.marks_release_date,
+        "results_publish_date": None,
+        "results_published": False,
         "marking_scheme_url": None, "created_at": now,
-        "course_name": course["name"], "is_past_deadline": False
+        "course_name": course["name"], "is_past_deadline": False, "is_released": is_released,
+        "submissions_reviewed": 0, "total_submissions": 0
     }
 
 @api_router.post("/assignments/{assignment_id}/marking-scheme")
@@ -726,6 +759,93 @@ async def upload_marking_scheme(assignment_id: str, file: UploadFile = File(...)
     
     await db.assignments.update_one({"id": assignment_id}, {"$set": {"marking_scheme_url": f"/api/files/{filename}"}})
     return {"message": "Marking scheme uploaded", "url": f"/api/files/{filename}"}
+
+class PublishResultsRequest(BaseModel):
+    publish_date: str  # ISO datetime when results should be published
+
+@api_router.post("/assignments/{assignment_id}/publish-results")
+async def publish_assignment_results(assignment_id: str, request: PublishResultsRequest, current_user: dict = Depends(require_marker)):
+    """Publish results for all students in an assignment at a specific date/time"""
+    assignment = await db.assignments.find_one({"id": assignment_id}, {"_id": 0})
+    if not assignment:
+        raise HTTPException(status_code=404, detail="Assignment not found")
+    
+    course = await db.courses.find_one({"id": assignment["course_id"]}, {"_id": 0})
+    if course.get("leader_id") != current_user["id"]:
+        raise HTTPException(status_code=403, detail="Only course leader can publish results")
+    
+    # Get submission stats
+    total_subs = await db.submissions.count_documents({"assignment_id": assignment_id})
+    reviewed_subs = await db.submissions.count_documents({
+        "assignment_id": assignment_id,
+        "status": {"$in": ["feedback_released", "no_issues"]}
+    })
+    
+    all_reviewed = reviewed_subs >= total_subs if total_subs > 0 else False
+    warning = None
+    if not all_reviewed:
+        warning = f"Warning: Only {reviewed_subs} of {total_subs} submissions have been reviewed."
+    
+    # Update assignment with publish date
+    await db.assignments.update_one(
+        {"id": assignment_id},
+        {"$set": {
+            "results_publish_date": request.publish_date,
+            "results_published": False  # Will be True when the date passes
+        }}
+    )
+    
+    # Mark all submissions as having results scheduled
+    await db.submissions.update_many(
+        {"assignment_id": assignment_id},
+        {"$set": {"results_scheduled": request.publish_date}}
+    )
+    
+    return {
+        "message": "Results publication scheduled",
+        "publish_date": request.publish_date,
+        "submissions_reviewed": reviewed_subs,
+        "total_submissions": total_subs,
+        "all_reviewed": all_reviewed,
+        "warning": warning
+    }
+
+@api_router.get("/assignments/{assignment_id}/review-status")
+async def get_assignment_review_status(assignment_id: str, current_user: dict = Depends(require_marker)):
+    """Get detailed review status for an assignment"""
+    assignment = await db.assignments.find_one({"id": assignment_id}, {"_id": 0})
+    if not assignment:
+        raise HTTPException(status_code=404, detail="Assignment not found")
+    
+    submissions = await db.submissions.find({"assignment_id": assignment_id}, {"_id": 0}).to_list(500)
+    
+    reviewed = []
+    pending = []
+    for sub in submissions:
+        student = await db.users.find_one({"id": sub["student_id"]}, {"_id": 0, "full_name": 1, "email": 1})
+        sub_info = {
+            "id": sub["id"],
+            "student_name": student.get("full_name", "Unknown") if student else "Unknown",
+            "student_email": student.get("email", "") if student else "",
+            "status": sub.get("status", "pending"),
+            "marks": sub.get("marks"),
+            "submitted_at": sub.get("submission_time")
+        }
+        if sub.get("status") in ["feedback_released", "no_issues"]:
+            reviewed.append(sub_info)
+        else:
+            pending.append(sub_info)
+    
+    return {
+        "assignment_id": assignment_id,
+        "total_submissions": len(submissions),
+        "reviewed_count": len(reviewed),
+        "pending_count": len(pending),
+        "reviewed_submissions": reviewed,
+        "pending_submissions": pending,
+        "results_publish_date": assignment.get("results_publish_date"),
+        "results_published": assignment.get("results_published", False)
+    }
 
 @api_router.get("/files/{filename}")
 async def get_file(filename: str):
@@ -746,11 +866,48 @@ async def get_assignments(course_id: Optional[str] = None, current_user: dict = 
     
     assignments = await db.assignments.find(query, {"_id": 0}).to_list(100)
     result = []
+    now = datetime.now(timezone.utc)
+    
     for a in assignments:
+        # Check if assignment is released to students
+        is_released = True
+        if a.get("has_schedule_release") and a.get("schedule_release_date"):
+            release_dt = datetime.fromisoformat(a["schedule_release_date"].replace('Z', '+00:00'))
+            is_released = now >= release_dt
+        
+        # For students, only show released assignments
+        if current_user["role"] == "student" and not is_released:
+            continue
+        
+        # Check if results are published
+        results_published = a.get("results_published", False)
+        if a.get("results_publish_date"):
+            publish_dt = datetime.fromisoformat(a["results_publish_date"].replace('Z', '+00:00'))
+            if now >= publish_dt:
+                results_published = True
+                # Auto-update if needed
+                if not a.get("results_published"):
+                    await db.assignments.update_one({"id": a["id"]}, {"$set": {"results_published": True}})
+        
+        # Get submission stats for markers
+        total_subs = await db.submissions.count_documents({"assignment_id": a["id"]})
+        reviewed_subs = await db.submissions.count_documents({
+            "assignment_id": a["id"],
+            "status": {"$in": ["feedback_released", "no_issues"]}
+        })
+        
         course = await db.courses.find_one({"id": a["course_id"]}, {"_id": 0})
+        # Ensure new fields have default values for legacy assignments
         result.append({
-            **a, "course_name": course["name"] if course else "Unknown",
-            "is_past_deadline": is_past_deadline(a.get("due_date"))
+            **a, 
+            "has_deadline": a.get("has_deadline", False),
+            "has_schedule_release": a.get("has_schedule_release", False),
+            "course_name": course["name"] if course else "Unknown",
+            "is_past_deadline": is_past_deadline(a.get("due_date")) if a.get("has_deadline") else False,
+            "is_released": is_released,
+            "submissions_reviewed": reviewed_subs,
+            "total_submissions": total_subs,
+            "results_published": results_published
         })
     return result
 
@@ -759,8 +916,40 @@ async def get_assignment(assignment_id: str, current_user: dict = Depends(get_cu
     assignment = await db.assignments.find_one({"id": assignment_id}, {"_id": 0})
     if not assignment:
         raise HTTPException(status_code=404, detail="Assignment not found")
+    
+    now = datetime.now(timezone.utc)
+    is_released = True
+    if assignment.get("has_schedule_release") and assignment.get("schedule_release_date"):
+        release_dt = datetime.fromisoformat(assignment["schedule_release_date"].replace('Z', '+00:00'))
+        is_released = now >= release_dt
+    
+    # Check if results are published
+    results_published = assignment.get("results_published", False)
+    if assignment.get("results_publish_date"):
+        publish_dt = datetime.fromisoformat(assignment["results_publish_date"].replace('Z', '+00:00'))
+        if now >= publish_dt:
+            results_published = True
+    
+    # Get submission stats
+    total_subs = await db.submissions.count_documents({"assignment_id": assignment_id})
+    reviewed_subs = await db.submissions.count_documents({
+        "assignment_id": assignment_id,
+        "status": {"$in": ["feedback_released", "no_issues"]}
+    })
+    
     course = await db.courses.find_one({"id": assignment["course_id"]}, {"_id": 0})
-    return {**assignment, "course_name": course["name"] if course else "Unknown", "is_past_deadline": is_past_deadline(assignment.get("due_date"))}
+    # Ensure new fields have default values for legacy assignments
+    return {
+        **assignment, 
+        "has_deadline": assignment.get("has_deadline", False),
+        "has_schedule_release": assignment.get("has_schedule_release", False),
+        "course_name": course["name"] if course else "Unknown", 
+        "is_past_deadline": is_past_deadline(assignment.get("due_date")) if assignment.get("has_deadline") else False,
+        "is_released": is_released,
+        "submissions_reviewed": reviewed_subs,
+        "total_submissions": total_subs,
+        "results_published": results_published
+    }
 
 # ============ ISSUE CATEGORIES ============
 
@@ -797,8 +986,18 @@ async def create_submission(submission_data: SubmissionCreate, current_user: dic
         raise HTTPException(status_code=404, detail="Assignment not found")
     if assignment["course_id"] not in current_user.get("course_ids", []):
         raise HTTPException(status_code=403, detail="Not enrolled in this course")
-    if is_past_deadline(assignment.get("due_date")):
-        raise HTTPException(status_code=403, detail="Submissions closed")
+    
+    # Check if assignment is released
+    now = datetime.now(timezone.utc)
+    if assignment.get("has_schedule_release") and assignment.get("schedule_release_date"):
+        release_dt = datetime.fromisoformat(assignment["schedule_release_date"].replace('Z', '+00:00'))
+        if now < release_dt:
+            raise HTTPException(status_code=403, detail="Assignment not yet available")
+    
+    # Check deadline only if deadline is enabled
+    if assignment.get("has_deadline") and assignment.get("due_date"):
+        if is_past_deadline(assignment.get("due_date")):
+            raise HTTPException(status_code=403, detail="Submissions closed - deadline has passed")
     
     prev_subs = await db.submissions.find({
         "assignment_id": submission_data.assignment_id, "student_id": current_user["id"]
@@ -815,14 +1014,13 @@ async def create_submission(submission_data: SubmissionCreate, current_user: dic
         )
     
     submission_id = str(uuid.uuid4())
-    now = datetime.now(timezone.utc).isoformat()
     files = [{"id": str(uuid.uuid4()), "filename": f.filename, "content": f.content} for f in submission_data.files]
     
     submission_doc = {
         "id": submission_id, "assignment_id": submission_data.assignment_id,
         "student_id": current_user["id"], "files": files, "status": "pending",
         "attempt_number": attempt, "previous_submission_id": prev_subs[0]["id"] if prev_subs else None,
-        "submission_time": now, "is_latest_attempt": True, "marks": None,
+        "submission_time": now.isoformat(), "is_latest_attempt": True, "marks": None,
         "marks_released": False, "moderation_status": None,
         "review_completed_at": None, "reviewed_by": None
     }
@@ -851,6 +1049,8 @@ async def get_submissions(
     current_user: dict = Depends(get_current_user)
 ):
     query = {}
+    now = datetime.now(timezone.utc)
+    
     if current_user["role"] == "student":
         query["student_id"] = current_user["id"]
     else:
@@ -866,6 +1066,16 @@ async def get_submissions(
     
     if assignment_id:
         query["assignment_id"] = assignment_id
+        
+        # For markers: only show submissions if deadline has passed (or no deadline set)
+        if current_user["role"] != "student":
+            assignment = await db.assignments.find_one({"id": assignment_id}, {"_id": 0})
+            if assignment and assignment.get("has_deadline") and assignment.get("due_date"):
+                deadline_dt = datetime.fromisoformat(assignment["due_date"].replace('Z', '+00:00'))
+                if now < deadline_dt:
+                    # Deadline hasn't passed - return empty for markers
+                    return []
+    
     if status_filter:
         query["status"] = status_filter
     
@@ -886,10 +1096,26 @@ async def get_submissions(
         student = await db.users.find_one({"id": sub["student_id"]}, {"_id": 0})
         reviewer = await db.users.find_one({"id": sub.get("reviewed_by")}, {"_id": 0}) if sub.get("reviewed_by") else None
         issues_count = await db.feedback_issues.count_documents({"submission_id": sub["id"]})
+        
+        # For students: check if results are published before showing marks
+        show_marks = True
+        if current_user["role"] == "student":
+            assignment = await db.assignments.find_one({"id": sub["assignment_id"]}, {"_id": 0})
+            if assignment:
+                # Check if results are published (either scheduled or manually)
+                if assignment.get("results_publish_date"):
+                    publish_dt = datetime.fromisoformat(assignment["results_publish_date"].replace('Z', '+00:00'))
+                    show_marks = now >= publish_dt
+                elif not assignment.get("results_published", True):
+                    # If results_published is explicitly False and no publish date, don't show
+                    show_marks = assignment.get("results_published", True)
+        
         result.append({
             **sub, "student_name": student["full_name"] if student else "Unknown",
             "reviewed_by_name": reviewer["full_name"] if reviewer else None,
             "issues_count": issues_count,
+            "marks": sub.get("marks") if show_marks else None,
+            "marks_visible": show_marks,
             "files": [{"id": f["id"], "filename": f["filename"], "content": f["content"]} for f in sub.get("files", [])]
         })
     return result

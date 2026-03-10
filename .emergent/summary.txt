@@ -1,219 +1,202 @@
 <analysis>**original_problem_statement:**
-The user wants to build a CodeFeedback Studio, a comprehensive code assessment and moderation platform.
+The user wants to build CodeFeedback Studio, a comprehensive code assessment and moderation platform.
 
 PRODUCT REQUIREMENTS:
 
-**Phase 1: Foundation & Core Workflow (Mostly Complete)**
-*   **User Roles**: Student, Marker, Moderator, and Module Leader (Course Leader).
-*   **Course Management**: Markers can create courses, and a single Module Leader is assigned per course. Leaders can add other Markers as collaborators.
-*   **Enrollment**: Students can enroll in multiple courses.
-*   **Assignments**: Leaders create assignments with deadlines. Students can upload multiple files ( and others) and resubmit anytime before the deadline. The last submission is final.
-*   **Code Review**: Markers provide inline, file-specific feedback (like GitHub PRs). Students can view feedback, see the exact code location, and mark issues as fixed.
-
-**Phase 2: Advanced Features (Partially Implemented Backend, Frontend pending)**
-*   **Marking & Grading**:
-    *   Upload custom marking schemes (e.g., PDF) for assignments.
-    *   Schedule the release of marks.
-    *   Gamification for Markers (e.g., badges for timely marking).
-*   **Moderation Workflow**:
-    *   Moderators review all failed submissions and a 10% random sample of others.
-    *   Moderators can raise issues against a Marker's grading.
-    *   Module Leaders review and resolve moderation issues.
-*   **Student Gamification**:
-    *   An XP and badge system for students based on fixing issues found in their code.
-    *   Badges page to view achievements.
-*   **Feedback Templates**: Allow Markers to save and reuse common feedback comments.
-
-**Phase 3: Analytics & Reporting (Future)**
-*   **Analytics**: Course-specific dashboards for Students (progress) and Markers/Leaders (class-wide stats).
-*   **Marker Evaluation**: A scaling system for feedback consistency and reports for moderation tracking.
-
-**Phase 4: Notifications (Future)**
-*   **Email Notifications**: Use a frontend-heavy service (like Resend, not necessarily EmailJS) to notify students when marks are released or issues are raised/resolved.
-
-**General**:
-*   Update the  file after each phase with setup instructions and feature descriptions.
-*   The system should be permission-safe, structured, and provide a data-driven, GitHub-style review experience.
+- **Core Functionality**: A multi-role system (Student, Marker, Moderator, Module Leader) for managing courses, assignments, and submissions. Markers create courses, assign roles (Collaborator, Moderator, Leader), and create assignments. Students enroll and submit code. Markers provide GitHub-style inline feedback.
+- **Registration**: Simplified to only Student and Marker roles. Other roles (Moderator, Module Leader) are assigned within the application after registration.
+- **Assignment Workflow (Latest Request)**:
+    - **Schedule Release**: An optional setting for markers to control when an assignment becomes visible to students.
+    - **Set a Deadline**: An optional setting for markers to control the submission window. Markers can only view submissions after the deadline passes (if set).
+    - **Publish Results**: A separate, collective action for markers to publish all marks and feedback for an assignment at a scheduled time, after all submissions have been reviewed.
+- **Gamification**: An XP and badge system for both Students (for fixing issues) and Markers (for completing reviews). UI should include dedicated Badges pages for both roles.
+- **UI/UX**:
+    - A polished loading screen that displays for 6 seconds on the first visit.
+    - A dark mode toggle, with light mode as the default. The dark mode needs to be improved for readability.
+- **Documentation**: The  file must be updated with the full tech stack, local setup instructions, and details about the gamification system.
+- **Data Reset**: The user requested a complete reset of all existing data to test from scratch.
 
 **User's preferred language**: English
 
 **what currently exists?**
-A full-stack application with a FastAPI backend, React frontend, and MongoDB. The codebase has undergone a massive rewrite to support a complex, multi-role architecture (Student, Marker, Leader).
+A full-stack application with a FastAPI backend, React frontend, and MongoDB. The application supports a multi-role architecture.
 
-- **Backend**:  was completely rewritten to include data models and initial API endpoints for course leadership, multi-course student enrollment, multi-file submissions, moderation workflows, and gamification for both students and markers.
-- **Frontend**: Most pages were rewritten to support the new architecture. Key features like multi-file submission, the GitHub-style code review interface, and the student feedback/badges pages are implemented. However, the frontend has not been updated to reflect the *latest* backend changes from the user's most recent request.
-- **Local Setup**: The  has been updated multiple times to help the user with local setup issues, and separate  files for cloud and local environments have been created.
+- **Backend**: The backend includes data models and API endpoints for user authentication, course management, role assignment (leader, collaborator, moderator), multi-file submissions, code review, and gamification.
+- **Frontend**: The frontend has pages for registration, login, dashboards for students and markers, a course management page, a code review interface, and dedicated badge pages for both students and markers.
+- **Features**: A polished loading screen, a theme provider with a dark mode toggle (defaulting to light mode), and a comprehensive gamification UI have been implemented. The database has been reset as per the user's request.
 
 **Last working item**:
-- **Last item agent was working:** The agent received a very detailed new set of requirements for grading, moderation, and marker gamification. It started implementation by completely rewriting  to incorporate the new data models and logic for these features. It was about to update the .
+- **Last item agent was working:** Implementing the new, detailed assignment lifecycle requested by the user. This involves three distinct controls: Schedule Release, Set a Deadline, and Publish Results. The agent was in the middle of a major backend refactor, updating Pydantic models (, ) and API endpoints (, , , etc.) to support this logic. A new endpoint () was being added.
 - **Status:** IN PROGRESS
 - **Agent Testing Done:** N
 - **Which testing method agent to use?** both
 - **User Testing Done:** N
 
 **All Pending/In progress Issue list**:
-- **Issue 1: User's Local Frontend Fails to Compile (P0)**
-    - **Description**: The user is experiencing a  error when running yarn run v1.22.22
-info Visit https://yarnpkg.com/en/docs/cli/run for documentation about this command. locally. This is a recurring issue.
-    - **Attempted fixes**: The agent identified this is caused by Emergent-specific plugins in the  folder. It created a  that excludes these plugins and instructed the user to delete the  folder and rename the craco config file.
-    - **Next debug checklist**:
-        - Verify with the user that they have correctly followed the steps:
-            1.  
-            2.   (or delete the folder manually)
-            3.  
-            4.  
-            5.  yarn run v1.22.22
-info Visit https://yarnpkg.com/en/docs/cli/run for documentation about this command.
-        - If it still fails, the  might need further simplification for local development.
-    - **Why fix this issue and what will be achieved with the fix?** This is a complete blocker for the user, who is trying to run the application locally. Fixing it will allow them to test and verify the application.
-    - **Status:** BLOCKED
-    - **Is recurring issue?** Y
-    - **Should Test frontend/backend/both after fix?** frontend
-    - **Blocked on other issue:** No
-
-- **Issue 2: User's Local Backend Connection Fails (P0)**
-    - **Description**: The user experienced CORS errors and .
-    - **Attempted fixes**: The agent correctly identified two separate root causes:
-        1.  **CORS**: The  in  was added in the wrong order. The agent moved it to the top of the middleware stack.
-        2.  **500 Error**: The local MongoDB contained data with an old schema, causing a  on the backend. The agent added a  block for backward compatibility and advised the user to either clear their local database or re-download the latest code.
-    - **Next debug checklist**:
-        - Confirm the user has the latest  with the CORS and  fixes.
-        - Instruct the user to clear their local MongoDB to ensure a clean state: .
-        - Guide them to restart the backend server () and test the health endpoint directly: .
-    - **Why fix this issue and what will be achieved with the fix?** This is also a blocker for local development. The frontend cannot function without a working backend.
-    - **Status:** BLOCKED
+- **Issue 1: Local Backend Environment Issues on User's Machine (P0)**
+    - **Description**: The user repeatedly faces issues running the backend locally on Windows, specifically  due to PowerShell creating  files with the wrong encoding (UTF-16 instead of UTF-8).
+    - **Attempted fixes**: The agent provided multiple correct solutions, including using specific PowerShell commands to create UTF-8 files and instructions for saving with the correct encoding in VS Code.
+    - **Next debug checklist**: This is a user-side environment issue. The next agent should be prepared to provide clear, simple, step-by-step instructions for creating a correctly encoded  file if the user reports the error again.
+    - **Why fix this issue and what will be achieved with the fix?** This is a blocker for the user's ability to run the backend locally.
+    - **Status:** BLOCKED (on user action)
     - **Is recurring issue?** Y
     - **Should Test frontend/backend/both after fix?** backend
-    - **Blocked on other issue:** No
+    - **Blocked on other issue:** None
 
-- **Issue 3: Unaddressed ESLint Warnings (P2)**
-    - **Description**: The user's yarn run v1.22.22
-info Visit https://yarnpkg.com/en/docs/cli/run for documentation about this command. log shows multiple  warnings in several page components (, , etc.).
+- **Issue 2: Marker Badge Gamification Logic (P1)**
+    - **Description**: The user reported that badges were not working correctly for markers. The agent added logic to award XP to markers upon completing reviews, but this full flow has not been end-to-end tested since the changes.
     - **Next debug checklist**:
-        - For each warning, inspect the  hook. The  function is likely defined inside the component and should be added to the dependency array or wrapped in .
-        - Example fix in : Add  to the  dependency array.
-    - **Why fix this issue and what will be achieved with the fix?** Fixes potential stale data bugs and improves code quality.
-    - **Status:** NOT STARTED
-    - **Should Test frontend/backend/both after fix?** frontend
+        - After the assignment workflow is complete, perform a full test cycle:
+            1. Marker creates an assignment.
+            2. Student submits code.
+            3. Marker reviews the submission and provides feedback/grades.
+            4. Verify that the marker's XP and badges are updated correctly via the  endpoint and on the Marker Badges page.
+    - **Why fix this issue and what will be achieved with the fix?** It completes a core feature request and ensures the gamification system is functional for all roles.
+    - **Status:** TESTING PENDING
+    - **Is recurring issue?** N
+    - **Should Test frontend/backend/both after fix?** both
+    - **Blocked on other issue:** In progress Task 1
 
 **In progress Task List**:
-- **Task 1: Implement New Requirements (Phase 1 & 2) (P0)**
-    - **Where to resume:** The backend () has just been rewritten to support the new features (marking schemes, moderation, marker gamification). The next step is to update the frontend components (, , etc.) to use the new backend APIs and reflect the new workflows. After that, the  must be updated.
-    - **What will be achieved with this?** The application will have the core logic for the advanced grading and moderation systems requested by the user.
+- **Task 1: Complete New Assignment Workflow (P0)**
+    - **Where to resume:** The backend refactor is in progress. The agent was updating the submission-related endpoints (, ) in  to respect the new  and  fields. After finishing the backend, the frontend  needs to be updated to implement the new assignment creation dialog and the Publish Results functionality.
+    - **What will be achieved with this?** A clear, controlled, and flexible assignment lifecycle that meets the user's detailed specifications.
     - **Status:** IN PROGRESS
     - **Should Test frontend/backend/both after fix?** both
-    - **Blocked on something:**  and . The agent cannot proceed until the user can run the application locally.
+    - **Blocked on something:** No
 
 **Upcoming and Future Tasks**
 - **Upcoming Tasks:**
-    - **P0: Finish Frontend for Phase 1 & 2**: Update all relevant frontend pages to support the new backend logic for moderation and grading.
-    - **P0: Update README.md**: After Phase 1 & 2 are complete and tested, update the README with the new features and local setup guide.
-    - **P1: Implement Email Notifications**: Integrate a frontend-heavy email service (like ) for notifications. This will require calling the  subagent.
+    - **P0: Improve Dark Mode Readability**: Adjust the CSS variables for the dark theme to improve text contrast and visual clarity.
+    - **P0: Update README.md**: Perform a comprehensive update to the  file, including the full tech stack, detailed local setup instructions (for both frontend and backend), and a clear explanation of the gamification system (how badges are earned for students and markers).
+    - **P1: Implement Email Notifications**: Integrate  for notifications when results are published. This requires using the  subagent.
 - **Future Tasks:**
-    - **P2: Implement Phase 3 (Analytics & Reporting)**: Build out marker evaluation and moderation tracking reports.
-    - **P2: System Modeling Documentation**: Create Event B modeling and requirement diagrams as requested.
+    - **P2: Phase 3 - Analytics & Reporting**: Build dashboards for course-wide statistics and marker evaluation reports.
+    - **P2: System Modeling Documentation**: Create Event B modeling and requirements diagrams.
 
 **Completed work in this session**
-- **Massive Architectural Refactor**: Rewrote the entire backend and most of the frontend to support a complex, multi-role system (Leaders, Collaborators, multi-course students).
-- **Core Feature Implementation**:
-    - Implemented multi-file uploads for submissions.
-    - Built a GitHub PR-style code review UI with file navigation and click-to-scroll.
-    - Implemented a student feedback view that mirrors the review UI.
-- **Gamification System**: Created the backend logic and frontend UI for student XP and badges.
-- **Local Setup Support**:
-    - Diagnosed and provided fixes for user's local setup issues (Babel plugins, CORS, DB schema mismatch).
-    - Created a professional  with detailed local setup instructions.
-    - Created  files for both frontend and backend.
-- **Bug Fix**: Resolved an infinite loop error on the  by replacing a faulty  component with a custom implementation.
+- **Data Reset**: Successfully cleared the MongoDB database to allow for fresh testing.
+- **UI/UX Enhancements**:
+    - Implemented a polished, animated loading screen that appears for 6 seconds on the first visit.
+    - Implemented a dark mode toggle using a React Context (), with light mode set as the default.
+    - Improved overall UI styling with a new .
+- **Gamification Overhaul**:
+    - Created a new  and redesigned  with a modern UI.
+    - Added a missing  backend endpoint to fix a loading error on the badges page.
+- **Role & Course Management**:
+    - Simplified the registration page to only show Student and Marker roles.
+    - Implemented the full UI and backend logic for role management (add collaborators/moderators, transfer leadership) on the .
+- **Testing and Bug Fixes**:
+    - Ran the testing agent, which identified and fixed several critical backend and frontend bugs.
+    - Manually fixed an  serialization error in the course creation endpoint.
+    - Fixed a frontend compilation error by disabling a faulty babel plugin ().
+    - Addressed numerous user-reported local environment issues, primarily related to file encoding on Windows.
 
 **Earlier issues found/mentioned but not fixed**
-- The ESLint warnings () in multiple frontend components were noted but not fixed.
+- **Issue 1: ESLint Warnings ()**
+    - **Debug checklist**: Inspect  hooks in components like , , etc. Ensure all dependencies, especially functions defined within the component, are included in the dependency array or wrapped in .
+    - **Why to solve this issue and what will be achieved with this?** Prevents potential bugs related to stale state and improves code quality.
+    - **Should Test frontend/backend/both after fix:** frontend
+    - **Is recurring issue?** Y
 
 **Known issue recurrence from previous fork**
-- None.
+- **Issue recurrence in previous fork**: User's local environment setup fails repeatedly, particularly with  in the backend due to incorrect  file encoding.
+- **Recurrence count**: 3+ times in this session.
+- **Status:** NOT STARTED (User-side issue, requires guidance).
 
 **Code Architecture**
 
 
 **Key Technical Concepts**
-- **Backend**: FastAPI, Pydantic, Motor (async MongoDB), JWT.
-- **Frontend**: React,  for config overrides, , React Router, .
-- **Authentication**: JWT-based, with a complex role-based access control (RBAC) model.
-- **Database**: MongoDB.
+- **Backend**: FastAPI, Pydantic, Motor (async MongoDB), JWT for auth.
+- **Frontend**: React,  for config overrides, , React Router, React Context for auth and theming.
+- **Authentication**: JWT-based with a role-based access control model (Student, Marker, Moderator, Module Leader).
+- **UI**: Dark/Light mode theming via Context and CSS variables.
 
 **key DB schema**
 - **users**: 
 - **courses**: 
 - **assignments**: 
 - **submissions**: 
-- **feedback_issues**: 
-- **moderation_issues**: 
-- **marker_gamification**: 
+- **gamification**: 
 
 **changes in tech stack**
-- None, but  was introduced to manage different build configurations.
+-  was introduced in the frontend for managing light and dark modes.
 
 **All files of reference**
-- : Completely rewritten to support the latest, most complex requirements.
-- : All pages have been significantly modified or newly created.
-- : New file created to enable local development by disabling cloud-specific plugins.
-- : Heavily updated with local setup instructions and feature documentation.
+- **Heavily Modified**:
+    - : Undergoing a major refactor for the new assignment workflow.
+    - : Will need significant updates for assignment creation/publishing.
+    - : Updated to include  and .
+    - : Updated to include dark mode toggle.
+    - : Needs a full rewrite.
+- **Newly Created**:
+    - 
+    - 
+    - 
+- **Other Important Files**:
+    - : Contains new dark mode styles.
+    - : UI was redesigned.
 
 **Areas that need refactoring**:
-- The  hooks in multiple frontend components need to have their dependencies fixed to resolve ESLint warnings and prevent potential bugs.
+- **Dark Mode CSS**: The styles for dark mode were added directly to  and could be better organized. The user also reported readability issues that need to be addressed.
+- **ESLint  dependencies**: Still need to be fixed across multiple components.
 
 **key api endpoints**
-The API surface has been massively expanded. Key new/updated conceptual endpoints include:
-- : Endpoints for moderators to review submissions and raise issues.
-- : Endpoints to track marker badges.
-- : Endpoint for uploading marking schemes.
-- : Endpoint for scheduling mark releases.
-- All existing endpoints (, , etc.) have been updated to enforce the new, stricter role-based access control.
+-  (Now restricted to 'student' and 'marker' roles)
+- 
+-  (Handles adding collaborators, moderators, and transferring leadership)
+-  (Logic being updated for deadline/release_date)
+-  (Logic being updated to filter by release_date for students)
+-  (New endpoint to be completed)
+-  (Logic being updated to check deadline)
+-  (Logic being updated to hide submissions from markers until after the deadline)
+- 
 
 **Critical Info for New Agent**
-1.  **User Is Blocked Locally**: Your absolute first priority is to help the user get their local environment running. They are facing both frontend compilation errors and backend connection errors. Do not proceed with new features until the user confirms they can run the app. The fixes are likely in the codebase already, but the user needs clear, step-by-step guidance to apply them.
-2.  **Backend/Frontend Desync**: The agent just rewrote  to add a host of new features (moderation, marker gamification). The frontend does **not** reflect these latest changes yet. After unblocking the user, the next major task is to update the frontend to match the new backend.
-3.  **Use  for Emails**: The user requested email notifications. When you get to this task, you must use the  subagent to get the implementation plan for a service like Resend.
+1.  **Finish Assignment Workflow First**: The highest priority is completing the backend and frontend implementation for the new assignment lifecycle (Schedule Release, Set Deadline, Publish Results). The work is currently in-progress in .
+2.  **User's Local Environment is Fragile**: Be prepared to guide the user through fixing  file encoding issues on their Windows machine. Provide simple, copy-pasteable commands.
+3.  **Improve Dark Mode**: After the workflow is done, address the user's feedback on dark mode's poor readability by adjusting the CSS.
+4.  **Update the README**: A comprehensive  update is a key deliverable. Do not finish without completing this.
+5.  **Test Gamification**: The marker gamification flow needs to be tested end-to-end after the assignment and review process is fully functional.
 
 **documents and test reports created in this job**
--  (updated)
--  (updated)
--  (created)
--  (created)
+- 
+- 
+-  (updated multiple times)
+-  (partially updated, needs a full rewrite)
 
 **Last 10 User Messages and any pending HUMAN messages**
-1.  : Reported frontend compilation error ().
-2.  : Identified the cause as cloud-specific plugins and provided a fix ().
-3.  : Reported a new error: CORS and .
-4.  : Identified it as a backend CORS configuration issue and provided a fix for .
-5.  : Reported the same frontend compilation error again.
-6.  : Re-iterated the fix, emphasizing the need to delete the  folder.
-7.  : Reported a backend Internal Server Error.
-8.  : Identified it as a schema mismatch in the user's local DB and provided a fix for  and advised clearing the local DB.
-9.  : Sent a massive new list of requirements for moderation, grading, marker gamification, and more, asking to rewrite the README again.
-10. : Confirmed the agent's plan and asked to start with Phase 1 & 2, use a frontend-heavy email library, and update the README after each phase.
+10. : Requested comprehensive tests. 
+9. : Asked to reset all data and implement a large set of new features: conditional assignment dates, dark mode toggle, better loading screen, fix marker badges, and update README. 
+8. : Provided a screenshot of a backend crash (). 
+7. : Provided another screenshot of the same error. 
+6. : Provided a screenshot of the  crash. 
+5. : Provided another screenshot of the . 
+4. : Provided another screenshot of the , showing the file in VS Code. 
+3. : Requested gamification for both marker and student, better UI, and an updated README. 
+2. : Sent a screenshot of the Failed to load badges error toast. 
+1. : Provided detailed requirements for the new assignment workflow (Schedule Release, Set a Deadline, Publish Results), requested a better loading screen (6 seconds), improved dark mode readability, and a README update. 
 
 **Project Health Check:**
-- **Working (in cloud)**: The application was fully functional with the GitHub-style review flow, student gamification, and multi-file submissions before the latest backend rewrite.
-- **Broken (for user locally)**: The user's local development environment is completely non-functional due to a combination of frontend compilation errors and backend server errors.
-- **Mocked**: No mocked components.
+- **Broken**: The core assignment creation and submission workflow is currently broken due to the in-progress backend refactor.
+- **Mocked**: None.
 
 **3rd Party Integrations**
 - **PostHog**: Integrated for analytics.
-- **Email Service (Pending)**: User requested a frontend-heavy email service.  is a good candidate. This requires using the  agent.
+- **Email Service (Pending)**: User requested email integration.  is the suggested service. This will require using the  subagent.
 
 **Testing status**
-- **Testing agent used after significant changes**: NO (The last attempt seemed to hang, and no report was generated).
+- **Testing agent used after significant changes**: YES (before the latest feature request). The agent successfully found and fixed several bugs.
 - **Troubleshoot agent used after agent stuck in loop**: NO
-- **Test files created**: None in this session.
-- **Known regressions**: The user's local setup is fully regressed and non-functional.
+- **Test files created**: Test reports were generated at . No persistent test files () were created.
+- **Known regressions**: The assignment workflow is non-functional.
 
 **Credentials to test flow:**
-- Advise the user to create new credentials via the registration page after clearing their local database, as previous test data is likely invalid.
-    - **Marker**:  / 
-    - **Student**:  / 
+The database has been reset. New accounts must be created through the registration page.
+Suggest using:
+- **Marker**:  / 
+- **Student**:  / 
 
 **What agent forgot to execute**
-- The agent has not yet updated the frontend to align with the very latest  rewrite that includes moderation and advanced grading features.
-- The agent did not fix the  ESLint warnings.
-- A full test cycle using the  was not completed after the last major refactor.</analysis>
+- The  ESLint warnings, which were noted in the initial handoff, have still not been addressed.</analysis>

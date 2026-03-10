@@ -1,22 +1,12 @@
 # CodeFeedback Studio
 
-A comprehensive code assessment and moderation platform for programming education. Features GitHub-style code review, multi-role team management, gamification, and dark mode support.
+A comprehensive code assessment and moderation platform for programming education. Features GitHub-style code review, multi-role team management, gamification, and full assignment lifecycle control.
 
-![CodeFeedback Studio](https://img.shields.io/badge/version-2.1-blue) ![License](https://img.shields.io/badge/license-MIT-green) ![Dark Mode](https://img.shields.io/badge/dark%20mode-supported-purple)
-
----
-
-## What's New in v2.1
-
-- **Dark Mode**: Toggle between light and dark themes
-- **Loading Screen**: Beautiful animated loading screen on app start
-- **Improved Assignment Creation**: Yes/No toggles for deadline and release date
-- **Fixed Marker Gamification**: Markers now earn XP when grading submissions
-- **Database Reset**: Fresh start capability for testing
+![CodeFeedback Studio](https://img.shields.io/badge/version-2.2-blue) ![License](https://img.shields.io/badge/license-MIT-green) ![Dark Mode](https://img.shields.io/badge/dark%20mode-supported-purple)
 
 ---
 
-## Features
+## Features Overview
 
 ### For Students
 - **Multi-file Submissions**: Upload multiple Python files per assignment
@@ -39,24 +29,48 @@ A comprehensive code assessment and moderation platform for programming educatio
 - **Leadership Transfer**: Delegate leadership to other markers
 
 ### UI/UX Features
-- **Dark Mode**: System-aware theme with manual toggle
-- **Loading Screen**: Animated splash screen on first visit
+- **Dark Mode**: Improved contrast and readability with manual toggle (light mode default)
+- **Loading Screen**: Polished animated splash screen (6 seconds)
 - **Responsive Design**: Works on desktop and tablet devices
 
 ---
 
-## Assignment Features
+## Tech Stack
 
-### Deadline Management
-When creating an assignment, markers can choose:
-- **Set a Deadline?** → Yes/No toggle
-  - If **Yes**: Date/time picker becomes required
-  - If **No**: No deadline is set (open-ended)
+| Layer | Technology |
+|-------|------------|
+| **Frontend** | React 18, Tailwind CSS, shadcn/ui, Monaco Editor |
+| **Backend** | FastAPI, Python 3.11+, Pydantic |
+| **Database** | MongoDB with Motor (async driver) |
+| **Authentication** | JWT (JSON Web Tokens) |
+| **Theming** | CSS Variables with dark/light mode support |
 
-### Mark Release Scheduling
-- **Schedule Mark Release?** → Yes/No toggle
-  - If **Yes**: Marks are hidden until the specified date
-  - If **No**: Marks are released immediately when graded
+---
+
+## Assignment Lifecycle
+
+CodeFeedback Studio provides three distinct controls for managing the assignment workflow:
+
+### 1. Schedule Release (Yes/No)
+Controls when the assignment becomes visible to students.
+
+- **Yes**: Enter a date/time. Students only see the assignment after this time.
+- **No**: Assignment is visible immediately after creation.
+
+### 2. Set a Deadline (Yes/No)
+Controls the submission window and marker access.
+
+- **Yes**: Enter a date/time. Students can submit until the deadline. **Markers can only view submissions after the deadline passes.**
+- **No**: No deadline. Submissions are visible to markers immediately after students submit.
+
+### 3. Publish Results
+A collective action to release all marks and feedback to students.
+
+- After reviewing submissions, markers can schedule a publish date/time
+- The system shows review progress (how many submissions reviewed vs. pending)
+- If not all submissions are reviewed, a warning is displayed
+- At the scheduled time, all students receive access to their marks and feedback together
+- Students can only see their own feedback
 
 ---
 
@@ -72,13 +86,18 @@ When creating an assignment, markers can choose:
 | **Perfectionist** | Get a submission with no issues | +150 XP |
 | **Rapid Improver** | Improve score by 20% on resubmission | +125 XP |
 | **Consistent Performer** | Submit 5 assignments on time | +100 XP |
-| **Error Hunter** | Fix 10 distinct runtime errors | +150 XP |
-| **Exception Architect** | Fix 5 unhandled exception issues | +125 XP |
-| **Complexity Reducer** | Reduce complexity in 5 submissions | +150 XP |
-| **DRY Advocate** | Remove 10+ duplicated code blocks | +125 XP |
-| **Coding Master** | Earn all student badges | +500 XP |
 
-**Student Levels**: Novice Coder → Apprentice → Junior Developer → Developer → Senior Developer → Lead Developer → Architect → Senior Architect → Principal Engineer → Code Master
+**Student Levels** (by XP):
+1. Novice (0 XP)
+2. Beginner (100 XP)
+3. Learner (300 XP)
+4. Practitioner (600 XP)
+5. Competent (1000 XP)
+6. Proficient (1500 XP)
+7. Advanced (2200 XP)
+8. Expert (3000 XP)
+9. Master (4000 XP)
+10. Grandmaster (5200 XP)
 
 ### Marker Badges & XP
 
@@ -91,14 +110,11 @@ When creating an assignment, markers can choose:
 | **Feedback Master** | Create 10 reusable feedback templates | +100 XP |
 | **Mentor** | Help 5 students achieve perfect scores | +200 XP |
 | **Consistent Marker** | Maintain 95% moderation approval rate | +175 XP |
-| **Marking Master** | Earn all marker badges | +500 XP |
 
 **XP Earned Per Action**:
-- Grading a submission: +25 XP
-- Marking as "No Issues": +15 XP
-- Creating a feedback template: +10 XP
-
-**Marker Levels**: Apprentice Marker → Junior Marker → Marker → Senior Marker → Lead Marker → Expert Marker → Master Marker → Principal Marker → Distinguished Marker → Legendary Marker
+- Grading a submission: **+25 XP**
+- Marking as "No Issues": **+15 XP**
+- Creating a feedback template: **+10 XP**
 
 ---
 
@@ -121,7 +137,7 @@ When creating an assignment, markers can choose:
    ```bash
    python -m venv venv
    
-   # Windows
+   # Windows (PowerShell)
    venv\Scripts\activate
    
    # Mac/Linux
@@ -135,7 +151,7 @@ When creating an assignment, markers can choose:
 
 4. **Create `.env` file:**
    
-   **On Mac/Linux:**
+   **Mac/Linux:**
    ```bash
    cat > .env << EOF
    MONGO_URL=mongodb://localhost:27017
@@ -144,7 +160,7 @@ When creating an assignment, markers can choose:
    EOF
    ```
    
-   **On Windows (PowerShell) - IMPORTANT: Use this exact command:**
+   **Windows (PowerShell) - IMPORTANT:**
    ```powershell
    [System.IO.File]::WriteAllLines("$PWD\.env", @(
        "MONGO_URL=mongodb://localhost:27017",
@@ -153,7 +169,7 @@ When creating an assignment, markers can choose:
    ), [System.Text.UTF8Encoding]::new($false))
    ```
    
-   > **Note**: Windows PowerShell's `echo` and `>` operators create UTF-16 files which cause errors. Always use the PowerShell command above or create the file manually in VS Code/Notepad with UTF-8 encoding.
+   > ⚠️ **Windows Note**: PowerShell's `echo` and `>` operators create UTF-16 files which cause `UnicodeDecodeError`. Always use the PowerShell command above or create the file manually in VS Code with **UTF-8 encoding**.
 
 5. **Start MongoDB** (if running locally):
    ```bash
@@ -165,7 +181,7 @@ When creating an assignment, markers can choose:
    uvicorn server:app --reload --port 8001
    ```
    
-   Backend: `http://localhost:8001`
+   Backend runs at: `http://localhost:8001`
 
 ### Frontend Setup
 
@@ -191,8 +207,9 @@ When creating an assignment, markers can choose:
    [System.IO.File]::WriteAllText("$PWD\.env", "REACT_APP_BACKEND_URL=http://localhost:8001", [System.Text.UTF8Encoding]::new($false))
    ```
 
-4. **For local development, update craco config** (if you see Babel errors):
+4. **For local development** (if you see Babel errors):
    ```bash
+   # Rename craco config files
    mv craco.config.js craco.config.cloud.js
    mv craco.config.local.js craco.config.js
    ```
@@ -202,16 +219,91 @@ When creating an assignment, markers can choose:
    yarn start
    ```
    
-   Frontend: `http://localhost:3000`
+   Frontend runs at: `http://localhost:3000`
+
+---
+
+## API Documentation
+
+**Interactive Docs**: `http://localhost:8001/docs` (Swagger UI)  
+**Alternative Docs**: `http://localhost:8001/redoc` (ReDoc)
+
+### Key Endpoints
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/auth/register` | POST | Register (student/marker) |
+| `/api/auth/login` | POST | Login and get JWT |
+| `/api/courses` | GET/POST | List or create courses |
+| `/api/assignments` | GET/POST | List or create assignments |
+| `/api/assignments/{id}/publish-results` | POST | Schedule results publication |
+| `/api/assignments/{id}/review-status` | GET | Get review progress |
+| `/api/submissions` | GET/POST | List or submit code |
+| `/api/submissions/{id}/grade` | POST | Grade a submission |
+| `/api/issues` | GET/POST | List or create feedback |
+| `/api/gamification/stats` | GET | XP, level, and badges |
+
+---
+
+## Database Schema
+
+### Users
+```json
+{
+  "id": "uuid",
+  "email": "string",
+  "full_name": "string",
+  "role": "student | marker | moderator | module_leader",
+  "course_ids": ["uuid"],
+  "xp": 0,
+  "badges": [],
+  "created_at": "datetime"
+}
+```
+
+### Assignments
+```json
+{
+  "id": "uuid",
+  "course_id": "uuid",
+  "title": "string",
+  "description": "string",
+  "has_deadline": false,
+  "due_date": "datetime | null",
+  "has_schedule_release": false,
+  "schedule_release_date": "datetime | null",
+  "results_publish_date": "datetime | null",
+  "results_published": false,
+  "total_marks": 100,
+  "max_attempts": -1,
+  "created_at": "datetime"
+}
+```
+
+### Submissions
+```json
+{
+  "id": "uuid",
+  "assignment_id": "uuid",
+  "student_id": "uuid",
+  "files": [{"id": "uuid", "filename": "main.py", "content": "..."}],
+  "status": "pending | in_review | feedback_released | no_issues",
+  "marks": 0,
+  "attempt_number": 1,
+  "submission_time": "datetime",
+  "reviewed_by": "uuid | null"
+}
+```
 
 ---
 
 ## Troubleshooting
 
 ### `.env` file encoding issues (Windows)
+
 **Error**: `UnicodeDecodeError: 'utf-8' codec can't decode byte 0xff`
 
-**Solution**: The file was saved with UTF-16 encoding. Delete it and recreate using:
+**Solution**: The file was saved with UTF-16 encoding. Delete and recreate:
 ```powershell
 Remove-Item .env -Force
 [System.IO.File]::WriteAllLines("$PWD\.env", @(
@@ -229,40 +321,43 @@ Remove-Item .env -Force
 - Ensure backend is running on port 8001
 - Check `REACT_APP_BACKEND_URL` matches the backend URL
 
-### Dark mode not working
+### Dark mode not applying
 - Clear browser cache and localStorage
-- Check browser console for errors
+- Toggle the theme switch in the header
 
 ---
 
-## API Documentation
+## Project Structure
 
-**Swagger UI**: `http://localhost:8001/docs`
-**ReDoc**: `http://localhost:8001/redoc`
-
-### Key Endpoints
-
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/auth/register` | POST | Register (student/marker) |
-| `/api/auth/login` | POST | Login and get JWT |
-| `/api/courses` | GET/POST | List or create courses |
-| `/api/assignments` | GET/POST | List or create assignments |
-| `/api/submissions` | GET/POST | List or submit code |
-| `/api/submissions/{id}/grade` | POST | Grade a submission |
-| `/api/issues` | GET/POST | List or create feedback |
-| `/api/gamification/stats` | GET | XP, level, and badges |
-| `/api/gamification/badges` | GET | All badges |
-
----
-
-## Tech Stack
-
-- **Backend**: FastAPI, Python 3.11+, Motor (async MongoDB)
-- **Frontend**: React 18, Tailwind CSS, shadcn/ui
-- **Database**: MongoDB
-- **Authentication**: JWT
-- **Theming**: CSS Variables with dark mode support
+```
+/app/
+├── README.md
+├── backend/
+│   ├── .env              # Environment variables
+│   ├── requirements.txt  # Python dependencies
+│   └── server.py         # FastAPI application
+└── frontend/
+    ├── .env              # Environment variables
+    ├── package.json      # Node dependencies
+    ├── craco.config.js   # Build configuration
+    └── src/
+        ├── App.js
+        ├── components/
+        │   ├── layout/AppLayout.js
+        │   ├── LoadingScreen.js
+        │   └── ui/           # shadcn/ui components
+        ├── contexts/
+        │   ├── AuthContext.js
+        │   └── ThemeContext.js
+        └── pages/
+            ├── StudentDashboard.js
+            ├── StudentBadgesPage.js
+            ├── MarkerDashboard.js
+            ├── MarkerCoursePage.js
+            ├── MarkerBadgesPage.js
+            ├── CodeReviewPage.js
+            └── ...
+```
 
 ---
 
@@ -272,4 +367,4 @@ MIT License - see [LICENSE](LICENSE) for details.
 
 ---
 
-Built with ❤️ for programming education
+Built with care for programming education
