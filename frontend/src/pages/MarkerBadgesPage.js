@@ -155,26 +155,36 @@ export default function MarkerBadgesPage() {
 
   const fetchData = useCallback(async () => {
     try {
-      const [badgesRes, analyticsRes] = await Promise.all([
-        api().get('/gamification/badges'),
+      const [statsRes, analyticsRes] = await Promise.all([
+        api().get('/gamification/stats'),
         api().get('/analytics/marker')
       ]);
-      setBadgeData(badgesRes.data);
       
-      // Get user XP from analytics or user object
-      const userXp = user?.xp || 0;
+      // Use stats from gamification endpoint (which auto-checks badges)
+      const gamificationData = statsRes.data;
+      
+      setBadgeData({
+        earned: gamificationData.badges_earned || [],
+        available: Object.keys(MARKER_BADGE_DEFINITIONS)
+      });
+      
       setStats({
-        xp: userXp,
-        badges: badgesRes.data.earned || [],
-        totalReviews: analyticsRes.data.total_feedback_given || 0,
-        pendingReviews: analyticsRes.data.total_pending_reviews || 0
+        xp: gamificationData.xp || 0,
+        badges: gamificationData.badges || [],
+        totalReviews: gamificationData.total_reviews || analyticsRes.data.total_feedback_given || 0,
+        pendingReviews: gamificationData.pending_reviews || analyticsRes.data.total_pending_reviews || 0,
+        level: gamificationData.level,
+        levelTitle: gamificationData.level_title,
+        levelProgress: gamificationData.level_progress,
+        xpToNextLevel: gamificationData.xp_to_next_level
       });
     } catch (error) {
+      console.error('Failed to load badges:', error);
       toast.error('Failed to load badges');
     } finally {
       setLoading(false);
     }
-  }, [api, user]);
+  }, [api]);
 
   useEffect(() => {
     fetchData();
@@ -189,14 +199,22 @@ export default function MarkerBadgesPage() {
     badgesByCategory[badge.category].push({ id, ...badge });
   });
 
-  // Check if badge is earned
+  // Check if badge is earned - use the badges array from stats
   const isEarned = (badgeId) => {
-    return badgeData.earned?.some(b => b.id === badgeId || b === badgeId) || 
-           stats.badges?.includes(badgeId);
+    return stats.badges?.includes(badgeId) || 
+           badgeData.earned?.some(b => b.id === badgeId);
   };
 
-  const levelInfo = getMarkerLevel(stats.xp);
-  const earnedCount = badgeData.earned?.length || 0;
+  // Use backend level info if available, otherwise calculate locally
+  const levelInfo = stats.level ? {
+    level: stats.level,
+    title: stats.levelTitle || MARKER_LEVELS.find(l => l.level === stats.level)?.title || 'Marker',
+    progress: stats.levelProgress || 0,
+    xpToNext: stats.xpToNextLevel || 0,
+    nextLevel: MARKER_LEVELS.find(l => l.level === stats.level + 1)
+  } : getMarkerLevel(stats.xp);
+  
+  const earnedCount = stats.badges?.length || badgeData.earned?.length || 0;
   const totalBadges = Object.keys(MARKER_BADGE_DEFINITIONS).length;
 
   if (loading) {
