@@ -411,39 +411,180 @@ LEVEL_THRESHOLDS = [
 
 def get_level_info(xp: int) -> tuple:
     level, title = 1, "Novice"
+    current_threshold = 0
     next_level_xp = 100
+    
     for lvl, threshold, lvl_title in LEVEL_THRESHOLDS:
         if xp >= threshold:
             level, title = lvl, lvl_title
+            current_threshold = threshold
+    
     for lvl, threshold, _ in LEVEL_THRESHOLDS:
         if threshold > xp:
             next_level_xp = threshold - xp
             break
     else:
         next_level_xp = 0
+    
     return level, title, next_level_xp
 
-async def award_badge(user_id: str, badge_id: str, badge_type: str = "student"):
+async def award_badge(user_id: str, badge_id: str, badge_type: str = "student") -> dict:
+    """Award a badge to a user. Returns badge info if awarded, None if already had."""
     badges = STUDENT_BADGES if badge_type == "student" else MARKER_BADGES
     if badge_id not in badges:
-        return
+        return None
+    
     user = await db.users.find_one({"id": user_id}, {"_id": 0})
     if not user or badge_id in user.get("badges", []):
-        return
+        return None  # Already has badge or user not found
+    
     badge = badges[badge_id]
+    
+    # Atomically update user
     await db.users.update_one(
-        {"id": user_id},
+        {"id": user_id, "badges": {"$ne": badge_id}},  # Prevent duplicates
         {"$addToSet": {"badges": badge_id}, "$inc": {"xp": badge["xp"]}}
     )
+    
+    # Create notification
     await db.notifications.insert_one({
         "id": str(uuid.uuid4()),
         "user_id": user_id,
         "type": "badge_earned",
         "title": f"Badge Earned: {badge['name']}",
         "message": badge["description"],
+        "xp_gained": badge["xp"],
+        "badge_id": badge_id,
         "read": False,
         "created_at": datetime.now(timezone.utc).isoformat()
     })
+    
+    # Log XP gain
+    await db.xp_history.insert_one({
+        "id": str(uuid.uuid4()),
+        "user_id": user_id,
+        "xp_gained": badge["xp"],
+        "reason": f"Badge: {badge['name']}",
+        "event_type": "badge_earned",
+        "created_at": datetime.now(timezone.utc).isoformat()
+    })
+    
+    return {"badge_id": badge_id, "badge": badge, "xp_gained": badge["xp"]}
+
+async def award_xp(user_id: str, xp_amount: int, reason: str, event_type: str = "action") -> int:
+    """Award XP to a user and log it. Returns new total XP."""
+    await db.users.update_one(
+        {"id": user_id},
+        {"$inc": {"xp": xp_amount}}
+    )
+    
+    # Log XP gain
+    await db.xp_history.insert_one({
+        "id": str(uuid.uuid4()),
+        "user_id": user_id,
+        "xp_gained": xp_amount,
+        "reason": reason,
+        "event_type": event_type,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    })
+    
+    user = await db.users.find_one({"id": user_id}, {"_id": 0, "xp": 1})
+    return user.get("xp", 0) if user else 0
+
+async def check_and_award_student_badges(user_id: str):
+    """Check all student badge conditions and award any earned badges."""
+    user = await db.users.find_one({"id": user_id}, {"_id": 0})
+    if not user or user.get("role") != "student":
+        return []
+    
+    awarded = []
+    
+    # Get user stats
+    submissions = await db.submissions.find({"student_id": user_id}, {"_id": 0}).to_list(500)
+    all_issues = await db.feedback_issues.find(
+        {"submission_id": {"$in": [s["id"] for s in submissions]}}, {"_id": 0}
+    ).to_list(1000)
+    
+    fixed_issues = [i for i in all_issues if i.get("student_status") == "fixed"]
+    no_issue_submissions = [s for s in submissions if s.get("status") == "no_issues"]
+    on_time_submissions = [s for s in submissions if s.get("status") in ["feedback_released", "no_issues"]]
+    
+    # first_submission - Submit first assignment
+    if len(submissions) >= 1:
+        result = await award_badge(user_id, "first_submission", "student")
+        if result:
+            awarded.append(result)
+    
+    # bug_squasher - Fix 10 issues
+    if len(fixed_issues) >= 10:
+        result = await award_badge(user_id, "bug_squasher", "student")
+        if result:
+            awarded.append(result)
+    
+    # perfectionist - Get a submission with no issues
+    if len(no_issue_submissions) >= 1:
+        result = await award_badge(user_id, "perfectionist", "student")
+        if result:
+            awarded.append(result)
+    
+    # consistent - Submit 5 assignments on time
+    if len(on_time_submissions) >= 5:
+        result = await award_badge(user_id, "consistent", "student")
+        if result:
+            awarded.append(result)
+    
+    return awarded
+
+async def check_and_award_marker_badges(user_id: str):
+    """Check all marker badge conditions and award any earned badges."""
+    user = await db.users.find_one({"id": user_id}, {"_id": 0})
+    if not user or user.get("role") == "student":
+        return []
+    
+    awarded = []
+    
+    # Get marker stats
+    reviews_count = await db.submissions.count_documents({"reviewed_by": user_id})
+    templates_count = await db.issue_templates.count_documents({"created_by": user_id})
+    issues_created = await db.feedback_issues.count_documents({"marker_id": user_id})
+    
+    # Perfect score reviews (mentor badge)
+    perfect_reviews = await db.submissions.count_documents({
+        "reviewed_by": user_id,
+        "status": "no_issues"
+    })
+    
+    # first_review - Complete first code review
+    if reviews_count >= 1:
+        result = await award_badge(user_id, "first_review", "marker")
+        if result:
+            awarded.append(result)
+    
+    # speed_reviewer - Review 10 submissions
+    if reviews_count >= 10:
+        result = await award_badge(user_id, "speed_reviewer", "marker")
+        if result:
+            awarded.append(result)
+    
+    # thorough_reviewer - Provide detailed feedback on 20 submissions
+    if issues_created >= 20:
+        result = await award_badge(user_id, "thorough_reviewer", "marker")
+        if result:
+            awarded.append(result)
+    
+    # feedback_master - Create 10 reusable feedback templates
+    if templates_count >= 10:
+        result = await award_badge(user_id, "feedback_master", "marker")
+        if result:
+            awarded.append(result)
+    
+    # mentor - Help 5 students achieve perfect scores
+    if perfect_reviews >= 5:
+        result = await award_badge(user_id, "mentor", "marker")
+        if result:
+            awarded.append(result)
+    
+    return awarded
 
 # ============ AUTH ENDPOINTS ============
 
@@ -1180,19 +1321,20 @@ async def grade_submission(submission_id: str, grade_data: GradeSubmissionReques
     if not release_date or datetime.now(timezone.utc) >= parse_iso_datetime(release_date):
         await db.submissions.update_one({"id": submission_id}, {"$set": {"marks_released": True}})
     
-    # Award marker badges and XP
-    reviews_count = await db.submissions.count_documents({"reviewed_by": current_user["id"]})
-    
-    # Award XP for completing review
+    # Award marker XP for completing review
     xp_gained = 25  # Base XP for grading
-    await db.users.update_one({"id": current_user["id"]}, {"$inc": {"xp": xp_gained}})
+    new_xp = await award_xp(current_user["id"], xp_gained, "Graded submission", "review_completed")
     
-    if reviews_count == 1:
-        await award_badge(current_user["id"], "first_review", "marker")
-    if reviews_count >= 10:
-        await award_badge(current_user["id"], "speed_reviewer", "marker")
+    # Check and award any earned badges
+    badges_awarded = await check_and_award_marker_badges(current_user["id"])
     
-    return {"message": "Graded successfully", "marks": grade_data.marks, "xp_gained": xp_gained}
+    return {
+        "message": "Graded successfully", 
+        "marks": grade_data.marks, 
+        "xp_gained": xp_gained,
+        "new_total_xp": new_xp,
+        "badges_awarded": badges_awarded
+    }
 
 @api_router.post("/submissions/{submission_id}/release-marks")
 async def release_marks(submission_id: str, current_user: dict = Depends(require_marker)):
@@ -1212,7 +1354,12 @@ async def release_marks(submission_id: str, current_user: dict = Depends(require
 @api_router.post("/submissions/{submission_id}/mark-no-issues")
 async def mark_no_issues(submission_id: str, request: MarkNoIssuesRequest, current_user: dict = Depends(require_marker)):
     now = datetime.now(timezone.utc).isoformat()
-    assignment = await db.assignments.find_one({"id": (await db.submissions.find_one({"id": submission_id}))["assignment_id"]}, {"_id": 0})
+    submission = await db.submissions.find_one({"id": submission_id}, {"_id": 0})
+    if not submission:
+        raise HTTPException(status_code=404, detail="Submission not found")
+    
+    assignment = await db.assignments.find_one({"id": submission["assignment_id"]}, {"_id": 0})
+    
     await db.submissions.update_one(
         {"id": submission_id},
         {"$set": {
@@ -1225,14 +1372,21 @@ async def mark_no_issues(submission_id: str, request: MarkNoIssuesRequest, curre
     
     # Award marker XP for quick review
     xp_gained = 15
-    await db.users.update_one({"id": current_user["id"]}, {"$inc": {"xp": xp_gained}})
+    new_xp = await award_xp(current_user["id"], xp_gained, "Marked no issues", "review_completed")
     
-    # Check for first review badge
-    reviews_count = await db.submissions.count_documents({"reviewed_by": current_user["id"]})
-    if reviews_count == 1:
-        await award_badge(current_user["id"], "first_review", "marker")
+    # Check and award any earned badges
+    badges_awarded = await check_and_award_marker_badges(current_user["id"])
     
-    return {"message": "Marked as correct", "status": "no_issues", "xp_gained": xp_gained}
+    # Award student the perfectionist badge
+    await award_badge(submission["student_id"], "perfectionist", "student")
+    
+    return {
+        "message": "Marked as correct", 
+        "status": "no_issues", 
+        "xp_gained": xp_gained,
+        "new_total_xp": new_xp,
+        "badges_awarded": badges_awarded
+    }
 
 @api_router.post("/submissions/{submission_id}/publish")
 async def publish_feedback(submission_id: str, current_user: dict = Depends(require_marker)):
@@ -1488,6 +1642,113 @@ async def get_moderation_issues(course_id: Optional[str] = None, current_user: d
         })
     return result
 
+@api_router.get("/moderation/queue")
+async def get_moderation_queue(course_id: Optional[str] = None, assignment_id: Optional[str] = None, current_user: dict = Depends(require_moderator)):
+    """Get moderation queue - all failed submissions + 10% random sample of passed ones."""
+    # Build base query for reviewed submissions
+    base_query = {"status": {"$in": ["feedback_released", "no_issues"]}}
+    
+    if assignment_id:
+        base_query["assignment_id"] = assignment_id
+    elif course_id:
+        assignments = await db.assignments.find({"course_id": course_id}, {"_id": 0}).to_list(100)
+        base_query["assignment_id"] = {"$in": [a["id"] for a in assignments]}
+    else:
+        # Get all accessible courses
+        accessible = await get_accessible_course_ids(current_user)
+        if accessible:
+            assignments = await db.assignments.find({"course_id": {"$in": accessible}}, {"_id": 0}).to_list(500)
+            base_query["assignment_id"] = {"$in": [a["id"] for a in assignments]}
+    
+    all_submissions = await db.submissions.find(base_query, {"_id": 0}).to_list(1000)
+    
+    # Separate failed and passed
+    failed = [s for s in all_submissions if (s.get("marks") or 0) < 50]
+    passed = [s for s in all_submissions if (s.get("marks") or 0) >= 50]
+    
+    # Get 10% sample of passed
+    sample_size = max(1, len(passed) // 10) if passed else 0
+    passed_sample = random.sample(passed, min(sample_size, len(passed))) if passed else []
+    
+    # Combine
+    moderation_queue = failed + passed_sample
+    
+    # Enrich with student and assignment info
+    result = []
+    for sub in moderation_queue:
+        student = await db.users.find_one({"id": sub["student_id"]}, {"_id": 0})
+        assignment = await db.assignments.find_one({"id": sub["assignment_id"]}, {"_id": 0})
+        marker = await db.users.find_one({"id": sub.get("reviewed_by")}, {"_id": 0})
+        
+        result.append({
+            **sub,
+            "student_name": student["full_name"] if student else "Unknown",
+            "assignment_title": assignment["title"] if assignment else "Unknown",
+            "marker_name": marker["full_name"] if marker else "Unknown",
+            "is_failed": (sub.get("marks") or 0) < 50
+        })
+    
+    return {
+        "queue": result,
+        "stats": {
+            "total_reviewed": len(all_submissions),
+            "failed_count": len(failed),
+            "passed_count": len(passed),
+            "sample_size": sample_size,
+            "queue_size": len(moderation_queue)
+        }
+    }
+
+@api_router.get("/moderation/dashboard")
+async def get_moderation_dashboard(course_id: Optional[str] = None, current_user: dict = Depends(require_moderator)):
+    """Get moderation dashboard statistics."""
+    accessible = await get_accessible_course_ids(current_user)
+    
+    if course_id and course_id in accessible:
+        accessible = [course_id]
+    
+    stats = {
+        "total_submissions": 0,
+        "reviewed": 0,
+        "pending_moderation": 0,
+        "issues_open": 0,
+        "issues_resolved": 0,
+        "issues_discarded": 0,
+        "approved_no_issues": 0,
+        "courses": []
+    }
+    
+    for cid in accessible[:10]:  # Limit to 10 courses
+        course = await db.courses.find_one({"id": cid}, {"_id": 0})
+        if not course:
+            continue
+        
+        assignments = await db.assignments.find({"course_id": cid}, {"_id": 0}).to_list(50)
+        assignment_ids = [a["id"] for a in assignments]
+        
+        submissions = await db.submissions.find({"assignment_id": {"$in": assignment_ids}}, {"_id": 0}).to_list(500)
+        reviewed = [s for s in submissions if s.get("status") in ["feedback_released", "no_issues"]]
+        
+        mod_issues = await db.moderation_issues.find({"submission_id": {"$in": [s["id"] for s in submissions]}}, {"_id": 0}).to_list(200)
+        
+        course_stats = {
+            "id": cid,
+            "name": course.get("name", "Unknown"),
+            "code": course.get("code", ""),
+            "total_submissions": len(submissions),
+            "reviewed": len(reviewed),
+            "issues_open": len([i for i in mod_issues if i.get("status") == "open"]),
+            "issues_resolved": len([i for i in mod_issues if i.get("status") == "resolved"])
+        }
+        
+        stats["total_submissions"] += len(submissions)
+        stats["reviewed"] += len(reviewed)
+        stats["issues_open"] += course_stats["issues_open"]
+        stats["issues_resolved"] += course_stats["issues_resolved"]
+        stats["courses"].append(course_stats)
+    
+    return stats
+
 # ============ NOTIFICATIONS ============
 
 @api_router.get("/notifications")
@@ -1584,20 +1845,44 @@ async def get_all_badges(current_user: dict = Depends(get_current_user)):
 @api_router.get("/gamification/stats")
 async def get_gamification_stats(current_user: dict = Depends(get_current_user)):
     """Get comprehensive gamification stats for current user"""
-    xp = current_user.get("xp", 0)
-    level, title, xp_to_next = get_level_info(xp)
-    user_badges = current_user.get("badges", [])
+    # Refresh badge status first
+    if current_user["role"] == "student":
+        await check_and_award_student_badges(current_user["id"])
+    else:
+        await check_and_award_marker_badges(current_user["id"])
     
-    # Get recent XP gains from notifications
-    recent_gains = await db.notifications.find(
-        {"user_id": current_user["id"], "type": "badge_earned"},
+    # Re-fetch user to get updated data
+    user = await db.users.find_one({"id": current_user["id"]}, {"_id": 0})
+    xp = user.get("xp", 0)
+    level, title, xp_to_next = get_level_info(xp)
+    user_badges = user.get("badges", [])
+    
+    # Get recent XP history
+    recent_xp = await db.xp_history.find(
+        {"user_id": current_user["id"]},
         {"_id": 0}
-    ).sort("created_at", -1).limit(5).to_list(5)
+    ).sort("created_at", -1).limit(10).to_list(10)
     
     recent_xp_gains = [
-        {"reason": n.get("title", "Badge earned"), "xp_gained": 50, "date": n.get("created_at")}
-        for n in recent_gains
+        {"reason": r.get("reason", "Action"), "xp_gained": r.get("xp_gained", 0), "date": r.get("created_at")}
+        for r in recent_xp
     ]
+    
+    # Calculate level progress percentage
+    current_level_threshold = 0
+    next_level_threshold = 100
+    for lvl, threshold, _ in LEVEL_THRESHOLDS:
+        if xp >= threshold:
+            current_level_threshold = threshold
+        if threshold > xp:
+            next_level_threshold = threshold
+            break
+    
+    level_progress = 0
+    if next_level_threshold > current_level_threshold:
+        level_progress = ((xp - current_level_threshold) / (next_level_threshold - current_level_threshold)) * 100
+    elif xp >= 5200:  # Max level
+        level_progress = 100
     
     if current_user["role"] == "student":
         # Student-specific stats
@@ -1610,16 +1895,21 @@ async def get_gamification_stats(current_user: dict = Depends(get_current_user))
         ).to_list(500)
         
         issues_fixed = len([i for i in issues if i.get("student_status") == "fixed"])
+        issues_open = len([i for i in issues if i.get("student_status") != "fixed"])
         
         return {
             "xp": xp,
             "total_xp": xp,
             "level": level,
             "level_title": title,
+            "level_progress": round(level_progress, 1),
             "xp_to_next_level": xp_to_next,
             "badges": user_badges,
             "badges_earned": [{"id": b, **STUDENT_BADGES.get(b, {})} for b in user_badges if b in STUDENT_BADGES],
+            "badges_count": len(user_badges),
+            "total_badges_available": len(STUDENT_BADGES),
             "issues_fixed": issues_fixed,
+            "issues_open": issues_open,
             "submissions_count": len(submissions),
             "recent_xp_gains": recent_xp_gains
         }
@@ -1630,17 +1920,24 @@ async def get_gamification_stats(current_user: dict = Depends(get_current_user))
             "status": "pending",
             "reviewed_by": {"$exists": False}
         })
+        issues_created = await db.feedback_issues.count_documents({"marker_id": current_user["id"]})
+        templates_created = await db.issue_templates.count_documents({"created_by": current_user["id"]})
         
         return {
             "xp": xp,
             "total_xp": xp,
             "level": level,
             "level_title": title,
+            "level_progress": round(level_progress, 1),
             "xp_to_next_level": xp_to_next,
             "badges": user_badges,
             "badges_earned": [{"id": b, **MARKER_BADGES.get(b, {})} for b in user_badges if b in MARKER_BADGES],
+            "badges_count": len(user_badges),
+            "total_badges_available": len(MARKER_BADGES),
             "total_reviews": reviews,
             "pending_reviews": pending,
+            "issues_created": issues_created,
+            "templates_created": templates_created,
             "recent_xp_gains": recent_xp_gains
         }
 

@@ -24,6 +24,7 @@ Build a comprehensive code assessment and moderation platform ("CodeFeedback Stu
 - [x] Multi-file code submissions
 - [x] GitHub-style code review interface
 - [x] **Delete assignment** (Module Leader only)
+- [x] **Reusable issue templates** with category, severity, suggested fix
 
 ### Assignment Workflow ✅ (Completed December 2025)
 - [x] **Schedule Release** (Yes/No toggle)
@@ -38,18 +39,29 @@ Build a comprehensive code assessment and moderation platform ("CodeFeedback Stu
   - Schedule publish date/time
   - Students see marks/feedback collectively at publish time
 
-### Gamification ✅
-- [x] XP system for students and markers
+### Gamification ✅ (Fixed December 2025)
+- [x] XP system for students and markers with XP history logging
+- [x] **Centralized badge evaluation** - badges checked on stats fetch
+- [x] **Level progress percentage** calculation
 - [x] Badge categories:
   - **Students**: Getting Started, Bug Fixing, Excellence, Consistency, Debugging Mastery, Code Quality
   - **Markers**: Getting Started, Speed & Efficiency, Quality & Thoroughness, Impact & Mentoring, Mastery
 - [x] Level progression (Novice → Grandmaster)
 - [x] Dedicated badge pages for both roles
+- [x] **XP awarded on grading** (+25 XP) and no-issues (+15 XP)
+- [x] **Atomic badge awarding** to prevent duplicates
+
+### Moderation ✅ (Fixed December 2025)
+- [x] `/api/moderation/queue` - All failed + 10% sample of passed submissions
+- [x] `/api/moderation/dashboard` - Comprehensive stats per course
+- [x] `/api/moderation/issues` - Issue listing with proper filtering
+- [x] Issue workflow: create → approve/reject → resolve
+- [x] Moderator badge for consistent marking (95% approval rate)
 
 ### UI/UX ✅
 - [x] Dark mode toggle (light mode default)
 - [x] Improved dark mode contrast and readability
-- [x] **Minimalistic 6-second loading screen** with gradient logo, pulse animation, progress bar
+- [x] **Fast loading screen** (~1.5 seconds with assembly animation)
 - [x] Clean, minimal card-based design
 
 ### Documentation ✅

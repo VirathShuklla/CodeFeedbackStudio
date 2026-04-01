@@ -7,7 +7,7 @@ export default function LoadingScreen({ onComplete }) {
 
   useEffect(() => {
     // Trigger assembly animation after a short delay
-    setTimeout(() => setAssembled(true), 300);
+    setTimeout(() => setAssembled(true), 150);
     
     const timer = setInterval(() => {
       setProgress(prev => {
@@ -15,18 +15,18 @@ export default function LoadingScreen({ onComplete }) {
           clearInterval(timer);
           setTimeout(() => {
             setFadeOut(true);
-            setTimeout(onComplete, 600);
-          }, 300);
+            setTimeout(onComplete, 300);
+          }, 100);
           return 100;
         }
-        return prev + 0.55;
+        return prev + 2.5;  // Complete in ~1.2 seconds
       });
     }, 30);
     return () => clearInterval(timer);
   }, [onComplete]);
 
   return (
-    <div className={`fixed inset-0 z-50 flex items-center justify-center transition-all duration-600 ${fadeOut ? 'opacity-0 scale-105' : 'opacity-100'}`}
+    <div className={`fixed inset-0 z-50 flex items-center justify-center transition-all duration-300 ${fadeOut ? 'opacity-0 scale-105' : 'opacity-100'}`}
          style={{ background: 'linear-gradient(180deg, #f8fafc 0%, #e2e8f0 100%)' }}>
       
       {/* Animated background circles */}

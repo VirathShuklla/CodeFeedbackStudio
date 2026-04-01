@@ -1,0 +1,77 @@
+{
+  "templates": [
+    {
+      "id": "exception-handling-missing",
+      "category": "Error Handling",
+      "severity": "critical",
+      "title": "Missing Exception Handling for Critical Operation",
+      "explanation": "The code performs a critical operation (file I/O, network request, database query, or user input processing) without appropriate exception handling. This can lead to uncontrolled program termination, data corruption, security vulnerabilities, or poor user experience when runtime errors occur. In production environments, unhandled exceptions may expose sensitive stack trace information to end users, creating both usability and security concerns.",
+      "suggested_fix": "1. Identify all operations that may raise exceptions (I/O, parsing, external calls)\n2. Wrap these operations in try-except blocks with specific exception types\n3. Handle each exception type appropriately (log, recover, or gracefully degrade)\n4. Avoid bare 'except:' clauses - always catch specific exceptions\n5. Consider using context managers (with statements) for resource management\n6. Provide meaningful error messages for debugging while avoiding information leakage",
+      "marks_deduction": 8,
+      "reference_links": [
+        "https://docs.python.org/3/tutorial/errors.html",
+        "https://peps.python.org/pep-0008/#programming-recommendations"
+      ],
+      "verification_criteria": "Code should handle FileNotFoundError, ValueError, TypeError, and other relevant exceptions with appropriate recovery or error reporting."
+    },
+    {
+      "id": "code-duplication-block",
+      "category": "Code Quality",
+      "severity": "moderate",
+      "title": "Significant Code Duplication Detected",
+      "explanation": "Multiple code blocks contain nearly identical logic with only minor variations. This violates the DRY (Don't Repeat Yourself) principle and increases maintenance burden. When bugs are fixed or features updated, all duplicate instances must be modified, increasing the risk of inconsistent behavior and regression bugs. Code duplication also inflates the codebase size unnecessarily.",
+      "suggested_fix": "1. Identify the common pattern across duplicated blocks\n2. Extract the shared logic into a separate function with appropriate parameters\n3. Replace all duplicate blocks with calls to the new function\n4. Use default parameter values for optional variations\n5. Consider using higher-order functions or decorators for behavioral variations\n6. Test thoroughly after refactoring to ensure consistent behavior",
+      "marks_deduction": 5,
+      "reference_links": [],
+      "verification_criteria": "No code block longer than 5 lines should appear more than once without being extracted into a reusable function."
+    },
+    {
+      "id": "variable-naming-unclear",
+      "category": "Style & Readability",
+      "severity": "minor",
+      "title": "Unclear or Non-Descriptive Variable Names",
+      "explanation": "Variable names used in this code section are unclear, overly abbreviated, or do not convey their purpose. Names like 'x', 'temp', 'data1', 'val' etc. make code difficult to understand and maintain. Good variable names serve as documentation, reducing the cognitive load required to understand code logic. This is especially important in collaborative environments where others must read and modify your code.",
+      "suggested_fix": "1. Replace single-letter variables with descriptive names (except for loop counters i, j, k)\n2. Use snake_case for variables and functions (Python convention)\n3. Names should describe WHAT the variable contains, not HOW it's used\n4. Boolean variables should use is_, has_, can_, should_ prefixes\n5. Collection variables should use plural nouns (users, items, records)\n6. Avoid abbreviations unless universally understood (max, min, etc.)",
+      "marks_deduction": 3,
+      "reference_links": [
+        "https://peps.python.org/pep-0008/#naming-conventions"
+      ],
+      "verification_criteria": "All variable names should clearly indicate their purpose without requiring additional comments to explain them."
+    },
+    {
+      "id": "algorithm-inefficiency",
+      "category": "Performance",
+      "severity": "moderate",
+      "title": "Inefficient Algorithm or Data Structure Choice",
+      "explanation": "The current implementation uses an algorithm or data structure that results in suboptimal time or space complexity for the given problem. This may cause performance degradation with larger datasets, increased memory consumption, or longer execution times. Understanding algorithmic complexity is fundamental to writing scalable software that performs well under real-world conditions.",
+      "suggested_fix": "1. Analyze the current time complexity using Big-O notation\n2. Consider whether a more efficient algorithm exists for this problem\n3. Evaluate if a different data structure would reduce complexity\n4. Common improvements: use sets for O(1) lookup instead of list search, use dict for key-based access, avoid nested loops where possible\n5. Profile the code with realistic data sizes to confirm improvements\n6. Document the chosen approach and its complexity in comments",
+      "marks_deduction": 6,
+      "reference_links": [],
+      "verification_criteria": "The solution should demonstrate appropriate algorithm choice with documented time/space complexity justification."
+    },
+    {
+      "id": "input-validation-missing",
+      "category": "Security & Robustness",
+      "severity": "critical",
+      "title": "Missing Input Validation",
+      "explanation": "User-provided input is used directly without validation or sanitization. This creates vulnerabilities including injection attacks (SQL, command, path traversal), type errors at runtime, unexpected program behavior, and potential security exploits. All external input must be treated as potentially malicious or malformed, regardless of the expected use case.",
+      "suggested_fix": "1. Define acceptable input constraints (type, range, format, length)\n2. Validate all user inputs at the point of entry\n3. Use type checking and conversion with error handling\n4. Implement whitelist validation where possible (known-good values)\n5. Sanitize strings that will be used in commands, queries, or file paths\n6. Return clear error messages indicating what input is expected\n7. Never trust client-side validation alone",
+      "marks_deduction": 10,
+      "reference_links": [
+        "https://owasp.org/www-community/Input_Validation_Cheat_Sheet"
+      ],
+      "verification_criteria": "All user inputs should be validated with appropriate checks before processing, with clear error handling for invalid inputs."
+    },
+    {
+      "id": "magic-numbers-hardcoded",
+      "category": "Maintainability",
+      "severity": "minor",
+      "title": "Magic Numbers or Hardcoded Values",
+      "explanation": "The code contains unexplained numeric literals or hardcoded string values whose purpose is not immediately clear. These 'magic numbers' make code difficult to understand and maintain. When the value needs to change, all occurrences must be found and updated, risking inconsistencies. Named constants provide documentation and a single point of change.",
+      "suggested_fix": "1. Identify all numeric literals and hardcoded strings in the code\n2. Create named constants with UPPER_SNAKE_CASE names\n3. Place constants at the top of the file or in a configuration module\n4. Use descriptive names that explain the constant's purpose\n5. Add comments explaining why specific values were chosen if not obvious\n6. Consider using configuration files or environment variables for deployment-specific values",
+      "marks_deduction": 2,
+      "reference_links": [],
+      "verification_criteria": "No unexplained numeric literals (except 0, 1, -1) or hardcoded configuration values should appear in the code body."
+    }
+  ]
+}
