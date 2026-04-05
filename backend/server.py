@@ -1866,10 +1866,20 @@ async def get_student_analytics(current_user: dict = Depends(require_student)):
         total_issues_fixed += fixed_issues
         total_issues_all += total_issues
     
+    # Calculate totals for overall stats
+    total_submissions = sum(c["total_submissions"] for c in courses_progress)
+    fix_rate = round((total_issues_fixed / total_issues_all * 100), 0) if total_issues_all > 0 else 0
+    
     return {
         "total_xp": xp, "level": level, "level_title": title,
         "badges": current_user.get("badges", []),
         "courses": courses_progress,
+        "overall_stats": {
+            "total_submissions": total_submissions,
+            "total_issues": total_issues_all,
+            "fixed_issues": total_issues_fixed,
+            "fix_rate": fix_rate
+        },
         "summary": {
             "assignments_completed": total_assignments_completed,
             "total_assignments": total_assignments_all,
