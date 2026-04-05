@@ -327,7 +327,8 @@ async def require_marker(current_user: dict = Depends(get_current_user)):
     return current_user
 
 async def require_moderator(current_user: dict = Depends(get_current_user)):
-    if current_user["role"] not in ["moderator", "module_leader"]:
+    # Allow markers who are course leaders to access moderation for their courses
+    if current_user["role"] not in ["moderator", "module_leader", "marker"]:
         raise HTTPException(status_code=403, detail="Moderator access required")
     return current_user
 
@@ -1240,13 +1241,15 @@ async def get_submissions(
     if status_filter:
         query["status"] = status_filter
     
-    # Moderation filtering
-    if for_moderation and current_user["role"] in ["moderator", "module_leader"]:
+    # Moderation filtering - allow course leaders as well
+    if for_moderation and current_user["role"] in ["moderator", "module_leader", "marker"]:
         # Get failed + 10% random sample
         all_subs = await db.submissions.find(query, {"_id": 0}).to_list(1000)
-        failed = [s for s in all_subs if s.get("status") == "feedback_released" and (s.get("marks", 100) < 50)]
-        passed = [s for s in all_subs if s.get("status") == "feedback_released" and (s.get("marks", 100) >= 50)]
-        sample_size = max(1, len(passed) // 10)
+        # Only include reviewed submissions for moderation
+        reviewed_subs = [s for s in all_subs if s.get("status") in ["feedback_released", "no_issues"]]
+        failed = [s for s in reviewed_subs if (s.get("marks", 100) < 50)]
+        passed = [s for s in reviewed_subs if (s.get("marks", 100) >= 50)]
+        sample_size = max(1, len(passed) // 10) if passed else 0
         random_sample = random.sample(passed, min(sample_size, len(passed))) if passed else []
         submissions = failed + random_sample
     else:
@@ -1807,29 +1810,72 @@ async def get_student_analytics(current_user: dict = Depends(require_student)):
     course_ids = current_user.get("course_ids", [])
     courses_progress = []
     
+    total_assignments_completed = 0
+    total_assignments_all = 0
+    total_issues_fixed = 0
+    total_issues_all = 0
+    
     for cid in course_ids:
         course = await db.courses.find_one({"id": cid}, {"_id": 0})
         if not course:
             continue
         assignments = await db.assignments.find({"course_id": cid}, {"_id": 0}).to_list(100)
+        assignment_ids = [a["id"] for a in assignments]
+        
         submissions = await db.submissions.find({
-            "assignment_id": {"$in": [a["id"] for a in assignments]},
+            "assignment_id": {"$in": assignment_ids},
             "student_id": current_user["id"]
         }, {"_id": 0}).to_list(100)
+        
+        # Get all issues for these submissions
+        submission_ids = [s["id"] for s in submissions]
+        issues = await db.feedback_issues.find({
+            "submission_id": {"$in": submission_ids}
+        }, {"_id": 0}).to_list(500)
+        
+        fixed_issues = len([i for i in issues if i.get("student_status") == "fixed"])
+        total_issues = len(issues)
+        
+        # Count completed assignments (ones with feedback released or no_issues)
+        completed_submissions = [s for s in submissions if s.get("status") in ["feedback_released", "no_issues"]]
+        completed_assignment_ids = set(s["assignment_id"] for s in completed_submissions)
         
         total_marks = sum(s.get("marks", 0) for s in submissions if s.get("marks_released"))
         max_marks = len([s for s in submissions if s.get("marks_released")]) * 100
         
+        # Issues by category
+        issues_by_category = {}
+        for issue in issues:
+            cat = issue.get("category", "Other")
+            issues_by_category[cat] = issues_by_category.get(cat, 0) + 1
+        
         courses_progress.append({
-            "course_id": cid, "course_name": course["name"],
+            "course_id": cid, 
+            "course_name": course["name"],
             "total_submissions": len(submissions),
+            "total_assignments": len(assignments),
+            "assignments_completed": len(completed_assignment_ids),
+            "fixed_issues": fixed_issues,
+            "total_issues": total_issues,
+            "issues_by_category": issues_by_category,
             "average_marks": round(total_marks / max_marks * 100, 1) if max_marks > 0 else 0
         })
+        
+        total_assignments_completed += len(completed_assignment_ids)
+        total_assignments_all += len(assignments)
+        total_issues_fixed += fixed_issues
+        total_issues_all += total_issues
     
     return {
         "total_xp": xp, "level": level, "level_title": title,
         "badges": current_user.get("badges", []),
-        "courses": courses_progress
+        "courses": courses_progress,
+        "summary": {
+            "assignments_completed": total_assignments_completed,
+            "total_assignments": total_assignments_all,
+            "issues_fixed": total_issues_fixed,
+            "total_issues": total_issues_all
+        }
     }
 
 @api_router.get("/gamification/badges")
