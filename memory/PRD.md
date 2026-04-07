@@ -4,11 +4,10 @@
 Build a comprehensive code assessment and moderation platform ("CodeFeedback Studio") with:
 - Multi-role system (Student, Marker, Moderator, Module Leader)
 - Course and assignment management
-- GitHub-style inline code feedback
+- GitHub-style inline code feedback with module-specific templates
+- Auto-draft saving for markers
 - Gamification with XP, badges, and module-specific leaderboards
-- Three-phase assignment lifecycle (Schedule Release, Set Deadline, Publish Results)
 - Privacy-first leaderboards with unique nicknames
-- User profiles accessible from leaderboards
 
 ## Tech Stack
 - **Frontend**: React 18, Tailwind CSS, shadcn/ui, Monaco Editor, Lucide Icons
@@ -20,54 +19,52 @@ Build a comprehensive code assessment and moderation platform ("CodeFeedback Stu
 ## What's Been Implemented
 
 ### Core Features
-- [x] User registration (Student/Marker roles)
-- [x] JWT-based authentication
-- [x] Course creation and management
-- [x] Role assignment (Leader, Collaborator, Moderator)
-- [x] Multi-file code submissions
-- [x] GitHub-style code review interface
-- [x] Delete assignment (Module Leader only)
-- [x] Reusable issue templates with category, severity, suggested fix
+- [x] User registration (Student/Marker roles) with JWT auth
+- [x] Course creation, enrollment, and management
+- [x] Multi-file code submissions with Monaco Editor
+- [x] GitHub-style inline code review interface
+- [x] Role-based access control (Leader, Collaborator, Moderator)
+
+### Feedback & Templates System (NEW - Feb 2026)
+- [x] Module-specific custom feedback templates (scoped by course_id)
+- [x] Global templates available across all modules
+- [x] Template auto-fill: selecting a template populates title, explanation, severity, fix, deduction
+- [x] Template search by name, category, or content
+- [x] Save as Template from Add Issue dialog with module/global scope
+- [x] Template usage tracking (usage_count incremented per use)
+- [x] Template CRUD with delete protection (can only delete own)
+- [x] Copy button on sidebar issues for quick reuse
+- [x] Sidebar-code sync: clicking issue scrolls to and highlights code with pulse animation
+- [x] Auto-draft saving every 15 seconds (server-side)
+- [x] Draft recovery on page refresh (form state, marks, issues)
+- [x] Draft status indicator (Saved/Unsaved/Saving) in header
 
 ### Assignment Workflow
-- [x] Schedule Release (Yes/No toggle)
-- [x] Set Deadline (Yes/No toggle)
-- [x] Publish Results (collective action with scheduling)
+- [x] Schedule Release, Set Deadline, Publish Results
+- [x] Delete assignment with cascading deletion (Module Leader only)
 
 ### Gamification
-- [x] 14 Student badges (First Steps, Bug Squasher, Quick Learner, Zero to Hero, Perfectionist, Five Star Coder, Rapid Improver, Consistent Performer, Streak Warrior, Early Bird, Feedback Champion, Tenacious, Multi-Talented, Centurion)
-- [x] 13 Marker badges (First Review, Speed Reviewer, On-Time Champion, Quick Turnaround, Thorough Reviewer, Feedback Master, Detail Oriented, Template Architect, Mentor, Consistent Marker, Quality Guardian, Multi-Course Expert, Century Reviewer)
+- [x] 14 Student badges + 13 Marker badges
 - [x] XP system with 10 levels (Novice to Grandmaster)
-- [x] Centralized badge evaluation on stats fetch
-- [x] XP history logging
+- [x] Centralized badge evaluation
 
 ### Module Leaderboards
-- [x] Per-module opt-in leaderboards for students and markers
-- [x] Unique nicknames per module with real-time availability check
-- [x] Privacy-first: real names never shown on leaderboard
-- [x] Role-separated views: students only see student leaderboard, markers only see marker leaderboard
-- [x] Student scoring: submissions, on-time, fixes, perfects, quick fixes
-- [x] Marker scoring: reviews, issues found, approvals, turnaround
-- [x] Leave/rejoin anytime without losing XP/badges
-- [x] Profile modal with badges, XP, level, and active modules
+- [x] Per-module opt-in with unique nicknames
+- [x] Role-separated: students only see student board, markers only see marker board
+- [x] Profile modal with badges, XP, level, active modules
 
 ### Moderation
-- [x] Moderation queue (all failed + 10% sample of passed)
-- [x] Moderation dashboard with per-course stats
-- [x] Issue workflow: create -> approve/reject -> resolve
-- [x] Course leaders can access moderation for their courses
+- [x] Queue with sampling, issue workflow, course leader access
 - [x] Fixed race condition in data fetching
 
 ### UI/UX
-- [x] Dark mode toggle (light mode default)
-- [x] Fast loading screen (~0.5s assembly animation)
-- [x] Micro-animations: slide-up, fade-in, scale-in, stagger effects
-- [x] Animated loading spinners
-- [x] Card hover effects with translateY
-- [x] Leaderboard podium with hover scaling
+- [x] Dark mode toggle, fast loading screen (~0.5s)
+- [x] Micro-animations: slide-up, fade-in, scale-in, stagger
+- [x] Code highlight pulse for active issues
+- [x] Card hover effects, animated loading spinners
 
 ### Documentation
-- [x] Comprehensive README with setup guide, badge guide, feature docs
+- [x] Comprehensive README with full feature lists for students & markers, badge guide, setup guide
 
 ## Prioritized Backlog
 
@@ -82,16 +79,11 @@ Build a comprehensive code assessment and moderation platform ("CodeFeedback Stu
 
 ### P3 (Low Priority/Future)
 - [ ] Code plagiarism detection
-- [ ] Bulk import students via CSV
-- [ ] Real-time collaboration for markers
 - [ ] System Modeling Documentation (Event B)
 
 ## Test Credentials
 - **Marker**: marker@test.com / password123
 - **Student**: student@test.com / password123
-
-## Known Issues
-- Windows users may encounter `.env` encoding issues (UTF-16)
 
 ---
 *Last Updated: February 2026*
