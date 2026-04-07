@@ -5,9 +5,9 @@ Build a comprehensive code assessment and moderation platform ("CodeFeedback Stu
 - Multi-role system (Student, Marker, Moderator, Module Leader)
 - Course and assignment management
 - GitHub-style inline code feedback
-- Gamification with XP and badges
+- Gamification with XP, badges, and module-specific leaderboards
 - Three-phase assignment lifecycle (Schedule Release, Set Deadline, Publish Results)
-- Module-specific opt-in leaderboards with nicknames and privacy controls
+- Privacy-first leaderboards with unique nicknames
 - User profiles accessible from leaderboards
 
 ## Tech Stack
@@ -34,17 +34,18 @@ Build a comprehensive code assessment and moderation platform ("CodeFeedback Stu
 - [x] Set Deadline (Yes/No toggle)
 - [x] Publish Results (collective action with scheduling)
 
-### Gamification (Extended Feb 2026)
+### Gamification
 - [x] 14 Student badges (First Steps, Bug Squasher, Quick Learner, Zero to Hero, Perfectionist, Five Star Coder, Rapid Improver, Consistent Performer, Streak Warrior, Early Bird, Feedback Champion, Tenacious, Multi-Talented, Centurion)
 - [x] 13 Marker badges (First Review, Speed Reviewer, On-Time Champion, Quick Turnaround, Thorough Reviewer, Feedback Master, Detail Oriented, Template Architect, Mentor, Consistent Marker, Quality Guardian, Multi-Course Expert, Century Reviewer)
 - [x] XP system with 10 levels (Novice to Grandmaster)
 - [x] Centralized badge evaluation on stats fetch
 - [x] XP history logging
 
-### Module Leaderboards (New - Feb 2026)
+### Module Leaderboards
 - [x] Per-module opt-in leaderboards for students and markers
 - [x] Unique nicknames per module with real-time availability check
 - [x] Privacy-first: real names never shown on leaderboard
+- [x] Role-separated views: students only see student leaderboard, markers only see marker leaderboard
 - [x] Student scoring: submissions, on-time, fixes, perfects, quick fixes
 - [x] Marker scoring: reviews, issues found, approvals, turnaround
 - [x] Leave/rejoin anytime without losing XP/badges
@@ -53,53 +54,20 @@ Build a comprehensive code assessment and moderation platform ("CodeFeedback Stu
 ### Moderation
 - [x] Moderation queue (all failed + 10% sample of passed)
 - [x] Moderation dashboard with per-course stats
-- [x] Issue workflow: create → approve/reject → resolve
+- [x] Issue workflow: create -> approve/reject -> resolve
 - [x] Course leaders can access moderation for their courses
+- [x] Fixed race condition in data fetching
 
 ### UI/UX
 - [x] Dark mode toggle (light mode default)
-- [x] Fast loading screen (~1.5s assembly animation)
-- [x] Leaderboard page with podium, ranked table, profile modal
+- [x] Fast loading screen (~0.5s assembly animation)
+- [x] Micro-animations: slide-up, fade-in, scale-in, stagger effects
+- [x] Animated loading spinners
+- [x] Card hover effects with translateY
+- [x] Leaderboard podium with hover scaling
 
 ### Documentation
 - [x] Comprehensive README with setup guide, badge guide, feature docs
-
-## API Endpoints
-
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/auth/register` | POST | Register |
-| `/api/auth/login` | POST | Login |
-| `/api/courses` | GET/POST | Courses |
-| `/api/assignments` | GET/POST | Assignments |
-| `/api/assignments/{id}` | DELETE | Delete assignment |
-| `/api/assignments/{id}/publish-results` | POST | Publish results |
-| `/api/submissions` | GET/POST | Submissions |
-| `/api/submissions/{id}/grade` | POST | Grade |
-| `/api/issues` | GET/POST | Feedback issues |
-| `/api/gamification/stats` | GET | XP, level, badges |
-| `/api/leaderboard/join` | POST | Join leaderboard |
-| `/api/leaderboard/leave` | POST | Leave leaderboard |
-| `/api/leaderboard/check-nickname` | GET | Nickname availability |
-| `/api/leaderboard/{course_id}/students` | GET | Student leaderboard |
-| `/api/leaderboard/{course_id}/markers` | GET | Marker leaderboard |
-| `/api/profile/{user_id}` | GET | User profile |
-
-## Database Schema
-
-### leaderboard_settings (New)
-```json
-{
-  "id": "uuid",
-  "user_id": "string",
-  "course_id": "string",
-  "nickname": "string",
-  "joined": true,
-  "role": "student|marker",
-  "created_at": "datetime",
-  "updated_at": "datetime"
-}
-```
 
 ## Prioritized Backlog
 
