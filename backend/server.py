@@ -1,4 +1,4 @@
-from fastapi import FastAPI, APIRouter, HTTPException, Depends, status, UploadFile, File, Form
+from fastapi import FastAPI, APIRouter, HTTPException, Depends, status, UploadFile, File, Form, Body
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.responses import FileResponse
 from dotenv import load_dotenv
@@ -243,6 +243,7 @@ class IssueTemplateCreate(BaseModel):
     severity: str = "moderate"
     suggested_fix: Optional[str] = ""
     marks_deduction: int = 0
+    course_id: Optional[str] = None
 
 class IssueTemplateResponse(BaseModel):
     id: str
@@ -255,6 +256,7 @@ class IssueTemplateResponse(BaseModel):
     marks_deduction: int
     created_by: str
     usage_count: int = 0
+    course_id: Optional[str] = None
 
 class GradeSubmissionRequest(BaseModel):
     marks: int
@@ -1645,7 +1647,9 @@ async def create_issue_template(template_data: IssueTemplateCreate, current_user
         "explanation": template_data.explanation, "category_id": template_data.category_id,
         "severity": template_data.severity, "suggested_fix": template_data.suggested_fix or "",
         "marks_deduction": template_data.marks_deduction,
-        "created_by": current_user["id"], "usage_count": 0
+        "course_id": template_data.course_id,
+        "created_by": current_user["id"], "usage_count": 0,
+        "created_at": datetime.now(timezone.utc).isoformat()
     }
     await db.issue_templates.insert_one(template_doc)
     
@@ -1653,17 +1657,62 @@ async def create_issue_template(template_data: IssueTemplateCreate, current_user
     template_count = await db.issue_templates.count_documents({"created_by": current_user["id"]})
     if template_count >= 10:
         await award_badge(current_user["id"], "feedback_master", "marker")
+    if template_count >= 20:
+        await award_badge(current_user["id"], "template_architect", "marker")
     
-    return template_doc
+    category = await db.issue_categories.find_one({"id": template_data.category_id}, {"_id": 0})
+    return {**template_doc, "_id": None, "category_name": category["name"] if category else "Unknown"}
 
 @api_router.get("/issue-templates")
-async def get_issue_templates(current_user: dict = Depends(require_marker)):
-    templates = await db.issue_templates.find({}, {"_id": 0}).to_list(100)
+async def get_issue_templates(course_id: Optional[str] = None, current_user: dict = Depends(require_marker)):
+    query = {}
+    if course_id:
+        # Module-specific: show templates for this course + user's global templates (no course_id)
+        query["$or"] = [{"course_id": course_id}, {"course_id": None}, {"course_id": {"$exists": False}}]
+    templates = await db.issue_templates.find(query, {"_id": 0}).to_list(200)
     result = []
     for t in templates:
         category = await db.issue_categories.find_one({"id": t["category_id"]}, {"_id": 0})
         result.append({**t, "category_name": category["name"] if category else "Unknown"})
     return result
+
+@api_router.delete("/issue-templates/{template_id}")
+async def delete_issue_template(template_id: str, current_user: dict = Depends(require_marker)):
+    template = await db.issue_templates.find_one({"id": template_id}, {"_id": 0})
+    if not template:
+        raise HTTPException(status_code=404, detail="Template not found")
+    if template["created_by"] != current_user["id"]:
+        raise HTTPException(status_code=403, detail="You can only delete your own templates")
+    await db.issue_templates.delete_one({"id": template_id})
+    return {"message": "Template deleted"}
+
+@api_router.post("/issue-templates/{template_id}/use")
+async def increment_template_usage(template_id: str, current_user: dict = Depends(require_marker)):
+    await db.issue_templates.update_one({"id": template_id}, {"$inc": {"usage_count": 1}})
+    return {"message": "Usage recorded"}
+
+@api_router.post("/drafts/save")
+async def save_draft(draft_data: dict = Body(...), current_user: dict = Depends(require_marker)):
+    """Save marker's in-progress work (issues, form state) as a server-side draft."""
+    await db.drafts.update_one(
+        {"user_id": current_user["id"], "submission_id": draft_data.get("submission_id")},
+        {"$set": {
+            "user_id": current_user["id"],
+            "submission_id": draft_data.get("submission_id"),
+            "form_state": draft_data.get("form_state", {}),
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }},
+        upsert=True
+    )
+    return {"message": "Draft saved"}
+
+@api_router.get("/drafts/{submission_id}")
+async def get_draft(submission_id: str, current_user: dict = Depends(require_marker)):
+    """Get saved draft for a submission."""
+    draft = await db.drafts.find_one(
+        {"user_id": current_user["id"], "submission_id": submission_id}, {"_id": 0}
+    )
+    return draft or {"form_state": {}}
 
 # ============ MODERATION ENDPOINTS ============
 

@@ -1,0 +1,112 @@
+{
+  "summary": "Iteration 8 testing completed. All new features verified: module-specific templates, auto-draft saving, template picker, Save as Template dialog, sidebar-code sync. Backend: 16/16 tests passed (100%). Frontend: All requested features verified working.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iteration8_templates_drafts.py",
+    "/app/test_reports/pytest/iteration8_results.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "IssueTemplateCreate model correctly includes optional course_id field for module-specific templates",
+    "GET /api/issue-templates?course_id=xxx correctly returns module templates + global templates using $or query",
+    "DELETE /api/issue-templates/{id} correctly checks created_by to ensure users can only delete their own templates",
+    "POST /api/issue-templates/{id}/use correctly increments usage_count atomically",
+    "POST /api/drafts/save uses upsert=True for idempotent draft saving",
+    "GET /api/drafts/{submission_id} returns empty form_state for nonexistent drafts (graceful handling)",
+    "CodeReviewPage.js implements 15-second auto-draft interval with proper cleanup on unmount",
+    "Template picker correctly separates module templates from global templates in UI"
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iteration8_templates_drafts.py - Created comprehensive test suite for iteration 8 features"
+  ],
+  "success_rate": {
+    "backend": "100% (16/16 tests passed)",
+    "frontend": "100% (all requested features verified)"
+  },
+  "test_credentials": {
+    "marker": "marker@test.com / password123",
+    "student": "student@test.com / password123"
+  },
+  "seed_data_creation": "Created new submission 57ab561c-aa4d-458a-8ad4-05e299887cbf for code review testing",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "All iteration 8 features verified. Module-specific templates work with course_id field. Auto-draft saves every 15 seconds. Template picker shows module vs global sections. Save as Template dialog allows scope selection.",
+  "features_tested": {
+    "backend_issue_templates": {
+      "create_module_specific": "PASS - POST /api/issue-templates with course_id creates module-specific template",
+      "create_global": "PASS - POST /api/issue-templates without course_id creates global template",
+      "get_with_filter": "PASS - GET /api/issue-templates?course_id=xxx returns module + global templates",
+      "delete_own": "PASS - DELETE /api/issue-templates/{id} deletes own template",
+      "increment_usage": "PASS - POST /api/issue-templates/{id}/use increments usage_count"
+    },
+    "backend_drafts": {
+      "save_draft": "PASS - POST /api/drafts/save saves marker draft for submission",
+      "get_draft": "PASS - GET /api/drafts/{submission_id} retrieves saved draft",
+      "get_nonexistent": "PASS - GET /api/drafts/{submission_id} returns empty form_state for nonexistent draft",
+      "update_overwrites": "PASS - Saving draft again overwrites previous draft"
+    },
+    "backend_regression": {
+      "auth_login": "PASS - Both marker and student login working",
+      "auth_me": "PASS - GET /api/auth/me returns current user",
+      "courses": "PASS - GET /api/courses returns courses",
+      "gamification": "PASS - GET /api/gamification/stats returns XP, level, badges",
+      "marker_badges": "PASS - Marker has 13 badges available",
+      "student_badges": "PASS - Student has 14 badges available"
+    },
+    "frontend_code_review_page": {
+      "page_loads": "PASS - Code review page loads with data-testid='code-review-page'",
+      "file_sidebar": "PASS - File sidebar shows files with issue counts",
+      "monaco_editor": "PASS - Monaco Editor displays code content",
+      "issues_panel": "PASS - Issues panel shows issue count and list",
+      "templates_button": "PASS - 'Templates' button visible for ungraded submissions",
+      "add_issue_button": "PASS - 'Add Issue' button visible for ungraded submissions",
+      "draft_status": "PASS - Draft status indicator (Saved/Unsaved/Saving) visible in header"
+    },
+    "frontend_add_issue_dialog": {
+      "dialog_opens": "PASS - Add Issue dialog opens with all fields",
+      "category_select": "PASS - Category dropdown works",
+      "severity_select": "PASS - Severity dropdown works",
+      "title_input": "PASS - Title input works",
+      "explanation_input": "PASS - Explanation textarea works",
+      "suggested_fix_input": "PASS - Suggested Fix textarea works",
+      "marks_deduction_input": "PASS - Marks Deduction input works",
+      "save_as_template_button": "PASS - 'Save as Template' button present in dialog"
+    },
+    "frontend_save_template_dialog": {
+      "dialog_opens": "PASS - Save as Template dialog opens from Add Issue",
+      "template_name_input": "PASS - Template Name input present",
+      "scope_select": "PASS - Scope dropdown (This module only / All modules) present",
+      "preview_info": "PASS - Shows Category, Severity, Deduction preview"
+    },
+    "frontend_templates_panel": {
+      "panel_opens": "PASS - Templates panel opens when clicking Templates button",
+      "search_input": "PASS - Template search input present",
+      "empty_state": "PASS - Shows 'No templates yet' with instruction when empty"
+    },
+    "frontend_moderation_page": {
+      "page_loads": "PASS - Moderation page loads without error toast",
+      "stats_cards": "PASS - Shows Pending Review, Open Issues, Resolved stats",
+      "submissions_tab": "PASS - Submissions tab with list present"
+    },
+    "frontend_leaderboard_role_separation": {
+      "marker_leaderboard": "PASS - Marker sees 'Marker Rankings' badge, no Students tab",
+      "student_leaderboard": "PASS - Student sees 'Student Rankings' badge, no Markers tab"
+    }
+  },
+  "ui_observations": {
+    "code_review_page": "Clean 3-column layout: File sidebar (left), Monaco Editor (center), Issues panel (right). Header shows student name, file count, attempt number, draft status, and action buttons.",
+    "add_issue_dialog": "Well-organized form with Category/Severity dropdowns, Title/Explanation/Suggested Fix inputs, Marks Deduction field. 'Save as Template' button at bottom left.",
+    "save_template_dialog": "Nested dialog with Template Name input, Scope dropdown, and preview of template details. Clear Cancel/Save Template buttons.",
+    "templates_panel": "Modal with search input and sections for Module Templates and Global Templates. Empty state shows helpful instruction.",
+    "moderation_page": "Stats cards at top, Submissions/Issues tabs, submission list with View/Flag/OK actions.",
+    "leaderboard_pages": "Role-separated views - markers only see marker rankings, students only see student rankings. Privacy-focused messaging."
+  }
+}

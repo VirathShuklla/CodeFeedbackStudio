@@ -377,6 +377,16 @@
     border-left: 3px solid #3b82f6 !important;
 }
 
+/* Active issue highlight pulse */
+.code-highlight-active {
+    animation: highlightPulse 0.8s ease-in-out 2;
+}
+
+@keyframes highlightPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
 /* Gutter markers */
 .issue-gutter-marker {
     width: 6px !important;
