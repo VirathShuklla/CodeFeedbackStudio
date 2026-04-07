@@ -56,24 +56,36 @@ export default function ModerationPage() {
   const [issueDescription, setIssueDescription] = useState('');
   const [issueSeverity, setIssueSeverity] = useState('moderate');
 
-  const fetchData = useCallback(async () => {
+  // Fetch courses once on mount
+  useEffect(() => {
+    const fetchCourses = async () => {
+      try {
+        const res = await api().get('/courses');
+        setCourses(res.data || []);
+        if (res.data?.length > 0) {
+          setSelectedCourseId(res.data[0].id);
+        }
+      } catch {
+        // Silently handle — empty courses is a valid state
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchCourses();
+  }, [api]);
+
+  // Fetch moderation data when course changes
+  const fetchModerationData = useCallback(async () => {
+    if (!selectedCourseId) return;
+    setLoading(true);
     try {
-      const coursesRes = await api().get('/courses');
-      setCourses(coursesRes.data);
-      
-      if (coursesRes.data.length > 0 && !selectedCourseId) {
-        setSelectedCourseId(coursesRes.data[0].id);
-      }
-      
-      if (selectedCourseId) {
-        const [subsRes, issuesRes] = await Promise.all([
-          api().get(`/submissions?course_id=${selectedCourseId}&for_moderation=true`),
-          api().get(`/moderation/issues?course_id=${selectedCourseId}`)
-        ]);
-        setSubmissions(subsRes.data);
-        setModerationIssues(issuesRes.data);
-      }
-    } catch (error) {
+      const [subsRes, issuesRes] = await Promise.all([
+        api().get(`/submissions?course_id=${selectedCourseId}&for_moderation=true`),
+        api().get(`/moderation/issues?course_id=${selectedCourseId}`)
+      ]);
+      setSubmissions(subsRes.data || []);
+      setModerationIssues(issuesRes.data || []);
+    } catch {
       toast.error('Failed to load moderation data');
     } finally {
       setLoading(false);
@@ -81,12 +93,11 @@ export default function ModerationPage() {
   }, [api, selectedCourseId]);
 
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    fetchModerationData();
+  }, [fetchModerationData]);
 
   const handleCourseChange = (courseId) => {
     setSelectedCourseId(courseId);
-    setLoading(true);
   };
 
   const handleRaiseIssue = async () => {
@@ -105,7 +116,7 @@ export default function ModerationPage() {
       setShowRaiseIssueDialog(false);
       setIssueDescription('');
       setIssueSeverity('moderate');
-      fetchData();
+      fetchModerationData();
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Failed to raise issue');
     }
@@ -115,7 +126,7 @@ export default function ModerationPage() {
     try {
       await api().post(`/moderation/submissions/${submissionId}/confirm`);
       toast.success('Confirmed no moderation issues');
-      fetchData();
+      fetchModerationData();
     } catch (error) {
       toast.error('Failed to confirm');
     }
@@ -125,7 +136,7 @@ export default function ModerationPage() {
     try {
       await api().post(`/moderation/issues/${issueId}/approve`);
       toast.success('Issue approved');
-      fetchData();
+      fetchModerationData();
     } catch (error) {
       toast.error('Failed to approve');
     }
@@ -161,11 +172,14 @@ export default function ModerationPage() {
   const openIssues = moderationIssues.filter(i => i.status === 'open');
   const resolvedIssues = moderationIssues.filter(i => i.status !== 'open');
 
-  if (loading) {
+  if (loading && courses.length === 0) {
     return (
       <AppLayout>
         <div className="p-8 flex items-center justify-center min-h-[60vh]">
-          <div className="text-muted-foreground">Loading...</div>
+          <div className="flex items-center gap-2 text-muted-foreground">
+            <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+            Loading...
+          </div>
         </div>
       </AppLayout>
     );
@@ -175,7 +189,7 @@ export default function ModerationPage() {
     <AppLayout>
       <div className="max-w-5xl mx-auto px-6 py-8" data-testid="moderation-page">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between mb-6 animate-slide-down">
           <div>
             <Button 
               variant="ghost" 
@@ -213,15 +227,15 @@ export default function ModerationPage() {
 
         {/* Stats */}
         <div className="grid grid-cols-3 gap-4 mb-6">
-          <div className="card-clean p-4">
+          <div className="card-clean p-4 animate-slide-up animate-stagger-1">
             <p className="text-sm text-muted-foreground">Pending Review</p>
             <p className="text-2xl font-semibold mt-1">{pendingSubmissions.length}</p>
           </div>
-          <div className="card-clean p-4">
+          <div className="card-clean p-4 animate-slide-up animate-stagger-2">
             <p className="text-sm text-muted-foreground">Open Issues</p>
             <p className="text-2xl font-semibold mt-1">{openIssues.length}</p>
           </div>
-          <div className="card-clean p-4">
+          <div className="card-clean p-4 animate-slide-up animate-stagger-3">
             <p className="text-sm text-muted-foreground">Resolved</p>
             <p className="text-2xl font-semibold mt-1">{resolvedIssues.length}</p>
           </div>

@@ -90,11 +90,16 @@
     
     /* Card styles - using CSS variables for dark mode */
     .card-clean {
-        @apply bg-card text-card-foreground rounded-xl border border-border/60 shadow-sm;
+        @apply bg-card text-card-foreground rounded-xl border border-border/60 shadow-sm transition-all duration-200;
     }
     
     .card-hover {
-        @apply card-clean hover:border-primary/30 hover:shadow-md transition-all duration-200 cursor-pointer;
+        @apply card-clean cursor-pointer;
+    }
+    
+    .card-hover:hover {
+        @apply border-primary/30 shadow-md;
+        transform: translateY(-1px);
     }
     
     /* Status badges */
@@ -139,12 +144,29 @@
 
 @layer utilities {
     .animate-fade-in {
-        animation: fadeIn 0.25s ease-out;
+        animation: fadeIn 0.3s ease-out both;
     }
     
     .animate-slide-up {
-        animation: slideUp 0.3s ease-out;
+        animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
     }
+    
+    .animate-slide-down {
+        animation: slideDown 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+    
+    .animate-scale-in {
+        animation: scaleIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+
+    .animate-stagger-1 { animation-delay: 50ms; }
+    .animate-stagger-2 { animation-delay: 100ms; }
+    .animate-stagger-3 { animation-delay: 150ms; }
+    .animate-stagger-4 { animation-delay: 200ms; }
+    .animate-stagger-5 { animation-delay: 250ms; }
+    .animate-stagger-6 { animation-delay: 300ms; }
+    .animate-stagger-7 { animation-delay: 350ms; }
+    .animate-stagger-8 { animation-delay: 400ms; }
 }
 
 @keyframes fadeIn {
@@ -153,14 +175,33 @@
 }
 
 @keyframes slideUp {
-    from { 
-        opacity: 0;
-        transform: translateY(8px);
-    }
-    to { 
-        opacity: 1;
-        transform: translateY(0);
-    }
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideDown {
+    from { opacity: 0; transform: translateY(-12px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes scaleIn {
+    from { opacity: 0; transform: scale(0.92); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes shimmerSlide {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+}
+
+@keyframes gentlePulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
+
+@keyframes countUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
 /* Monaco Editor */

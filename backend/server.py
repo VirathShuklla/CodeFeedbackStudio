@@ -1365,8 +1365,8 @@ async def get_submissions(
         all_subs = await db.submissions.find(query, {"_id": 0}).to_list(1000)
         # Only include reviewed submissions for moderation
         reviewed_subs = [s for s in all_subs if s.get("status") in ["feedback_released", "no_issues"]]
-        failed = [s for s in reviewed_subs if (s.get("marks", 100) < 50)]
-        passed = [s for s in reviewed_subs if (s.get("marks", 100) >= 50)]
+        failed = [s for s in reviewed_subs if (s.get("marks") or 0) < 50]
+        passed = [s for s in reviewed_subs if (s.get("marks") or 0) >= 50]
         sample_size = max(1, len(passed) // 10) if passed else 0
         random_sample = random.sample(passed, min(sample_size, len(passed))) if passed else []
         submissions = failed + random_sample

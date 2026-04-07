@@ -125,7 +125,10 @@ export default function MarkerDashboard() {
     return (
       <AppLayout>
         <div className="p-8 flex items-center justify-center min-h-[60vh]">
-          <div className="text-muted-foreground">Loading...</div>
+          <div className="flex items-center gap-2 text-muted-foreground">
+            <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+            Loading...
+          </div>
         </div>
       </AppLayout>
     );
@@ -135,7 +138,7 @@ export default function MarkerDashboard() {
     <AppLayout>
       <div className="max-w-4xl mx-auto px-6 py-8" data-testid="marker-dashboard">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center justify-between mb-8 animate-slide-down">
           <div>
             <h1 className="text-2xl font-semibold font-['Outfit']">Your Courses</h1>
             <p className="text-sm text-muted-foreground mt-1">
@@ -209,11 +212,11 @@ export default function MarkerDashboard() {
 
         {/* Stats Summary */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          <div className="card-clean p-5">
+          <div className="card-clean p-5 animate-slide-up animate-stagger-1">
             <p className="text-sm text-muted-foreground">Pending Reviews</p>
             <p className="text-3xl font-semibold mt-1 font-['Outfit']">{stats.pending}</p>
           </div>
-          <div className="card-clean p-5">
+          <div className="card-clean p-5 animate-slide-up animate-stagger-2">
             <p className="text-sm text-muted-foreground">Feedback Given</p>
             <p className="text-3xl font-semibold mt-1 font-['Outfit']">{stats.reviewed}</p>
           </div>

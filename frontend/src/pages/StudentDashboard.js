@@ -222,7 +222,10 @@ export default function StudentDashboard() {
     return (
       <AppLayout>
         <div className="p-8 flex items-center justify-center min-h-[60vh]">
-          <div className="text-muted-foreground">Loading...</div>
+          <div className="flex items-center gap-2 text-muted-foreground">
+            <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+            Loading...
+          </div>
         </div>
       </AppLayout>
     );
@@ -232,7 +235,7 @@ export default function StudentDashboard() {
     <AppLayout>
       <div className="max-w-4xl mx-auto px-6 py-8" data-testid="student-dashboard">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between mb-6 animate-slide-down">
           <div>
             <h1 className="text-2xl font-semibold font-['Outfit']">My Courses</h1>
             <p className="text-sm text-muted-foreground mt-1">
@@ -310,7 +313,7 @@ export default function StudentDashboard() {
                   const hasReviewedFeedback = submission?.status === 'feedback_released' || submission?.status === 'no_issues';
                   
                   return (
-                    <div key={assignment.id} className="card-clean p-5" data-testid={`assignment-${assignment.id}`}>
+                    <div key={assignment.id} className="card-clean p-5 animate-slide-up" style={{ animationDelay: `${assignments.indexOf(assignment) * 60}ms` }} data-testid={`assignment-${assignment.id}`}>
                       <div className="flex items-start justify-between mb-3">
                         <div>
                           <h3 className="font-medium">{assignment.title}</h3>

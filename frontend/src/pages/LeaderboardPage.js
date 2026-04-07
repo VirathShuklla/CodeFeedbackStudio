@@ -33,7 +33,6 @@ import {
   LogOut,
   Check,
   X,
-  ChevronUp,
   Flame,
   Award,
   Eye,
@@ -55,9 +54,9 @@ const MARKER_BADGE_ICONS = {
 };
 
 function RankBadge({ rank }) {
-  if (rank === 1) return <div className="w-8 h-8 rounded-full bg-amber-400 flex items-center justify-center shadow-lg shadow-amber-200/50"><Crown className="w-4 h-4 text-white" /></div>;
-  if (rank === 2) return <div className="w-8 h-8 rounded-full bg-slate-400 flex items-center justify-center shadow-lg shadow-slate-200/50"><Medal className="w-4 h-4 text-white" /></div>;
-  if (rank === 3) return <div className="w-8 h-8 rounded-full bg-amber-600 flex items-center justify-center shadow-lg shadow-amber-300/50"><Medal className="w-4 h-4 text-white" /></div>;
+  if (rank === 1) return <div className="w-8 h-8 rounded-full bg-amber-400 flex items-center justify-center shadow-lg shadow-amber-200/50 animate-scale-in"><Crown className="w-4 h-4 text-white" /></div>;
+  if (rank === 2) return <div className="w-8 h-8 rounded-full bg-slate-400 flex items-center justify-center shadow-lg shadow-slate-200/50 animate-scale-in"><Medal className="w-4 h-4 text-white" /></div>;
+  if (rank === 3) return <div className="w-8 h-8 rounded-full bg-amber-600 flex items-center justify-center shadow-lg shadow-amber-300/50 animate-scale-in"><Medal className="w-4 h-4 text-white" /></div>;
   return <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-sm font-bold text-slate-500 dark:text-slate-300">{rank}</div>;
 }
 
@@ -83,12 +82,12 @@ function ProfileModal({ userId, courseId, isOpen, onClose, api }) {
       <DialogContent className="sm:max-w-lg" data-testid="profile-modal">
         <DialogHeader>
           <DialogTitle className="font-['Outfit']">Player Profile</DialogTitle>
+          <DialogDescription>View achievements, badges, and stats</DialogDescription>
         </DialogHeader>
         {loading ? (
           <div className="py-12 text-center text-muted-foreground animate-pulse">Loading profile...</div>
         ) : profile ? (
-          <div className="space-y-6">
-            {/* Header */}
+          <div className="space-y-6 animate-fade-in">
             <div className="flex items-center gap-4">
               <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/80 to-primary flex items-center justify-center text-2xl font-bold text-white shadow-lg">
                 {profile.display_name?.charAt(0)?.toUpperCase() || '?'}
@@ -104,38 +103,33 @@ function ProfileModal({ userId, courseId, isOpen, onClose, api }) {
               </div>
             </div>
 
-            {/* XP Bar */}
             <div>
               <div className="flex justify-between text-sm mb-1.5">
                 <span className="font-medium">{profile.xp} XP</span>
                 <span className="text-muted-foreground">{profile.xp_to_next_level} XP to next level</span>
               </div>
               <div className="h-3 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-gradient-to-r from-primary to-blue-400 rounded-full transition-all duration-700"
-                  style={{ width: `${profile.level_progress}%` }}
-                />
+                <div className="h-full bg-gradient-to-r from-primary to-blue-400 rounded-full transition-all duration-700"
+                  style={{ width: `${profile.level_progress}%` }} />
               </div>
             </div>
 
-            {/* Stats */}
             <div className="grid grid-cols-3 gap-3">
               {profile.role === 'student' ? (
                 <>
-                  <StatBox icon={<Zap className="w-4 h-4 text-amber-500" />} value={profile.stats?.submissions_count || 0} label="Submissions" />
-                  <StatBox icon={<Check className="w-4 h-4 text-emerald-500" />} value={profile.stats?.issues_fixed || 0} label="Issues Fixed" />
-                  <StatBox icon={<Star className="w-4 h-4 text-yellow-500" />} value={profile.stats?.perfect_submissions || 0} label="Perfect" />
+                  <StatBox icon={<Zap className="w-4 h-4 text-amber-500" />} value={profile.stats?.submissions_count || 0} label="Submissions" delay={1} />
+                  <StatBox icon={<Check className="w-4 h-4 text-emerald-500" />} value={profile.stats?.issues_fixed || 0} label="Issues Fixed" delay={2} />
+                  <StatBox icon={<Star className="w-4 h-4 text-yellow-500" />} value={profile.stats?.perfect_submissions || 0} label="Perfect" delay={3} />
                 </>
               ) : (
                 <>
-                  <StatBox icon={<Eye className="w-4 h-4 text-blue-500" />} value={profile.stats?.reviews_count || 0} label="Reviews" />
-                  <StatBox icon={<Zap className="w-4 h-4 text-amber-500" />} value={profile.stats?.issues_created || 0} label="Issues Found" />
-                  <StatBox icon={<Award className="w-4 h-4 text-purple-500" />} value={profile.stats?.templates_created || 0} label="Templates" />
+                  <StatBox icon={<Eye className="w-4 h-4 text-blue-500" />} value={profile.stats?.reviews_count || 0} label="Reviews" delay={1} />
+                  <StatBox icon={<Zap className="w-4 h-4 text-amber-500" />} value={profile.stats?.issues_created || 0} label="Issues Found" delay={2} />
+                  <StatBox icon={<Award className="w-4 h-4 text-purple-500" />} value={profile.stats?.templates_created || 0} label="Templates" delay={3} />
                 </>
               )}
             </div>
 
-            {/* Badges */}
             <div>
               <h4 className="text-sm font-semibold mb-3 flex items-center gap-1.5">
                 <Trophy className="w-4 h-4 text-amber-500" />
@@ -143,8 +137,8 @@ function ProfileModal({ userId, courseId, isOpen, onClose, api }) {
               </h4>
               {profile.badges?.length > 0 ? (
                 <div className="flex flex-wrap gap-2">
-                  {profile.badges.map(b => (
-                    <div key={b.id} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 text-sm" title={b.description}>
+                  {profile.badges.map((b, i) => (
+                    <div key={b.id} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 text-sm animate-scale-in" style={{ animationDelay: `${i * 60}ms` }} title={b.description}>
                       <span>{badgeIcons[b.id] || '🏅'}</span>
                       <span className="font-medium">{b.name}</span>
                     </div>
@@ -155,7 +149,6 @@ function ProfileModal({ userId, courseId, isOpen, onClose, api }) {
               )}
             </div>
 
-            {/* Active Modules */}
             {profile.active_modules?.length > 0 && (
               <div>
                 <h4 className="text-sm font-semibold mb-2 flex items-center gap-1.5">
@@ -179,9 +172,9 @@ function ProfileModal({ userId, courseId, isOpen, onClose, api }) {
   );
 }
 
-function StatBox({ icon, value, label }) {
+function StatBox({ icon, value, label, delay = 0 }) {
   return (
-    <div className="text-center p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border">
+    <div className={`text-center p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border animate-slide-up animate-stagger-${delay} hover:shadow-md transition-shadow duration-200`}>
       <div className="flex justify-center mb-1">{icon}</div>
       <div className="text-lg font-bold">{value}</div>
       <div className="text-xs text-muted-foreground">{label}</div>
@@ -193,7 +186,8 @@ export default function LeaderboardPage() {
   const { api, user, isStudent, isMarker } = useAuth();
   const [courses, setCourses] = useState([]);
   const [selectedCourse, setSelectedCourse] = useState('');
-  const [activeTab, setActiveTab] = useState(isStudent ? 'students' : 'markers');
+  // Force the tab to the user's own role — students only see students, markers only see markers
+  const myTab = isStudent ? 'students' : 'markers';
   const [leaderboard, setLeaderboard] = useState([]);
   const [loading, setLoading] = useState(false);
   const [mySettings, setMySettings] = useState(null);
@@ -205,7 +199,6 @@ export default function LeaderboardPage() {
   const [profileUserId, setProfileUserId] = useState(null);
   const [showProfile, setShowProfile] = useState(false);
 
-  // Fetch courses
   useEffect(() => {
     const fetchCourses = async () => {
       try {
@@ -223,13 +216,12 @@ export default function LeaderboardPage() {
     fetchCourses();
   }, [api, isStudent]);
 
-  // Fetch leaderboard + settings when course/tab changes
   const fetchLeaderboard = useCallback(async () => {
     if (!selectedCourse) return;
     setLoading(true);
     try {
       const [lbRes, settingsRes] = await Promise.all([
-        api().get(`/leaderboard/${selectedCourse}/${activeTab}`),
+        api().get(`/leaderboard/${selectedCourse}/${myTab}`),
         api().get(`/leaderboard/settings/${selectedCourse}`)
       ]);
       setLeaderboard(lbRes.data?.leaderboard || []);
@@ -239,13 +231,12 @@ export default function LeaderboardPage() {
     } finally {
       setLoading(false);
     }
-  }, [api, selectedCourse, activeTab]);
+  }, [api, selectedCourse, myTab]);
 
   useEffect(() => {
     fetchLeaderboard();
   }, [fetchLeaderboard]);
 
-  // Nickname check debounce
   useEffect(() => {
     if (!nickname || nickname.length < 2 || !selectedCourse) {
       setNicknameAvailable(null);
@@ -296,34 +287,32 @@ export default function LeaderboardPage() {
     setShowProfile(true);
   };
 
-  const isMyTab = (isStudent && activeTab === 'students') || (isMarker && activeTab === 'markers');
   const hasJoined = mySettings?.joined === true;
   const courseName = courses.find(c => c.id === selectedCourse)?.name || '';
-  const badgeIcons = activeTab === 'students' ? STUDENT_BADGE_ICONS : MARKER_BADGE_ICONS;
-
-  // Find my position
+  const badgeIcons = isStudent ? STUDENT_BADGE_ICONS : MARKER_BADGE_ICONS;
   const myEntry = leaderboard.find(e => e.user_id === user?.id);
+  const roleLabel = isStudent ? 'Student' : 'Marker';
 
   return (
     <AppLayout>
       <div className="max-w-5xl mx-auto px-6 py-8" data-testid="leaderboard-page">
         {/* Hero */}
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 p-8 mb-8">
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 p-8 mb-8 animate-fade-in">
           <div className="absolute inset-0 opacity-10" style={{backgroundImage: 'radial-gradient(circle at 25% 25%, rgba(99,102,241,0.3) 0%, transparent 50%), radial-gradient(circle at 75% 75%, rgba(168,85,247,0.2) 0%, transparent 50%)'}} />
           <div className="relative z-10 flex items-center justify-between">
             <div>
-              <div className="flex items-center gap-3 mb-3">
+              <div className="flex items-center gap-3 mb-2">
                 <div className="w-12 h-12 rounded-xl bg-amber-400/20 flex items-center justify-center">
                   <Trophy className="w-6 h-6 text-amber-400" />
                 </div>
                 <div>
-                  <h1 className="text-2xl sm:text-3xl font-bold text-white font-['Outfit']">Module Leaderboard</h1>
+                  <h1 className="text-2xl sm:text-3xl font-bold text-white font-['Outfit']">{roleLabel} Leaderboard</h1>
                   <p className="text-indigo-300 text-sm mt-0.5">Compete, earn recognition, stay private — your choice</p>
                 </div>
               </div>
             </div>
             {myEntry && (
-              <div className="text-right hidden sm:block">
+              <div className="text-right hidden sm:block animate-scale-in">
                 <div className="text-sm text-indigo-300">Your Rank</div>
                 <div className="text-4xl font-bold text-white font-['Outfit']">#{myEntry.rank}</div>
                 <div className="text-sm text-indigo-300">{myEntry.score} pts</div>
@@ -333,7 +322,7 @@ export default function LeaderboardPage() {
         </div>
 
         {/* Controls */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-6">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-6 animate-slide-up animate-stagger-1">
           <Select value={selectedCourse} onValueChange={setSelectedCourse}>
             <SelectTrigger className="w-full sm:w-64" data-testid="course-selector">
               <SelectValue placeholder="Select module" />
@@ -345,33 +334,21 @@ export default function LeaderboardPage() {
             </SelectContent>
           </Select>
 
-          {/* Tabs */}
-          <div className="flex bg-slate-100 dark:bg-slate-800 rounded-lg p-1 gap-1">
-            <button
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${activeTab === 'students' ? 'bg-white dark:bg-slate-700 shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
-              onClick={() => setActiveTab('students')}
-              data-testid="tab-students"
-            >
-              <Users className="w-4 h-4 inline mr-1.5" />Students
-            </button>
-            <button
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${activeTab === 'markers' ? 'bg-white dark:bg-slate-700 shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
-              onClick={() => setActiveTab('markers')}
-              data-testid="tab-markers"
-            >
-              <UserCheck className="w-4 h-4 inline mr-1.5" />Markers
-            </button>
+          {/* Role indicator instead of tabs */}
+          <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-sm font-medium text-foreground">
+            {isStudent ? <Users className="w-4 h-4 text-primary" /> : <UserCheck className="w-4 h-4 text-primary" />}
+            {roleLabel} Rankings
           </div>
 
           {/* Join/Leave button */}
-          {isMyTab && selectedCourse && (
+          {selectedCourse && (
             <div className="sm:ml-auto">
               {hasJoined ? (
-                <Button variant="outline" size="sm" onClick={handleLeave} data-testid="leave-leaderboard-btn">
-                  <LogOut className="w-4 h-4 mr-1.5" />Leave Board
+                <Button variant="outline" size="sm" onClick={handleLeave} data-testid="leave-leaderboard-btn" className="group">
+                  <LogOut className="w-4 h-4 mr-1.5 transition-transform group-hover:-translate-x-0.5" />Leave Board
                 </Button>
               ) : (
-                <Button size="sm" onClick={() => setShowJoinModal(true)} data-testid="join-leaderboard-btn" className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white border-0">
+                <Button size="sm" onClick={() => setShowJoinModal(true)} data-testid="join-leaderboard-btn" className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white border-0 shadow-lg shadow-amber-200/30 hover:shadow-amber-300/40 transition-all duration-200 hover:scale-[1.02]">
                   <LogIn className="w-4 h-4 mr-1.5" />Join Leaderboard
                 </Button>
               )}
@@ -381,20 +358,25 @@ export default function LeaderboardPage() {
 
         {/* Leaderboard Table */}
         {loading ? (
-          <div className="py-16 text-center text-muted-foreground animate-pulse">Loading leaderboard...</div>
-        ) : leaderboard.length === 0 ? (
           <div className="py-16 text-center">
+            <div className="inline-flex items-center gap-2 text-muted-foreground">
+              <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+              Loading leaderboard...
+            </div>
+          </div>
+        ) : leaderboard.length === 0 ? (
+          <div className="py-16 text-center animate-fade-in">
             <Trophy className="w-12 h-12 text-slate-300 dark:text-slate-600 mx-auto mb-4" />
             <h3 className="text-lg font-semibold mb-2">No participants yet</h3>
             <p className="text-muted-foreground text-sm max-w-md mx-auto">
-              Be the first to join the {courseName} {activeTab === 'students' ? 'student' : 'marker'} leaderboard!
+              Be the first to join the {courseName} {roleLabel.toLowerCase()} leaderboard!
             </p>
           </div>
         ) : (
           <div className="space-y-2" data-testid="leaderboard-list">
             {/* Top 3 podium */}
             {leaderboard.length >= 3 && (
-              <div className="grid grid-cols-3 gap-4 mb-8">
+              <div className="grid grid-cols-3 gap-4 mb-8 animate-slide-up animate-stagger-2">
                 {[leaderboard[1], leaderboard[0], leaderboard[2]].map((entry, idx) => {
                   const podiumRank = [2, 1, 3][idx];
                   const heights = ['h-28', 'h-36', 'h-24'];
@@ -404,13 +386,13 @@ export default function LeaderboardPage() {
                     'from-amber-600 to-amber-700',
                   ];
                   return (
-                    <div key={entry.user_id} className="flex flex-col items-center cursor-pointer" onClick={() => openProfile(entry.user_id)}>
-                      <div className="w-14 h-14 rounded-full bg-gradient-to-br from-primary/20 to-primary/40 flex items-center justify-center text-xl font-bold mb-2 border-2 border-white dark:border-slate-700 shadow-lg">
+                    <div key={entry.user_id} className="flex flex-col items-center cursor-pointer group" onClick={() => openProfile(entry.user_id)}>
+                      <div className="w-14 h-14 rounded-full bg-gradient-to-br from-primary/20 to-primary/40 flex items-center justify-center text-xl font-bold mb-2 border-2 border-white dark:border-slate-700 shadow-lg transition-transform duration-200 group-hover:scale-110">
                         {entry.nickname?.charAt(0)?.toUpperCase()}
                       </div>
                       <span className="text-sm font-semibold truncate max-w-full">{entry.nickname}</span>
                       <span className="text-xs text-muted-foreground mb-2">{entry.score} pts</span>
-                      <div className={`w-full ${heights[idx]} rounded-t-xl bg-gradient-to-t ${bgColors[idx]} flex items-end justify-center pb-3`}>
+                      <div className={`w-full ${heights[idx]} rounded-t-xl bg-gradient-to-t ${bgColors[idx]} flex items-end justify-center pb-3 transition-all duration-200 group-hover:shadow-lg`}>
                         <span className="text-2xl font-bold text-white">#{podiumRank}</span>
                       </div>
                     </div>
@@ -420,29 +402,30 @@ export default function LeaderboardPage() {
             )}
 
             {/* Full list */}
-            <div className="rounded-xl border overflow-hidden">
+            <div className="rounded-xl border overflow-hidden animate-slide-up animate-stagger-3">
               <div className="grid grid-cols-12 gap-2 px-4 py-3 bg-slate-50 dark:bg-slate-800/50 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                 <div className="col-span-1">Rank</div>
                 <div className="col-span-3">Player</div>
                 <div className="col-span-2 text-center">Score</div>
                 <div className="col-span-2 text-center">Level</div>
-                <div className="col-span-2 text-center">{activeTab === 'students' ? 'Fixed' : 'Reviews'}</div>
+                <div className="col-span-2 text-center">{isStudent ? 'Fixed' : 'Reviews'}</div>
                 <div className="col-span-2 text-center">Badges</div>
               </div>
-              {leaderboard.map((entry) => {
+              {leaderboard.map((entry, rowIdx) => {
                 const isMe = entry.user_id === user?.id;
                 return (
                   <div
                     key={entry.user_id}
-                    className={`grid grid-cols-12 gap-2 px-4 py-3.5 border-t items-center transition-colors cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/30 ${isMe ? 'bg-primary/5 border-l-2 border-l-primary' : ''}`}
+                    className={`grid grid-cols-12 gap-2 px-4 py-3.5 border-t items-center cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-all duration-150 ${isMe ? 'bg-primary/5 border-l-2 border-l-primary' : ''}`}
                     onClick={() => openProfile(entry.user_id)}
                     data-testid={`leaderboard-entry-${entry.rank}`}
+                    style={{ animationDelay: `${rowIdx * 40}ms` }}
                   >
                     <div className="col-span-1">
                       <RankBadge rank={entry.rank} />
                     </div>
                     <div className="col-span-3 flex items-center gap-2">
-                      <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-700 dark:to-slate-600 flex items-center justify-center text-sm font-bold">
+                      <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-700 dark:to-slate-600 flex items-center justify-center text-sm font-bold transition-transform duration-150 hover:scale-105">
                         {entry.nickname?.charAt(0)?.toUpperCase()}
                       </div>
                       <div>
@@ -460,7 +443,7 @@ export default function LeaderboardPage() {
                       <Badge variant="outline" className="text-xs">{entry.level_title}</Badge>
                     </div>
                     <div className="col-span-2 text-center font-medium">
-                      {activeTab === 'students' ? entry.issues_fixed : entry.reviews_count}
+                      {isStudent ? entry.issues_fixed : entry.reviews_count}
                     </div>
                     <div className="col-span-2 text-center">
                       <div className="flex justify-center gap-0.5">
@@ -480,14 +463,14 @@ export default function LeaderboardPage() {
         )}
 
         {/* My status card when not on board */}
-        {isMyTab && !hasJoined && !loading && (
-          <div className="mt-6 p-6 rounded-xl border-2 border-dashed border-primary/30 bg-primary/5 text-center">
+        {!hasJoined && !loading && (
+          <div className="mt-6 p-6 rounded-xl border-2 border-dashed border-primary/30 bg-primary/5 text-center animate-slide-up animate-stagger-4">
             <Shield className="w-8 h-8 text-primary mx-auto mb-3" />
             <h3 className="font-semibold mb-1">Your progress is tracked privately</h3>
             <p className="text-sm text-muted-foreground max-w-md mx-auto mb-4">
               Join the leaderboard to compete with peers. Pick a nickname to stay anonymous — your real name is never shown.
             </p>
-            <Button onClick={() => setShowJoinModal(true)} data-testid="join-leaderboard-cta" className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white border-0">
+            <Button onClick={() => setShowJoinModal(true)} data-testid="join-leaderboard-cta" className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white border-0 shadow-lg shadow-amber-200/30 hover:shadow-amber-300/40 transition-all duration-200 hover:scale-[1.02]">
               <Flame className="w-4 h-4 mr-1.5" />Join the Competition
             </Button>
           </div>
@@ -519,18 +502,18 @@ export default function LeaderboardPage() {
                 />
                 <div className="absolute right-3 top-1/2 -translate-y-1/2">
                   {checkingNickname && <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />}
-                  {!checkingNickname && nicknameAvailable === true && <Check className="w-4 h-4 text-emerald-500" />}
-                  {!checkingNickname && nicknameAvailable === false && <X className="w-4 h-4 text-destructive" />}
+                  {!checkingNickname && nicknameAvailable === true && <Check className="w-4 h-4 text-emerald-500 animate-scale-in" />}
+                  {!checkingNickname && nicknameAvailable === false && <X className="w-4 h-4 text-destructive animate-scale-in" />}
                 </div>
               </div>
               {nickname.length > 0 && nickname.length < 2 && (
-                <p className="text-xs text-destructive mt-1">At least 2 characters required</p>
+                <p className="text-xs text-destructive mt-1 animate-fade-in">At least 2 characters required</p>
               )}
               {nicknameAvailable === false && (
-                <p className="text-xs text-destructive mt-1">This nickname is taken in this module. Try another!</p>
+                <p className="text-xs text-destructive mt-1 animate-fade-in">This nickname is taken in this module. Try another!</p>
               )}
               {nicknameAvailable === true && (
-                <p className="text-xs text-emerald-600 mt-1">Nickname available!</p>
+                <p className="text-xs text-emerald-600 mt-1 animate-fade-in">Nickname available!</p>
               )}
             </div>
             <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-800 text-xs text-muted-foreground space-y-1">
@@ -545,6 +528,7 @@ export default function LeaderboardPage() {
               onClick={handleJoin}
               disabled={!nicknameAvailable || joining || nickname.length < 2}
               data-testid="confirm-join-btn"
+              className="transition-all duration-200 hover:scale-[1.02]"
             >
               {joining ? 'Joining...' : 'Join Leaderboard'}
             </Button>
@@ -552,7 +536,6 @@ export default function LeaderboardPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Profile Modal */}
       <ProfileModal
         userId={profileUserId}
         courseId={selectedCourse}
