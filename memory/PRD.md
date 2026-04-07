@@ -7,138 +7,123 @@ Build a comprehensive code assessment and moderation platform ("CodeFeedback Stu
 - GitHub-style inline code feedback
 - Gamification with XP and badges
 - Three-phase assignment lifecycle (Schedule Release, Set Deadline, Publish Results)
+- Module-specific opt-in leaderboards with nicknames and privacy controls
+- User profiles accessible from leaderboards
 
 ## Tech Stack
-- **Frontend**: React 18, Tailwind CSS, shadcn/ui, Monaco Editor
+- **Frontend**: React 18, Tailwind CSS, shadcn/ui, Monaco Editor, Lucide Icons
 - **Backend**: FastAPI, Python 3.11+, Pydantic
 - **Database**: MongoDB with Motor (async driver)
-- **Auth**: JWT-based authentication
+- **Auth**: JWT-based authentication (bcrypt)
+- **Build**: CRACO
 
 ## What's Been Implemented
 
-### Core Features ✅
+### Core Features
 - [x] User registration (Student/Marker roles)
 - [x] JWT-based authentication
 - [x] Course creation and management
 - [x] Role assignment (Leader, Collaborator, Moderator)
 - [x] Multi-file code submissions
 - [x] GitHub-style code review interface
-- [x] **Delete assignment** (Module Leader only)
-- [x] **Reusable issue templates** with category, severity, suggested fix
+- [x] Delete assignment (Module Leader only)
+- [x] Reusable issue templates with category, severity, suggested fix
 
-### Assignment Workflow ✅ (Completed December 2025)
-- [x] **Schedule Release** (Yes/No toggle)
-  - If Yes: Students only see assignment after release date
-  - If No: Assignment immediately visible
-- [x] **Set Deadline** (Yes/No toggle)
-  - If Yes: Submissions close at deadline; markers see submissions after deadline
-  - If No: Markers see submissions immediately
-- [x] **Publish Results** (collective action)
-  - Review status tracking (X/Y reviewed)
-  - Warning if not all submissions reviewed
-  - Schedule publish date/time
-  - Students see marks/feedback collectively at publish time
+### Assignment Workflow
+- [x] Schedule Release (Yes/No toggle)
+- [x] Set Deadline (Yes/No toggle)
+- [x] Publish Results (collective action with scheduling)
 
-### Gamification ✅ (Fixed December 2025)
-- [x] XP system for students and markers with XP history logging
-- [x] **Centralized badge evaluation** - badges checked on stats fetch
-- [x] **Level progress percentage** calculation
-- [x] Badge categories:
-  - **Students**: Getting Started, Bug Fixing, Excellence, Consistency, Debugging Mastery, Code Quality
-  - **Markers**: Getting Started, Speed & Efficiency, Quality & Thoroughness, Impact & Mentoring, Mastery
-- [x] Level progression (Novice → Grandmaster)
-- [x] Dedicated badge pages for both roles
-- [x] **XP awarded on grading** (+25 XP) and no-issues (+15 XP)
-- [x] **Atomic badge awarding** to prevent duplicates
+### Gamification (Extended Feb 2026)
+- [x] 14 Student badges (First Steps, Bug Squasher, Quick Learner, Zero to Hero, Perfectionist, Five Star Coder, Rapid Improver, Consistent Performer, Streak Warrior, Early Bird, Feedback Champion, Tenacious, Multi-Talented, Centurion)
+- [x] 13 Marker badges (First Review, Speed Reviewer, On-Time Champion, Quick Turnaround, Thorough Reviewer, Feedback Master, Detail Oriented, Template Architect, Mentor, Consistent Marker, Quality Guardian, Multi-Course Expert, Century Reviewer)
+- [x] XP system with 10 levels (Novice to Grandmaster)
+- [x] Centralized badge evaluation on stats fetch
+- [x] XP history logging
 
-### Moderation ✅ (Fixed December 2025)
-- [x] `/api/moderation/queue` - All failed + 10% sample of passed submissions
-- [x] `/api/moderation/dashboard` - Comprehensive stats per course
-- [x] `/api/moderation/issues` - Issue listing with proper filtering
+### Module Leaderboards (New - Feb 2026)
+- [x] Per-module opt-in leaderboards for students and markers
+- [x] Unique nicknames per module with real-time availability check
+- [x] Privacy-first: real names never shown on leaderboard
+- [x] Student scoring: submissions, on-time, fixes, perfects, quick fixes
+- [x] Marker scoring: reviews, issues found, approvals, turnaround
+- [x] Leave/rejoin anytime without losing XP/badges
+- [x] Profile modal with badges, XP, level, and active modules
+
+### Moderation
+- [x] Moderation queue (all failed + 10% sample of passed)
+- [x] Moderation dashboard with per-course stats
 - [x] Issue workflow: create → approve/reject → resolve
-- [x] Moderator badge for consistent marking (95% approval rate)
+- [x] Course leaders can access moderation for their courses
 
-### UI/UX ✅
+### UI/UX
 - [x] Dark mode toggle (light mode default)
-- [x] Improved dark mode contrast and readability
-- [x] **Fast loading screen** (~1.5 seconds with assembly animation)
-- [x] Clean, minimal card-based design
+- [x] Fast loading screen (~1.5s assembly animation)
+- [x] Leaderboard page with podium, ranked table, profile modal
 
-### Documentation ✅
-- [x] Comprehensive README.md with:
-  - Full tech stack
-  - Local setup instructions (Windows/Mac/Linux)
-  - Assignment lifecycle explanation
-  - Gamification system details
-  - Troubleshooting guide
+### Documentation
+- [x] Comprehensive README with setup guide, badge guide, feature docs
 
 ## API Endpoints
 
 | Endpoint | Method | Description |
 |----------|--------|-------------|
-| `/api/auth/register` | POST | Register (student/marker) |
-| `/api/auth/login` | POST | Login and get JWT |
-| `/api/courses` | GET/POST | List or create courses |
-| `/api/assignments` | GET/POST | List or create assignments |
-| `/api/assignments/{id}` | GET | Get single assignment |
-| `/api/assignments/{id}` | DELETE | Delete assignment (Leader only) |
-| `/api/assignments/{id}/review-status` | GET | Get review progress |
-| `/api/assignments/{id}/publish-results` | POST | Schedule results publication |
-| `/api/submissions` | GET/POST | List or submit code |
-| `/api/submissions/{id}/grade` | POST | Grade a submission |
-| `/api/issues` | GET/POST | List or create feedback |
-| `/api/gamification/stats` | GET | XP, level, and badges |
+| `/api/auth/register` | POST | Register |
+| `/api/auth/login` | POST | Login |
+| `/api/courses` | GET/POST | Courses |
+| `/api/assignments` | GET/POST | Assignments |
+| `/api/assignments/{id}` | DELETE | Delete assignment |
+| `/api/assignments/{id}/publish-results` | POST | Publish results |
+| `/api/submissions` | GET/POST | Submissions |
+| `/api/submissions/{id}/grade` | POST | Grade |
+| `/api/issues` | GET/POST | Feedback issues |
+| `/api/gamification/stats` | GET | XP, level, badges |
+| `/api/leaderboard/join` | POST | Join leaderboard |
+| `/api/leaderboard/leave` | POST | Leave leaderboard |
+| `/api/leaderboard/check-nickname` | GET | Nickname availability |
+| `/api/leaderboard/{course_id}/students` | GET | Student leaderboard |
+| `/api/leaderboard/{course_id}/markers` | GET | Marker leaderboard |
+| `/api/profile/{user_id}` | GET | User profile |
 
 ## Database Schema
 
-### Assignments
+### leaderboard_settings (New)
 ```json
 {
   "id": "uuid",
-  "course_id": "uuid",
-  "title": "string",
-  "description": "string",
-  "has_deadline": false,
-  "due_date": "datetime | null",
-  "has_schedule_release": false,
-  "schedule_release_date": "datetime | null",
-  "results_publish_date": "datetime | null",
-  "results_published": false,
-  "total_marks": 100,
-  "max_attempts": -1
+  "user_id": "string",
+  "course_id": "string",
+  "nickname": "string",
+  "joined": true,
+  "role": "student|marker",
+  "created_at": "datetime",
+  "updated_at": "datetime"
 }
 ```
 
 ## Prioritized Backlog
 
-### P0 (Critical) - DONE
-- ~~Assignment workflow with Schedule Release, Deadline, Publish Results~~
-- ~~Dark mode improvements~~
-- ~~Loading screen polish~~
-- ~~README update~~
-
 ### P1 (High Priority)
 - [ ] Email notifications via Resend when results are published
-- [ ] ESLint `react-hooks/exhaustive-deps` warnings fix
+- [ ] N+1 query optimization (MongoDB $lookup aggregation)
+- [ ] Refactor server.py into modular routers
 
 ### P2 (Medium Priority)
+- [ ] ESLint react-hooks/exhaustive-deps warnings fix
 - [ ] Phase 3 - Analytics & Reporting dashboards
-- [ ] System Modeling Documentation (Event B diagrams)
-- [ ] Advanced filtering for submissions list
 
 ### P3 (Low Priority/Future)
-- [ ] Bulk import students via CSV
 - [ ] Code plagiarism detection
+- [ ] Bulk import students via CSV
 - [ ] Real-time collaboration for markers
-- [ ] Mobile responsive improvements
+- [ ] System Modeling Documentation (Event B)
 
 ## Test Credentials
 - **Marker**: marker@test.com / password123
 - **Student**: student@test.com / password123
 
 ## Known Issues
-- Windows users may encounter `.env` encoding issues (UTF-16 instead of UTF-8)
-  - Solution: Use PowerShell command in README or save with UTF-8 in VS Code
+- Windows users may encounter `.env` encoding issues (UTF-16)
 
 ---
-*Last Updated: December 2025*
+*Last Updated: February 2026*
