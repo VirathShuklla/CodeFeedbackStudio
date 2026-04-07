@@ -1,910 +1,457 @@
 # CodeFeedback Studio
 
-<div align="center">
-
-![CodeFeedback Studio](https://img.shields.io/badge/CodeFeedback-Studio-6366f1?style=for-the-badge&logo=code&logoColor=white)
-![Version](https://img.shields.io/badge/version-2.5.0-blue?style=for-the-badge)
-![License](https://img.shields.io/badge/license-MIT-green?style=for-the-badge)
-![React](https://img.shields.io/badge/React-18-61DAFB?style=for-the-badge&logo=react&logoColor=white)
-![FastAPI](https://img.shields.io/badge/FastAPI-0.104-009688?style=for-the-badge&logo=fastapi&logoColor=white)
-![MongoDB](https://img.shields.io/badge/MongoDB-7.0-47A248?style=for-the-badge&logo=mongodb&logoColor=white)
-
-**A comprehensive code assessment and feedback platform for programming education**
-
-[Features](#-features) • [Quick Start](#-quick-start) • [Gamification](#-gamification-system) • [API Docs](#-api-documentation) • [Contributing](#-contributing)
-
-</div>
+A comprehensive code assessment, feedback, and moderation platform built for universities and educational institutions. Designed to streamline the assignment submission, marking, and feedback cycle while keeping students motivated through gamification.
 
 ---
 
-## 📋 Table of Contents
+## Table of Contents
 
-- [Overview](#-overview)
-- [Features](#-features)
-- [User Roles](#-user-roles)
-- [Assignment Lifecycle](#-assignment-lifecycle)
-- [Gamification System](#-gamification-system)
-- [Moderation System](#-moderation-system)
-- [Tech Stack](#-tech-stack)
-- [Quick Start](#-quick-start)
-- [API Documentation](#-api-documentation)
-- [Database Schema](#-database-schema)
-- [Troubleshooting](#-troubleshooting)
-- [Contributing](#-contributing)
-
----
-
-## 🎯 Overview
-
-**CodeFeedback Studio** is a full-featured code assessment platform designed for universities and coding bootcamps. It enables instructors to provide GitHub-style inline code reviews, manage assignments with flexible deadlines, and motivate both students and markers through a comprehensive gamification system.
-
-### Why CodeFeedback Studio?
-
-| Traditional Methods | CodeFeedback Studio |
-|---------------------|---------------------|
-| Email-based submissions | Centralized submission portal |
-| Generic feedback | Line-by-line inline comments |
-| No progress tracking | XP, badges, and level progression |
-| Manual moderation | Automated sampling + moderation workflow |
-| Inconsistent grading | Reusable feedback templates |
+- [Overview](#overview)
+- [Tech Stack](#tech-stack)
+- [Features](#features)
+  - [For Students](#for-students)
+  - [For Markers](#for-markers)
+  - [For Moderators & Module Leaders](#for-moderators--module-leaders)
+- [Gamification System](#gamification-system)
+  - [Student Badges](#student-badges)
+  - [Marker Badges](#marker-badges)
+  - [XP & Levels](#xp--levels)
+- [Module Leaderboards](#module-leaderboards)
+- [How Feedback Works](#how-feedback-works)
+- [Assignment Lifecycle](#assignment-lifecycle)
+- [Local Setup Guide](#local-setup-guide)
+  - [Prerequisites](#prerequisites)
+  - [Backend Setup](#backend-setup)
+  - [Frontend Setup](#frontend-setup)
+  - [Running the App](#running-the-app)
+- [Environment Variables](#environment-variables)
+- [API Reference](#api-reference)
+- [Deployment](#deployment)
+- [Troubleshooting](#troubleshooting)
 
 ---
 
-## ✨ Features
+## Overview
 
-### 📝 Code Submission & Review
+CodeFeedback Studio is a multi-role platform where:
 
-- **Multi-file Submissions**: Students can submit multiple Python files per assignment
-- **GitHub-style Code Review**: Markers can select specific lines and add contextual feedback
-- **Syntax Highlighting**: Monaco Editor integration with full Python syntax support
-- **Diff Comparison**: Compare current submission with previous attempts
-- **Issue Categorization**: Organize feedback by category (Logic, Style, Performance, etc.)
-- **Severity Levels**: Mark issues as Critical, Moderate, or Minor
-- **Suggested Fixes**: Provide actionable improvement suggestions
+- **Students** submit code assignments, receive inline feedback, fix issues, and track their learning progress.
+- **Markers** review submissions, provide GitHub-style inline code feedback with severity levels, and use reusable templates.
+- **Moderators** audit marker feedback to ensure quality and consistency.
+- **Module Leaders** manage courses, assignments, team members, and publish results.
 
-### 📚 Course Management
-
-- **Course Creation**: Create courses with code, name, semester, and year
-- **Team Collaboration**: Add collaborators and moderators to courses
-- **Student Enrollment**: Students can browse and enroll in available courses
-- **Role Assignment**: Assign Module Leader, Collaborator, or Moderator roles
-- **Leadership Transfer**: Transfer course ownership to another marker
-
-### 📋 Assignment Lifecycle
-
-Three distinct controls give markers full flexibility:
-
-| Control | Options | Behavior |
-|---------|---------|----------|
-| **Schedule Release** | Yes/No | Controls when students can see the assignment |
-| **Set Deadline** | Yes/No | Controls submission window and marker access |
-| **Publish Results** | Date/Time | When all students receive marks collectively |
-
-### 🎮 Gamification
-
-- **XP System**: Earn experience points for completing actions
-- **Badge Unlocks**: Achieve milestones to unlock badges
-- **Level Progression**: Progress from Novice to Grandmaster
-- **Progress Tracking**: Visual progress bars and statistics
-- **Leaderboards**: Compare progress with peers (coming soon)
-
-### 🛡️ Moderation
-
-- **Automatic Sampling**: 100% of failed submissions + 10% random sample of passed
-- **Issue Workflow**: Moderators raise issues, Module Leaders approve/reject
-- **Audit Trail**: Full history of moderation decisions
-- **Consistency Badge**: Markers earn badges for high approval rates
-
-### 🎨 User Experience
-
-- **Dark Mode**: Toggle between light and dark themes
-- **Fast Loading**: Optimized 1.5-second loading screen with assembly animation
-- **Responsive Design**: Works on desktop and tablet devices
-- **Toast Notifications**: Real-time feedback for all actions
-- **Keyboard Shortcuts**: Quick navigation and actions
+The platform encourages positive academic behaviour through a gamification system with XP, badges, levels, and optional per-module leaderboards.
 
 ---
 
-## 👥 User Roles
+## Tech Stack
 
-### 🎓 Student
-
-Students are the primary users who submit code and receive feedback.
-
-**Capabilities:**
-- Browse and enroll in courses
-- View released assignments
-- Submit code (single or multiple files)
-- View inline feedback and marks (after publication)
-- Mark issues as "fixed" and resubmit
-- Track XP, badges, and level progress
-
-**Dashboard Features:**
-- Active assignments list
-- Submission history
-- Feedback overview
-- Gamification stats
+| Layer       | Technology                                       |
+|-------------|--------------------------------------------------|
+| Frontend    | React 18, Tailwind CSS, shadcn/ui, Lucide Icons  |
+| Backend     | FastAPI (Python 3.11+), Pydantic                 |
+| Database    | MongoDB with Motor (async driver)                |
+| Auth        | JWT-based authentication (bcrypt hashing)         |
+| Code Editor | Monaco Editor (VS Code engine)                   |
+| Build Tool  | CRACO (Create React App Configuration Override)   |
 
 ---
 
-### ✏️ Marker
+## Features
 
-Markers are instructors who review code and provide feedback.
+### For Students
 
-**Capabilities:**
-- Create and manage courses
-- Create assignments with flexible scheduling
-- Review student submissions with inline comments
-- Grade submissions and assign marks
-- Create reusable feedback templates
-- View analytics and statistics
+| Feature                  | Description                                                         |
+|--------------------------|---------------------------------------------------------------------|
+| Course Enrollment        | Browse and join available courses                                   |
+| Code Submission          | Submit multi-file code via Monaco Editor                            |
+| Inline Feedback          | View GitHub-style line-by-line feedback from markers                |
+| Issue Tracking           | See open issues, mark them as fixed to earn XP                      |
+| Resubmission             | Resubmit improved code (tracked by attempt number)                  |
+| Progress Analytics       | Dashboard with per-course stats, fix rates, and issue breakdowns    |
+| Badges & XP              | Earn badges for good practices (on-time submissions, fixing issues) |
+| Module Leaderboard       | Opt-in to compete with peers using a private nickname               |
+| Profile                  | View your badges, XP, level, and active leaderboard modules         |
 
-**Special Features:**
-- Can only view submissions after deadline (if set)
-- Earn XP for completing reviews
-- Track review statistics
+### For Markers
 
----
+| Feature                  | Description                                                         |
+|--------------------------|---------------------------------------------------------------------|
+| Submission Queue         | View all pending submissions per course/assignment                  |
+| Code Review Interface    | Full Monaco Editor with line selection for inline feedback          |
+| Issue Templates          | Create and reuse common feedback templates                          |
+| Grading                  | Assign marks, add feedback, or mark submissions as "No Issues"      |
+| Publish Results          | Schedule when students see their marks                              |
+| Badges & XP              | Earn badges for review speed, thoroughness, and mentoring           |
+| Module Leaderboard       | Opt-in marker leaderboard per module                                |
+| Analytics                | Track reviews completed, pending reviews, per-course breakdowns     |
 
-### 🛡️ Moderator
+### For Moderators & Module Leaders
 
-Moderators ensure grading quality and consistency.
-
-**Capabilities:**
-- Access moderation queue (failed + 10% sample)
-- Raise issues against marker grading
-- Confirm submissions as "No Issue"
-- View moderation dashboard and statistics
-
-**Access Rules:**
-- Can only moderate courses they're assigned to
-- Cannot modify marks directly
-- Issues go to Module Leader for final decision
-
----
-
-### 👑 Module Leader
-
-Module Leaders have full control over their courses.
-
-**Capabilities:**
-- All Marker capabilities
-- All Moderator capabilities
-- Approve or reject moderation issues
-- Transfer course leadership
-- Manage team (add/remove collaborators and moderators)
-- Delete assignments
-
-**Special Powers:**
-- Final authority on grading disputes
-- Can publish results for entire assignment
-- Access to all course analytics
+| Feature                  | Description                                                         |
+|--------------------------|---------------------------------------------------------------------|
+| Moderation Queue         | Auto-sampled queue: all failed + 10% random sample of passed        |
+| Issue Flagging           | Raise moderation issues on marker feedback                          |
+| Approve / Reject         | Module leaders can approve or reject moderation flags               |
+| Course Management        | Add/remove collaborators, moderators; transfer leadership           |
+| Assignment Management    | Create, edit, delete assignments; set deadlines and release dates    |
+| Dashboard Stats          | Course-wide moderation statistics                                   |
 
 ---
 
-## 📅 Assignment Lifecycle
+## Gamification System
 
-### Phase 1: Creation
+The gamification system is designed to reward positive academic behaviour rather than raw scores. Both students and markers earn XP and badges for constructive participation.
 
-The Module Leader creates an assignment with three key settings:
+### Student Badges
+
+| Badge                | How to Earn                                           | XP   |
+|----------------------|-------------------------------------------------------|------|
+| First Steps          | Submit your first assignment                          | 50   |
+| Bug Squasher         | Fix 10 issues across your submissions                 | 100  |
+| Quick Learner        | Fix an issue within 24 hours of feedback              | 75   |
+| Zero to Hero         | Fix every single issue in a submission                | 100  |
+| Perfectionist        | Get a submission marked with no issues                | 150  |
+| Five Star Coder      | Get 5 perfect submissions with no issues              | 200  |
+| Rapid Improver       | Improve your score by 20% on a resubmission           | 125  |
+| Consistent Performer | Submit 5 assignments on time                          | 100  |
+| Streak Warrior       | Submit 3 assignments on time in a row                 | 80   |
+| Early Bird           | Submit an assignment 24 hours before the deadline      | 60   |
+| Feedback Champion    | Fix at least 80% of all issues raised on your work    | 120  |
+| Tenacious            | Resubmit and improve your score 3 times               | 110  |
+| Multi-Talented       | Be active in 3 or more modules                        | 90   |
+| Centurion            | Earn a total of 500 XP                                | 75   |
+
+### Marker Badges
+
+| Badge                | How to Earn                                            | XP   |
+|----------------------|--------------------------------------------------------|------|
+| First Review         | Complete your first code review                        | 50   |
+| Speed Reviewer       | Review 10 submissions within deadline                  | 100  |
+| On-Time Champion     | Review all assignments before deadline for a course    | 150  |
+| Quick Turnaround     | Review 5 submissions within 48 hours of submission     | 110  |
+| Thorough Reviewer    | Provide detailed feedback on 20 submissions            | 150  |
+| Feedback Master      | Create 10 reusable feedback templates                  | 100  |
+| Detail Oriented      | Average 3+ issues per review on at least 10 reviews    | 125  |
+| Template Architect   | Create 20 reusable feedback templates                  | 150  |
+| Mentor               | Help 5 students achieve perfect scores                 | 200  |
+| Consistent Marker    | Maintain 95% moderation approval rate                  | 175  |
+| Quality Guardian     | 100% moderation approval on 10+ reviews                | 200  |
+| Multi-Course Expert  | Actively review in 3 or more courses                   | 90   |
+| Century Reviewer     | Complete 100 code reviews                              | 250  |
+
+### XP & Levels
+
+XP is earned through actions and badge unlocks:
+
+| Level | Title         | XP Required |
+|-------|---------------|-------------|
+| 1     | Novice        | 0           |
+| 2     | Beginner      | 100         |
+| 3     | Learner       | 300         |
+| 4     | Practitioner  | 600         |
+| 5     | Competent     | 1,000       |
+| 6     | Proficient    | 1,500       |
+| 7     | Advanced      | 2,200       |
+| 8     | Expert        | 3,000       |
+| 9     | Master        | 4,000       |
+| 10    | Grandmaster   | 5,200       |
+
+**XP Sources:**
+- Grading a submission: +25 XP (marker)
+- Marking "No Issues": +15 XP (marker)
+- Fixing an issue within 24h: full severity XP (student)
+- Fixing an issue after 24h: half XP (student)
+- Badge unlock: varies (50-250 XP)
+
+---
+
+## Module Leaderboards
+
+Each course/module has separate, opt-in leaderboards for students and markers.
+
+**Key Principles:**
+- **Voluntary**: Joining is completely optional. You earn XP and badges regardless.
+- **Private**: You pick a unique nickname per module. Your real name is never displayed.
+- **Per-Module**: You can be on the leaderboard in one module but private in another.
+- **Fair**: Rankings compare only within the same module, not across the platform.
+- **Separate**: Student and marker leaderboards are independent.
+
+**Student Leaderboard Score** is based on:
+- Submissions made (10 pts each)
+- On-time submissions (15 pts each)
+- Issues fixed (8 pts each)
+- Perfect submissions (30 pts each)
+- Quick fixes within 24h (5 pts bonus)
+
+**Marker Leaderboard Score** is based on:
+- Reviews completed (10 pts each)
+- Issues found / thoroughness (5 pts each)
+- Moderation approvals (20 pts each)
+- Quick turnaround within 48h (8 pts bonus)
+
+---
+
+## How Feedback Works
+
+1. **Marker opens a submission** in the code review interface (Monaco Editor).
+2. **Selects lines of code** and creates an inline issue with:
+   - Title and explanation
+   - Category (Logic Error, Style, Efficiency, Security, Best Practice)
+   - Severity (Minor, Moderate, Critical)
+   - Suggested fix and reference links
+   - Marks deduction
+3. **Student receives feedback** when results are published.
+4. **Student fixes issues** and marks them as resolved — earning XP.
+5. **Student can resubmit** with improved code for the next attempt.
+
+Templates allow markers to save common feedback patterns (e.g., "Missing null check", "Inefficient loop") and reuse them across submissions for consistency.
+
+---
+
+## Assignment Lifecycle
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                    CREATE ASSIGNMENT                        │
-├─────────────────────────────────────────────────────────────┤
-│  Title: Week 3 - Functions                                  │
-│  Description: Practice writing reusable functions           │
-│  Total Marks: 100                                           │
-│  Max Attempts: 3                                            │
-├─────────────────────────────────────────────────────────────┤
-│  ┌─────────────────────────────────────────────────────┐   │
-│  │ Schedule Release?  [No] ←→ [Yes]                    │   │
-│  │ If Yes: Students see assignment after release date  │   │
-│  │ If No: Visible immediately                          │   │
-│  └─────────────────────────────────────────────────────┘   │
-│                                                             │
-│  ┌─────────────────────────────────────────────────────┐   │
-│  │ Set a Deadline?  [No] ←→ [Yes]                      │   │
-│  │ If Yes: Submissions close at deadline               │   │
-│  │         Markers see submissions AFTER deadline      │   │
-│  │ If No: Markers see submissions immediately          │   │
-│  └─────────────────────────────────────────────────────┘   │
-└─────────────────────────────────────────────────────────────┘
-```
-
-### Phase 2: Student Submission
-
-```
-Student View:
-┌─────────────────────────────────────────┐
-│ Week 3 - Functions                      │
-│ Due: March 15, 2026 at 11:59 PM         │
-│ Attempts: 0/3                           │
-│                                         │
-│ [Upload Files]  [Submit]                │
-└─────────────────────────────────────────┘
-
-Rules:
-✓ Can submit multiple files (.py)
-✓ Can resubmit until deadline (if set)
-✓ Can resubmit until max attempts reached
-✗ Cannot submit after deadline passes
-✗ Cannot see other students' work
-```
-
-### Phase 3: Marker Review
-
-```
-Marker View (after deadline):
-┌─────────────────────────────────────────────────────────────┐
-│ Submissions for "Week 3 - Functions"                        │
-├─────────────────────────────────────────────────────────────┤
-│ ○ Alice Johnson    │ Pending    │ Attempt 2 │ [Review]     │
-│ ○ Bob Smith        │ Pending    │ Attempt 1 │ [Review]     │
-│ ● Carol Davis      │ Reviewed   │ 85/100    │ [View]       │
-└─────────────────────────────────────────────────────────────┘
-
-Review Interface:
-┌─────────────────────────────────────────────────────────────┐
-│  main.py                                                    │
-├─────────────────────────────────────────────────────────────┤
-│  1 │ def calculate_sum(numbers):                            │
-│  2 │     total = 0                    ← [Add Issue]         │
-│  3 │     for n in numbers:                                  │
-│  4 │         total = total + n        ← [Add Issue]         │
-│  5 │     return total                                       │
-├─────────────────────────────────────────────────────────────┤
-│ Issue: Use += operator for cleaner code                     │
-│ Category: Style │ Severity: Minor │ Deduction: -2           │
-│ [Add Issue]                                                 │
-├─────────────────────────────────────────────────────────────┤
-│ Final Grade: [85] / 100                                     │
-│ [Grade Submission]  [Mark as No Issues]                     │
-└─────────────────────────────────────────────────────────────┘
-```
-
-### Phase 4: Results Publication
-
-```
-Publish Results Dialog:
-┌─────────────────────────────────────────────────────────────┐
-│              PUBLISH RESULTS                                │
-├─────────────────────────────────────────────────────────────┤
-│ Review Progress:                                            │
-│ ████████████████████░░░░  16/20 reviewed (80%)              │
-│                                                             │
-│ ⚠️ 4 submissions still pending review                       │
-│    Students with unreviewed submissions won't receive       │
-│    feedback yet.                                            │
-├─────────────────────────────────────────────────────────────┤
-│ Publish Date & Time:                                        │
-│ [March 20, 2026] [12:00 PM]                                 │
-│                                                             │
-│ At this time, ALL students will receive their marks         │
-│ and feedback simultaneously.                                │
-├─────────────────────────────────────────────────────────────┤
-│ [Cancel]                    [Schedule Publication]          │
-└─────────────────────────────────────────────────────────────┘
+Create Assignment
+       |
+       v
+ [Schedule Release?] --Yes--> Assignment hidden until release date
+       |No
+       v
+ Assignment visible to students
+       |
+       v
+ Students submit code
+       |
+       v
+ [Has Deadline?] --Yes--> Submissions close at deadline
+       |No                     Markers see submissions after deadline
+       v
+ Markers review & grade (any time)
+       |
+       v
+ Module Leader: "Publish Results"
+       |
+       v
+ [Schedule Publish?] --Yes--> Results visible at scheduled time
+       |No
+       v
+ Results immediately visible to students
 ```
 
 ---
 
-## 🎮 Gamification System
-
-CodeFeedback Studio features a comprehensive gamification system designed to motivate both students and markers through XP, badges, and level progression.
-
-### XP (Experience Points)
-
-XP is the primary currency of progress. Users earn XP by completing actions within the platform.
-
-#### Student XP Sources
-
-| Action | XP Earned | Notes |
-|--------|-----------|-------|
-| Submit assignment | +10 XP | First submission only |
-| Mark issue as fixed | +5 XP | Per issue |
-| Receive perfect score | +25 XP | No issues found |
-| Improve on resubmission | +15 XP | Score improvement ≥20% |
-
-#### Marker XP Sources
-
-| Action | XP Earned | Notes |
-|--------|-----------|-------|
-| Grade a submission | +25 XP | Per submission graded |
-| Mark as "No Issues" | +15 XP | Perfect submission |
-| Create feedback template | +10 XP | Reusable template |
-| Badge unlock | +50-200 XP | Varies by badge |
-
----
-
-### 🏅 Student Badges
-
-Students can earn 6 unique badges across different categories:
-
-#### Getting Started
-
-| Badge | Name | Description | XP Reward |
-|-------|------|-------------|-----------|
-| 🚀 | **First Steps** | Submit your first assignment | +50 XP |
-
-*Unlocks automatically on first submission.*
-
-#### Bug Fixing
-
-| Badge | Name | Description | XP Reward |
-|-------|------|-------------|-----------|
-| 🐛 | **Bug Squasher** | Fix 10 issues across all submissions | +100 XP |
-
-*Tracks cumulative issue fixes. Progress shown on badges page.*
-
-#### Quick Response
-
-| Badge | Name | Description | XP Reward |
-|-------|------|-------------|-----------|
-| ⚡ | **Quick Learner** | Fix an issue within 24 hours of receiving feedback | +75 XP |
-
-*Rewards fast response to feedback.*
-
-#### Excellence
-
-| Badge | Name | Description | XP Reward |
-|-------|------|-------------|-----------|
-| ⭐ | **Perfectionist** | Receive a submission graded as "No Issues" | +150 XP |
-
-*Awarded when a marker marks submission as perfect.*
-
-#### Consistency
-
-| Badge | Name | Description | XP Reward |
-|-------|------|-------------|-----------|
-| 📅 | **Consistent Performer** | Submit 5 assignments before their deadlines | +100 XP |
-
-*Tracks on-time submissions.*
-
-#### Improvement
-
-| Badge | Name | Description | XP Reward |
-|-------|------|-------------|-----------|
-| 📈 | **Rapid Improver** | Improve your score by 20% or more on a resubmission | +125 XP |
-
-*Compares current attempt to previous attempt.*
-
----
-
-### 🏆 Marker Badges
-
-Markers can earn 7 unique badges across different categories:
-
-#### Getting Started
-
-| Badge | Name | Description | XP Reward |
-|-------|------|-------------|-----------|
-| ✅ | **First Review** | Complete your first code review | +50 XP |
-
-*Unlocks automatically on first graded submission.*
-
-#### Speed & Efficiency
-
-| Badge | Name | Description | XP Reward |
-|-------|------|-------------|-----------|
-| ⚡ | **Speed Reviewer** | Review 10 submissions | +100 XP |
-| ⏰ | **On-Time Champion** | Review all assignments before deadline for a course | +150 XP |
-
-*Speed Reviewer tracks total reviews. On-Time Champion requires 100% completion before any deadline.*
-
-#### Quality & Thoroughness
-
-| Badge | Name | Description | XP Reward |
-|-------|------|-------------|-----------|
-| 🔍 | **Thorough Reviewer** | Provide detailed feedback (20+ issues created) | +150 XP |
-| 📝 | **Feedback Master** | Create 10 reusable feedback templates | +100 XP |
-
-*Thorough Reviewer counts total issues created. Feedback Master encourages template usage.*
-
-#### Impact & Mentoring
-
-| Badge | Name | Description | XP Reward |
-|-------|------|-------------|-----------|
-| 👥 | **Mentor** | Help 5 students achieve perfect scores | +200 XP |
-| 🎯 | **Consistent Marker** | Maintain 95% moderation approval rate | +175 XP |
-
-*Mentor tracks "No Issues" grades. Consistent Marker requires 20+ moderated submissions with 95% approval.*
-
----
-
-### 📊 Level Progression
-
-Both students and markers progress through 10 levels based on total XP:
-
-| Level | Title | Min XP | XP to Next |
-|-------|-------|--------|------------|
-| 1 | Novice | 0 | 100 |
-| 2 | Beginner | 100 | 200 |
-| 3 | Learner | 300 | 300 |
-| 4 | Practitioner | 600 | 400 |
-| 5 | Competent | 1,000 | 500 |
-| 6 | Proficient | 1,500 | 700 |
-| 7 | Advanced | 2,200 | 800 |
-| 8 | Expert | 3,000 | 1,000 |
-| 9 | Master | 4,000 | 1,200 |
-| 10 | Grandmaster | 5,200 | Max |
-
-#### Level Progress Calculation
-
-```
-Progress % = (Current XP - Current Level Threshold) / 
-             (Next Level Threshold - Current Level Threshold) × 100
-
-Example: User with 450 XP
-- Current Level: 3 (Learner, threshold 300)
-- Next Level: 4 (Practitioner, threshold 600)
-- Progress = (450 - 300) / (600 - 300) × 100 = 50%
-```
-
----
-
-### 🎯 Gamification Best Practices
-
-#### For Course Designers
-
-1. **Set reasonable deadlines** to allow students to earn the "Consistent Performer" badge
-2. **Encourage resubmissions** to enable the "Rapid Improver" badge
-3. **Provide detailed feedback** so students can earn "Bug Squasher" by fixing issues
-
-#### For Markers
-
-1. **Create templates** for common issues to earn "Feedback Master"
-2. **Review promptly** to unlock "Speed Reviewer" and "On-Time Champion"
-3. **Be thorough** in feedback to help students improve and earn "Mentor"
-
-#### For Students
-
-1. **Submit early** to have time for resubmissions
-2. **Fix issues promptly** (within 24 hours) for "Quick Learner"
-3. **Address all feedback** to work toward "Bug Squasher"
-
----
-
-## 🛡️ Moderation System
-
-The moderation system ensures fair and consistent grading across all submissions.
-
-### Moderation Queue
-
-The moderation queue automatically selects submissions for review:
-
-```
-Selection Algorithm:
-1. Include ALL failed submissions (marks < 50%)
-2. Add 10% random sample of passed submissions
-3. Exclude already-moderated submissions
-
-Example:
-- Total reviewed: 100 submissions
-- Failed (< 50%): 15 submissions
-- Passed (≥ 50%): 85 submissions
-- Sample size: ceil(85 × 0.10) = 9 submissions
-- Moderation queue: 15 + 9 = 24 submissions
-```
-
-### Moderation Workflow
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                   MODERATION WORKFLOW                       │
-└─────────────────────────────────────────────────────────────┘
-
-                    ┌──────────────┐
-                    │  Submission  │
-                    │   Graded     │
-                    └──────┬───────┘
-                           │
-                           ▼
-              ┌────────────────────────┐
-              │  In Moderation Queue?  │
-              └───────────┬────────────┘
-                          │
-            ┌─────────────┴─────────────┐
-            │ Yes                       │ No
-            ▼                           ▼
-    ┌───────────────┐           ┌──────────────┐
-    │   Moderator   │           │   Complete   │
-    │    Reviews    │           │  (No action) │
-    └───────┬───────┘           └──────────────┘
-            │
-    ┌───────┴───────┐
-    │               │
-    ▼               ▼
-┌─────────┐   ┌───────────┐
-│   No    │   │   Issue   │
-│  Issue  │   │  Raised   │
-└────┬────┘   └─────┬─────┘
-     │              │
-     ▼              ▼
-┌─────────┐   ┌───────────────┐
-│ Approved│   │ Module Leader │
-│         │   │   Decides     │
-└─────────┘   └───────┬───────┘
-                      │
-            ┌─────────┴─────────┐
-            │                   │
-            ▼                   ▼
-      ┌──────────┐        ┌──────────┐
-      │ Approve  │        │  Reject  │
-      │  Issue   │        │  Issue   │
-      └────┬─────┘        └────┬─────┘
-           │                   │
-           ▼                   ▼
-      ┌──────────┐        ┌──────────┐
-      │  Marker  │        │  Issue   │
-      │ Notified │        │ Discarded│
-      └──────────┘        └──────────┘
-```
-
-### Moderation Dashboard
-
-Module Leaders and Moderators have access to comprehensive statistics:
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│              MODERATION DASHBOARD                           │
-├─────────────────────────────────────────────────────────────┤
-│                                                             │
-│  Total Submissions: 245    Reviewed: 198    Pending: 47    │
-│                                                             │
-│  Issues Summary:                                            │
-│  ● Open: 12       ● Resolved: 34       ● Discarded: 8      │
-│                                                             │
-├─────────────────────────────────────────────────────────────┤
-│  By Course:                                                 │
-│  ┌────────────────┬──────────┬────────┬────────┬────────┐  │
-│  │ Course         │ Reviewed │ Issues │ Open   │ Resolved│  │
-│  ├────────────────┼──────────┼────────┼────────┼────────┤  │
-│  │ CS101          │ 85       │ 18     │ 5      │ 13     │  │
-│  │ CS201          │ 63       │ 12     │ 3      │ 9      │  │
-│  │ CS301          │ 50       │ 16     │ 4      │ 12     │  │
-│  └────────────────┴──────────┴────────┴────────┴────────┘  │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
-```
-
----
-
-## 🛠️ Tech Stack
-
-### Frontend
-
-| Technology | Version | Purpose |
-|------------|---------|---------|
-| React | 18.x | UI Framework |
-| Tailwind CSS | 3.x | Styling |
-| shadcn/ui | Latest | Component Library |
-| Monaco Editor | 0.45.x | Code Editor |
-| Axios | 1.x | HTTP Client |
-| React Router | 6.x | Navigation |
-| Lucide React | Latest | Icons |
-| Sonner | Latest | Toast Notifications |
-
-### Backend
-
-| Technology | Version | Purpose |
-|------------|---------|---------|
-| FastAPI | 0.104.x | Web Framework |
-| Python | 3.11+ | Runtime |
-| Motor | 3.x | Async MongoDB Driver |
-| Pydantic | 2.x | Data Validation |
-| PyJWT | 2.x | Authentication |
-| Uvicorn | 0.24.x | ASGI Server |
-
-### Database
-
-| Technology | Version | Purpose |
-|------------|---------|---------|
-| MongoDB | 7.x | Primary Database |
-| MongoDB Atlas | - | Cloud Hosting (optional) |
-
----
-
-## 🚀 Quick Start
+## Local Setup Guide
 
 ### Prerequisites
 
-- Python 3.11+
-- Node.js 18+
-- MongoDB 7.0+ (local or Atlas)
-- Git
+- **Node.js** 18.x or later ([download](https://nodejs.org))
+- **Python** 3.11+ ([download](https://python.org))
+- **MongoDB** 6.0+ ([download](https://www.mongodb.com/try/download/community))
+- **Yarn** 1.22+ (`npm install -g yarn`)
 
-### 1. Clone Repository
+### Backend Setup
 
 ```bash
-git clone https://github.com/your-repo/codefeedback-studio.git
+# 1. Clone the repository
+git clone <your-repo-url>
 cd codefeedback-studio
-```
 
-### 2. Backend Setup
-
-```bash
+# 2. Create a virtual environment
 cd backend
-
-# Create virtual environment
 python -m venv venv
-source venv/bin/activate  # Linux/Mac
-# or
-venv\Scripts\activate     # Windows
 
-# Install dependencies
+# Activate (choose your OS):
+# Windows PowerShell:
+.\venv\Scripts\Activate.ps1
+# macOS / Linux:
+source venv/bin/activate
+
+# 3. Install dependencies
 pip install -r requirements.txt
 
-# Create .env file
-cat > .env << EOF
-MONGO_URL=mongodb://localhost:27017
-DB_NAME=codefeedback_studio
-JWT_SECRET=your-super-secret-key-change-in-production
-EOF
+# 4. Create environment file
+# Create backend/.env with:
+MONGO_URL="mongodb://localhost:27017"
+DB_NAME="codefeedback_studio"
+JWT_SECRET="your-secret-key-change-this-in-production"
 
-# Start backend
-uvicorn server:app --reload --port 8001
+# 5. Make sure MongoDB is running
+# Windows: net start MongoDB
+# macOS: brew services start mongodb-community
+# Linux: sudo systemctl start mongod
+
+# 6. Start the backend
+uvicorn server:app --host 0.0.0.0 --port 8001 --reload
 ```
 
-**Windows Users:** Create `.env` with proper encoding:
-```powershell
-[System.IO.File]::WriteAllLines("$PWD\.env", @(
-    "MONGO_URL=mongodb://localhost:27017",
-    "DB_NAME=codefeedback_studio",
-    "JWT_SECRET=your-super-secret-key"
-), [System.Text.UTF8Encoding]::new($false))
-```
-
-### 3. Frontend Setup
+### Frontend Setup
 
 ```bash
+# 1. Open a new terminal
 cd frontend
 
-# Install dependencies
+# 2. Install dependencies
 yarn install
 
-# Create .env file
-echo "REACT_APP_BACKEND_URL=http://localhost:8001" > .env
+# 3. Create environment file
+# Create frontend/.env with:
+REACT_APP_BACKEND_URL=http://localhost:8001
 
-# Start frontend
+# 4. Start the frontend
 yarn start
 ```
 
-### 4. Access Application
+### Running the App
 
-- Frontend: http://localhost:3000
-- Backend API: http://localhost:8001
-- API Docs: http://localhost:8001/docs
+1. Open `http://localhost:3000` in your browser.
+2. Register as a **Marker** to create courses and assignments.
+3. Register as a **Student** to enroll in courses and submit code.
+4. The marker who creates a course automatically becomes the **Module Leader**.
 
 ---
 
-## 📚 API Documentation
+## Environment Variables
+
+### Backend (`backend/.env`)
+
+| Variable     | Description                   | Example                        |
+|--------------|-------------------------------|--------------------------------|
+| `MONGO_URL`  | MongoDB connection string     | `mongodb://localhost:27017`    |
+| `DB_NAME`    | Database name                 | `codefeedback_studio`          |
+| `JWT_SECRET` | Secret key for JWT tokens     | `your-secret-key`             |
+
+### Frontend (`frontend/.env`)
+
+| Variable                  | Description            | Example                  |
+|---------------------------|------------------------|--------------------------|
+| `REACT_APP_BACKEND_URL`   | Backend API base URL   | `http://localhost:8001`  |
+
+---
+
+## API Reference
 
 ### Authentication
-
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/auth/register` | POST | Register new user |
-| `/api/auth/login` | POST | Login and get JWT |
-| `/api/auth/me` | GET | Get current user |
+| Method | Endpoint              | Description          |
+|--------|-----------------------|----------------------|
+| POST   | `/api/auth/register`  | Register new user    |
+| POST   | `/api/auth/login`     | Login, get JWT token |
+| GET    | `/api/auth/me`        | Get current user     |
 
 ### Courses
-
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/courses` | GET | List all courses |
-| `/api/courses` | POST | Create course (Marker) |
-| `/api/courses/{id}` | GET | Get course details |
-| `/api/courses/{id}` | PUT | Update course (Leader) |
+| Method | Endpoint                      | Description              |
+|--------|-------------------------------|--------------------------|
+| GET    | `/api/courses`                | List accessible courses  |
+| POST   | `/api/courses`                | Create course (marker)   |
+| GET    | `/api/courses/{id}`           | Get course details       |
+| PUT    | `/api/courses/{id}`           | Update course settings   |
 
 ### Assignments
+| Method | Endpoint                                    | Description                |
+|--------|---------------------------------------------|----------------------------|
+| GET    | `/api/assignments`                          | List assignments           |
+| POST   | `/api/assignments`                          | Create assignment          |
+| DELETE | `/api/assignments/{id}`                     | Delete (leader only)       |
+| POST   | `/api/assignments/{id}/publish-results`     | Schedule results           |
+| GET    | `/api/assignments/{id}/review-status`       | Review progress            |
 
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/assignments` | GET | List assignments |
-| `/api/assignments` | POST | Create assignment |
-| `/api/assignments/{id}` | GET | Get assignment |
-| `/api/assignments/{id}` | DELETE | Delete assignment (Leader) |
-| `/api/assignments/{id}/review-status` | GET | Get review progress |
-| `/api/assignments/{id}/publish-results` | POST | Schedule publication |
+### Submissions & Grading
+| Method | Endpoint                                    | Description                |
+|--------|---------------------------------------------|----------------------------|
+| GET    | `/api/submissions`                          | List submissions           |
+| POST   | `/api/submissions`                          | Submit code (student)      |
+| POST   | `/api/submissions/{id}/grade`               | Grade (marker)             |
+| POST   | `/api/submissions/{id}/mark-no-issues`      | Mark perfect (marker)      |
 
-### Submissions
-
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/submissions` | GET | List submissions |
-| `/api/submissions` | POST | Create submission (Student) |
-| `/api/submissions/{id}` | GET | Get submission |
-| `/api/submissions/{id}/grade` | POST | Grade submission (Marker) |
-| `/api/submissions/{id}/mark-no-issues` | POST | Mark perfect (Marker) |
+### Feedback Issues
+| Method | Endpoint                      | Description              |
+|--------|-------------------------------|--------------------------|
+| GET    | `/api/issues`                 | List issues              |
+| POST   | `/api/issues`                 | Create inline issue      |
+| POST   | `/api/issues/{id}/mark-fixed` | Mark issue fixed         |
 
 ### Gamification
+| Method | Endpoint                  | Description              |
+|--------|---------------------------|--------------------------|
+| GET    | `/api/gamification/stats` | XP, level, badges        |
+| GET    | `/api/gamification/badges`| All badge definitions    |
 
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/gamification/stats` | GET | Get XP, level, badges |
-| `/api/gamification/badges` | GET | List all badges |
+### Leaderboard
+| Method | Endpoint                                  | Description                    |
+|--------|-------------------------------------------|--------------------------------|
+| GET    | `/api/leaderboard/check-nickname`         | Check nickname availability    |
+| POST   | `/api/leaderboard/join`                   | Join module leaderboard        |
+| POST   | `/api/leaderboard/leave`                  | Leave module leaderboard       |
+| GET    | `/api/leaderboard/settings/{course_id}`   | Get opt-in status              |
+| GET    | `/api/leaderboard/{course_id}/students`   | Student leaderboard            |
+| GET    | `/api/leaderboard/{course_id}/markers`    | Marker leaderboard             |
+
+### Profile
+| Method | Endpoint                  | Description              |
+|--------|---------------------------|--------------------------|
+| GET    | `/api/profile/{user_id}`  | Public profile with badges, XP, stats |
 
 ### Moderation
-
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/moderation/queue` | GET | Get moderation queue |
-| `/api/moderation/dashboard` | GET | Get moderation stats |
-| `/api/moderation/issues` | GET | List moderation issues |
-| `/api/moderation/issues` | POST | Create issue (Moderator) |
-| `/api/moderation/issues/{id}/approve` | POST | Approve issue (Leader) |
-| `/api/moderation/issues/{id}/reject` | POST | Reject issue (Leader) |
+| Method | Endpoint                                        | Description              |
+|--------|-------------------------------------------------|--------------------------|
+| GET    | `/api/moderation/queue`                         | Moderation queue         |
+| GET    | `/api/moderation/dashboard`                     | Moderation stats         |
+| POST   | `/api/moderation/issues`                        | Raise moderation issue   |
+| POST   | `/api/moderation/issues/{id}/approve`           | Approve issue            |
+| POST   | `/api/moderation/issues/{id}/reject`            | Reject issue             |
 
 ---
 
-## 💾 Database Schema
+## Deployment
 
-### Users Collection
+### Frontend (Vercel)
 
-```javascript
-{
-  "id": "uuid",
-  "email": "string",
-  "password_hash": "string",
-  "full_name": "string",
-  "role": "student | marker | moderator | module_leader",
-  "course_ids": ["uuid"],
-  "xp": 0,
-  "badges": ["badge_id"],
-  "created_at": "datetime"
-}
-```
+1. Push your code to GitHub.
+2. Import the repository in [Vercel](https://vercel.com).
+3. Set **Root Directory** to `frontend`.
+4. Set **Node.js Version** to `18.x` in Project Settings.
+5. Add environment variable: `REACT_APP_BACKEND_URL` = your backend URL.
+6. Deploy.
 
-### Courses Collection
+The repository includes `.nvmrc` (Node 18) and `.npmrc` (legacy-peer-deps) for compatibility.
 
-```javascript
-{
-  "id": "uuid",
-  "name": "string",
-  "code": "string",
-  "description": "string",
-  "year": 2026,
-  "semester": "Spring | Summer | Fall | Winter",
-  "leader_id": "uuid",
-  "collaborator_ids": ["uuid"],
-  "moderator_ids": ["uuid"],
-  "created_at": "datetime"
-}
-```
+### Backend (Render.com)
 
-### Assignments Collection
-
-```javascript
-{
-  "id": "uuid",
-  "course_id": "uuid",
-  "title": "string",
-  "description": "string",
-  "has_deadline": false,
-  "due_date": "datetime | null",
-  "has_schedule_release": false,
-  "schedule_release_date": "datetime | null",
-  "results_publish_date": "datetime | null",
-  "results_published": false,
-  "total_marks": 100,
-  "max_attempts": -1,
-  "created_at": "datetime"
-}
-```
-
-### Submissions Collection
-
-```javascript
-{
-  "id": "uuid",
-  "assignment_id": "uuid",
-  "student_id": "uuid",
-  "files": [
-    {
-      "id": "uuid",
-      "filename": "main.py",
-      "content": "string"
-    }
-  ],
-  "status": "pending | in_review | feedback_released | no_issues",
-  "marks": 85,
-  "marker_feedback": "string",
-  "attempt_number": 1,
-  "reviewed_by": "uuid",
-  "submission_time": "datetime",
-  "review_completed_at": "datetime"
-}
-```
-
-### Feedback Issues Collection
-
-```javascript
-{
-  "id": "uuid",
-  "submission_id": "uuid",
-  "file_id": "uuid",
-  "marker_id": "uuid",
-  "line_start": 5,
-  "line_end": 7,
-  "category_id": "uuid",
-  "severity": "critical | moderate | minor",
-  "explanation": "string",
-  "suggested_fix": "string",
-  "marks_deducted": 5,
-  "student_status": "open | acknowledged | fixed",
-  "created_at": "datetime"
-}
-```
+1. Create a new **Web Service** on [Render](https://render.com).
+2. Set **Root Directory** to `backend`.
+3. **Build Command**: `pip install -r requirements.txt`
+4. **Start Command**: `uvicorn server:app --host 0.0.0.0 --port $PORT`
+5. Add environment variables: `MONGO_URL`, `DB_NAME`, `JWT_SECRET`.
+6. Deploy.
 
 ---
 
-## ❓ Troubleshooting
+## Troubleshooting
 
-### Backend Issues
-
-#### `UnicodeDecodeError` on Windows
-
-The `.env` file was saved with UTF-16 encoding.
-
-**Fix:**
+### Windows `.env` encoding error
+If you see `UnicodeDecodeError` on startup, your `.env` file may be saved in UTF-16 (common with PowerShell `>` redirect). Fix:
 ```powershell
-Remove-Item .env -Force
-[System.IO.File]::WriteAllLines("$PWD\.env", @(
-    "MONGO_URL=mongodb://localhost:27017",
-    "DB_NAME=codefeedback_studio",
-    "JWT_SECRET=your-secret-key"
-), [System.Text.UTF8Encoding]::new($false))
+# Re-create the file with UTF-8 encoding
+Set-Content -Path backend\.env -Value @"
+MONGO_URL="mongodb://localhost:27017"
+DB_NAME="codefeedback_studio"
+JWT_SECRET="your-secret-key"
+"@ -Encoding UTF8
 ```
 
-#### MongoDB Connection Failed
+### MongoDB connection refused
+- Ensure MongoDB is running: `mongosh` should connect.
+- Check your `MONGO_URL` in `backend/.env`.
 
-Ensure MongoDB is running:
-```bash
-mongod --dbpath /path/to/data
-```
+### Frontend shows blank page
+- Check browser console for errors.
+- Verify `REACT_APP_BACKEND_URL` in `frontend/.env` points to the correct backend.
+- Ensure the backend is running and accessible.
 
-### Frontend Issues
-
-#### `Cannot find module 'ajv/dist/compile/codegen'`
-
-Node.js version is too new. Use Node 18:
-```bash
-nvm use 18
-yarn install
-yarn start
-```
-
-#### Badges Not Updating
-
-The gamification stats endpoint automatically checks and awards badges. Refresh the page or call `/api/gamification/stats` again.
+### CORS errors
+- The backend allows all origins by default (`CORS_ORIGINS="*"`).
+- For production, restrict to your frontend domain.
 
 ---
 
-## 🤝 Contributing
-
-We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
-
-### Development Setup
-
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/amazing-feature`
-3. Commit changes: `git commit -m 'Add amazing feature'`
-4. Push to branch: `git push origin feature/amazing-feature`
-5. Open a Pull Request
-
----
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
----
-
-<div align="center">
-
-**Made with ❤️ for Programming Education**
-
-[Report Bug](https://github.com/your-repo/codefeedback-studio/issues) • [Request Feature](https://github.com/your-repo/codefeedback-studio/issues)
-
-</div>
+Built with care for educators and learners.

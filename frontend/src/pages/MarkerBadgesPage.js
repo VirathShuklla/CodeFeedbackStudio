@@ -55,6 +55,16 @@ const MARKER_BADGE_DEFINITIONS = {
     bg: 'bg-blue-100',
     gradient: 'from-blue-400 to-blue-600'
   },
+  turnaround_king: {
+    name: 'Quick Turnaround',
+    description: 'Review 5 submissions within 48 hours of submission',
+    category: 'Speed & Efficiency',
+    icon: TrendingUp,
+    xp: 110,
+    color: 'text-cyan-500',
+    bg: 'bg-cyan-100',
+    gradient: 'from-cyan-400 to-cyan-600'
+  },
   
   // Quality & Thoroughness
   thorough_reviewer: {
@@ -76,6 +86,26 @@ const MARKER_BADGE_DEFINITIONS = {
     color: 'text-indigo-500',
     bg: 'bg-indigo-100',
     gradient: 'from-indigo-400 to-indigo-600'
+  },
+  detail_oriented: {
+    name: 'Detail Oriented',
+    description: 'Average 3+ issues per review on at least 10 reviews',
+    category: 'Quality & Thoroughness',
+    icon: Target,
+    xp: 125,
+    color: 'text-rose-500',
+    bg: 'bg-rose-100',
+    gradient: 'from-rose-400 to-rose-600'
+  },
+  template_architect: {
+    name: 'Template Architect',
+    description: 'Create 20 reusable feedback templates',
+    category: 'Quality & Thoroughness',
+    icon: Star,
+    xp: 150,
+    color: 'text-orange-500',
+    bg: 'bg-orange-100',
+    gradient: 'from-orange-400 to-orange-600'
   },
   
   // Impact & Mentoring
@@ -99,18 +129,38 @@ const MARKER_BADGE_DEFINITIONS = {
     bg: 'bg-teal-100',
     gradient: 'from-teal-400 to-teal-600'
   },
+  quality_guardian: {
+    name: 'Quality Guardian',
+    description: 'Achieve 100% moderation approval on 10+ reviews',
+    category: 'Impact & Mentoring',
+    icon: Award,
+    xp: 200,
+    color: 'text-emerald-600',
+    bg: 'bg-emerald-100',
+    gradient: 'from-emerald-500 to-green-600'
+  },
   
   // Mastery
-  marking_master: {
-    name: 'Marking Master',
-    description: 'Earn all marker badges',
+  multi_course: {
+    name: 'Multi-Course Expert',
+    description: 'Actively review in 3 or more courses',
+    category: 'Mastery',
+    icon: Users,
+    xp: 90,
+    color: 'text-sky-500',
+    bg: 'bg-sky-100',
+    gradient: 'from-sky-400 to-sky-600'
+  },
+  century_reviewer: {
+    name: 'Century Reviewer',
+    description: 'Complete 100 code reviews',
     category: 'Mastery',
     icon: Trophy,
-    xp: 500,
+    xp: 250,
     color: 'text-yellow-500',
     bg: 'bg-yellow-100',
     gradient: 'from-yellow-400 to-amber-500'
-  }
+  },
 };
 
 // Level definitions for markers

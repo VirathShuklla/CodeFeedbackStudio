@@ -9,7 +9,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '../ui/dropdown-menu';
-import { Code2, LogOut, ChevronDown, BarChart3, Award, BookOpen, Home, Shield, Trophy, Moon, Sun } from 'lucide-react';
+import { Code2, LogOut, ChevronDown, BarChart3, Award, BookOpen, Home, Shield, Trophy, Moon, Sun, Swords } from 'lucide-react';
 
 export const AppLayout = ({ children }) => {
   const { user, logout, isMarker, isStudent, isModerator } = useAuth();
@@ -75,6 +75,16 @@ export const AppLayout = ({ children }) => {
                   <span className="hidden sm:inline">Badges</span>
                 </Button>
               </Link>
+              <Link to="/marker/leaderboard">
+                <Button 
+                  variant={isActive('/marker/leaderboard') ? 'secondary' : 'ghost'} 
+                  size="sm"
+                  className="gap-2"
+                >
+                  <Swords className="w-4 h-4" />
+                  <span className="hidden sm:inline">Leaderboard</span>
+                </Button>
+              </Link>
               <Link to="/marker/analytics">
                 <Button 
                   variant={isActive('/marker/analytics') ? 'secondary' : 'ghost'} 
@@ -118,6 +128,16 @@ export const AppLayout = ({ children }) => {
                 >
                   <Award className="w-4 h-4" />
                   <span className="hidden sm:inline">Badges</span>
+                </Button>
+              </Link>
+              <Link to="/student/leaderboard">
+                <Button 
+                  variant={isActive('/student/leaderboard') ? 'secondary' : 'ghost'} 
+                  size="sm"
+                  className="gap-2"
+                >
+                  <Swords className="w-4 h-4" />
+                  <span className="hidden sm:inline">Leaderboard</span>
                 </Button>
               </Link>
             </>

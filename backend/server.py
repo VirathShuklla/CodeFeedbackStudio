@@ -385,11 +385,19 @@ async def get_accessible_course_ids(user: dict) -> List[str]:
 # Student badges
 STUDENT_BADGES = {
     "first_submission": {"name": "First Steps", "description": "Submit your first assignment", "icon": "rocket", "xp": 50},
-    "bug_squasher": {"name": "Bug Squasher", "description": "Fix 10 issues", "icon": "bug", "xp": 100},
-    "quick_learner": {"name": "Quick Learner", "description": "Fix an issue within 24 hours", "icon": "zap", "xp": 75},
-    "perfectionist": {"name": "Perfectionist", "description": "Get a submission with no issues", "icon": "star", "xp": 150},
+    "bug_squasher": {"name": "Bug Squasher", "description": "Fix 10 issues across your submissions", "icon": "bug", "xp": 100},
+    "quick_learner": {"name": "Quick Learner", "description": "Fix an issue within 24 hours of feedback", "icon": "zap", "xp": 75},
+    "perfectionist": {"name": "Perfectionist", "description": "Get a submission marked with no issues", "icon": "star", "xp": 150},
     "consistent": {"name": "Consistent Performer", "description": "Submit 5 assignments on time", "icon": "calendar", "xp": 100},
     "improver": {"name": "Rapid Improver", "description": "Improve score by 20% on resubmission", "icon": "trending-up", "xp": 125},
+    "streak_warrior": {"name": "Streak Warrior", "description": "Submit 3 assignments on time in a row", "icon": "flame", "xp": 80},
+    "early_bird": {"name": "Early Bird", "description": "Submit an assignment 24 hours before deadline", "icon": "sunrise", "xp": 60},
+    "feedback_engaged": {"name": "Feedback Champion", "description": "Fix at least 80% of all issues raised on your work", "icon": "message-circle", "xp": 120},
+    "zero_to_hero": {"name": "Zero to Hero", "description": "Fix every single issue in a submission", "icon": "trophy", "xp": 100},
+    "five_star": {"name": "Five Star Coder", "description": "Get 5 perfect submissions with no issues", "icon": "stars", "xp": 200},
+    "multi_module": {"name": "Multi-Talented", "description": "Be active in 3 or more modules", "icon": "layers", "xp": 90},
+    "tenacious": {"name": "Tenacious", "description": "Resubmit and improve your score 3 times", "icon": "repeat", "xp": 110},
+    "centurion": {"name": "Centurion", "description": "Earn a total of 500 XP", "icon": "shield", "xp": 75},
 }
 
 # Marker badges
@@ -401,6 +409,12 @@ MARKER_BADGES = {
     "consistent_marker": {"name": "Consistent Marker", "description": "Maintain 95% moderation approval rate", "icon": "target", "xp": 175},
     "on_time_champion": {"name": "On-Time Champion", "description": "Review all assignments before deadline for a course", "icon": "clock", "xp": 150},
     "feedback_master": {"name": "Feedback Master", "description": "Create 10 reusable feedback templates", "icon": "file-text", "xp": 100},
+    "detail_oriented": {"name": "Detail Oriented", "description": "Average 3+ issues per review on at least 10 reviews", "icon": "eye", "xp": 125},
+    "turnaround_king": {"name": "Quick Turnaround", "description": "Review 5 submissions within 48 hours of submission", "icon": "timer", "xp": 110},
+    "multi_course": {"name": "Multi-Course Expert", "description": "Actively review in 3 or more courses", "icon": "layers", "xp": 90},
+    "quality_guardian": {"name": "Quality Guardian", "description": "Achieve 100% moderation approval on 10+ reviews", "icon": "shield-check", "xp": 200},
+    "century_reviewer": {"name": "Century Reviewer", "description": "Complete 100 code reviews", "icon": "hash", "xp": 250},
+    "template_architect": {"name": "Template Architect", "description": "Create 20 reusable feedback templates", "icon": "blocks", "xp": 150},
 }
 
 LEVEL_THRESHOLDS = [
@@ -502,37 +516,107 @@ async def check_and_award_student_badges(user_id: str):
     
     # Get user stats
     submissions = await db.submissions.find({"student_id": user_id}, {"_id": 0}).to_list(500)
+    sub_ids = [s["id"] for s in submissions]
     all_issues = await db.feedback_issues.find(
-        {"submission_id": {"$in": [s["id"] for s in submissions]}}, {"_id": 0}
+        {"submission_id": {"$in": sub_ids}}, {"_id": 0}
     ).to_list(1000)
     
     fixed_issues = [i for i in all_issues if i.get("student_status") == "fixed"]
     no_issue_submissions = [s for s in submissions if s.get("status") == "no_issues"]
     on_time_submissions = [s for s in submissions if s.get("status") in ["feedback_released", "no_issues"]]
     
-    # first_submission - Submit first assignment
+    async def try_award(badge_id):
+        r = await award_badge(user_id, badge_id, "student")
+        if r:
+            awarded.append(r)
+    
+    # first_submission
     if len(submissions) >= 1:
-        result = await award_badge(user_id, "first_submission", "student")
-        if result:
-            awarded.append(result)
+        await try_award("first_submission")
     
     # bug_squasher - Fix 10 issues
     if len(fixed_issues) >= 10:
-        result = await award_badge(user_id, "bug_squasher", "student")
-        if result:
-            awarded.append(result)
+        await try_award("bug_squasher")
     
-    # perfectionist - Get a submission with no issues
+    # perfectionist - No issues submission
     if len(no_issue_submissions) >= 1:
-        result = await award_badge(user_id, "perfectionist", "student")
-        if result:
-            awarded.append(result)
+        await try_award("perfectionist")
     
-    # consistent - Submit 5 assignments on time
+    # consistent - 5 on-time
     if len(on_time_submissions) >= 5:
-        result = await award_badge(user_id, "consistent", "student")
-        if result:
-            awarded.append(result)
+        await try_award("consistent")
+    
+    # streak_warrior - 3 consecutive on-time (check last 3 submissions)
+    if len(on_time_submissions) >= 3:
+        sorted_subs = sorted(submissions, key=lambda s: s.get("submission_time", ""))
+        streak = 0
+        for s in sorted_subs:
+            if s.get("status") in ["feedback_released", "no_issues"]:
+                streak += 1
+                if streak >= 3:
+                    await try_award("streak_warrior")
+                    break
+            else:
+                streak = 0
+    
+    # early_bird - Submit 24h before deadline
+    for s in submissions:
+        assignment = await db.assignments.find_one({"id": s["assignment_id"]}, {"_id": 0, "due_date": 1, "has_deadline": 1})
+        if assignment and assignment.get("has_deadline") and assignment.get("due_date"):
+            deadline = parse_iso_datetime(assignment["due_date"])
+            sub_time = parse_iso_datetime(s.get("submission_time", ""))
+            if deadline and sub_time and (deadline - sub_time).total_seconds() >= 86400:
+                await try_award("early_bird")
+                break
+    
+    # feedback_engaged - Fix 80%+ of issues
+    if len(all_issues) >= 5:
+        fix_rate = len(fixed_issues) / len(all_issues)
+        if fix_rate >= 0.8:
+            await try_award("feedback_engaged")
+    
+    # zero_to_hero - Fix ALL issues in a single submission
+    for sid in sub_ids:
+        sub_issues = [i for i in all_issues if i["submission_id"] == sid]
+        if len(sub_issues) >= 2 and all(i.get("student_status") == "fixed" for i in sub_issues):
+            await try_award("zero_to_hero")
+            break
+    
+    # five_star - 5 perfect submissions
+    if len(no_issue_submissions) >= 5:
+        await try_award("five_star")
+    
+    # multi_module - Active in 3+ modules
+    course_ids = user.get("course_ids", [])
+    if len(course_ids) >= 3:
+        active_count = 0
+        for cid in course_ids:
+            has_sub = await db.submissions.count_documents({
+                "student_id": user_id,
+                "assignment_id": {"$in": [a["id"] async for a in db.assignments.find({"course_id": cid}, {"id": 1})]}
+            })
+            if has_sub > 0:
+                active_count += 1
+        if active_count >= 3:
+            await try_award("multi_module")
+    
+    # tenacious - Resubmit and improve 3 times
+    improved_count = 0
+    assignments_seen = set()
+    for s in sorted(submissions, key=lambda x: x.get("attempt_number", 0)):
+        if s.get("attempt_number", 1) > 1 and s["assignment_id"] not in assignments_seen:
+            prev = [p for p in submissions if p["assignment_id"] == s["assignment_id"] and p.get("attempt_number", 0) < s.get("attempt_number", 0)]
+            if prev and s.get("marks") is not None:
+                best_prev = max((p.get("marks") or 0) for p in prev)
+                if (s.get("marks") or 0) > best_prev:
+                    improved_count += 1
+                    assignments_seen.add(s["assignment_id"])
+    if improved_count >= 3:
+        await try_award("tenacious")
+    
+    # centurion - Earn 500+ XP
+    if user.get("xp", 0) >= 500:
+        await try_award("centurion")
     
     return awarded
 
@@ -543,6 +627,11 @@ async def check_and_award_marker_badges(user_id: str):
         return []
     
     awarded = []
+    
+    async def try_award(badge_id):
+        r = await award_badge(user_id, badge_id, "marker")
+        if r:
+            awarded.append(r)
     
     # Get marker stats
     reviews_count = await db.submissions.count_documents({"reviewed_by": user_id})
@@ -555,35 +644,64 @@ async def check_and_award_marker_badges(user_id: str):
         "status": "no_issues"
     })
     
-    # first_review - Complete first code review
+    # first_review
     if reviews_count >= 1:
-        result = await award_badge(user_id, "first_review", "marker")
-        if result:
-            awarded.append(result)
+        await try_award("first_review")
     
-    # speed_reviewer - Review 10 submissions
+    # speed_reviewer - 10 submissions
     if reviews_count >= 10:
-        result = await award_badge(user_id, "speed_reviewer", "marker")
-        if result:
-            awarded.append(result)
+        await try_award("speed_reviewer")
     
-    # thorough_reviewer - Provide detailed feedback on 20 submissions
+    # thorough_reviewer - 20 detailed feedbacks
     if issues_created >= 20:
-        result = await award_badge(user_id, "thorough_reviewer", "marker")
-        if result:
-            awarded.append(result)
+        await try_award("thorough_reviewer")
     
-    # feedback_master - Create 10 reusable feedback templates
+    # feedback_master - 10 templates
     if templates_count >= 10:
-        result = await award_badge(user_id, "feedback_master", "marker")
-        if result:
-            awarded.append(result)
+        await try_award("feedback_master")
     
-    # mentor - Help 5 students achieve perfect scores
+    # mentor - 5 perfect score students
     if perfect_reviews >= 5:
-        result = await award_badge(user_id, "mentor", "marker")
-        if result:
-            awarded.append(result)
+        await try_award("mentor")
+    
+    # detail_oriented - Avg 3+ issues per review on 10+ reviews
+    if reviews_count >= 10 and issues_created >= reviews_count * 3:
+        await try_award("detail_oriented")
+    
+    # turnaround_king - Review 5 within 48h of submission
+    quick_reviews = 0
+    reviewed_subs = await db.submissions.find(
+        {"reviewed_by": user_id, "review_completed_at": {"$exists": True}},
+        {"_id": 0, "submission_time": 1, "review_completed_at": 1}
+    ).to_list(200)
+    for rs in reviewed_subs:
+        sub_time = parse_iso_datetime(rs.get("submission_time", ""))
+        rev_time = parse_iso_datetime(rs.get("review_completed_at", ""))
+        if sub_time and rev_time and (rev_time - sub_time).total_seconds() <= 172800:
+            quick_reviews += 1
+    if quick_reviews >= 5:
+        await try_award("turnaround_king")
+    
+    # multi_course - Review in 3+ courses
+    reviewed_assignment_ids = await db.submissions.distinct("assignment_id", {"reviewed_by": user_id})
+    if reviewed_assignment_ids:
+        reviewed_courses = await db.assignments.distinct("course_id", {"id": {"$in": reviewed_assignment_ids}})
+        if len(reviewed_courses) >= 3:
+            await try_award("multi_course")
+    
+    # quality_guardian - 100% moderation approval on 10+ reviews
+    approved_count = await db.submissions.count_documents({"reviewed_by": user_id, "moderation_status": "approved"})
+    flagged_count = await db.submissions.count_documents({"reviewed_by": user_id, "moderation_status": {"$in": ["flagged", "flagged_approved"]}})
+    if approved_count >= 10 and flagged_count == 0:
+        await try_award("quality_guardian")
+    
+    # century_reviewer - 100 reviews
+    if reviews_count >= 100:
+        await try_award("century_reviewer")
+    
+    # template_architect - 20 templates
+    if templates_count >= 20:
+        await try_award("template_architect")
     
     return awarded
 
@@ -1996,6 +2114,336 @@ async def get_gamification_stats(current_user: dict = Depends(get_current_user))
             "templates_created": templates_created,
             "recent_xp_gains": recent_xp_gains
         }
+
+# ============ LEADERBOARD ENDPOINTS ============
+
+class LeaderboardJoinRequest(BaseModel):
+    course_id: str
+    nickname: str
+
+class LeaderboardLeaveRequest(BaseModel):
+    course_id: str
+
+@api_router.get("/leaderboard/check-nickname")
+async def check_nickname(course_id: str, nickname: str, current_user: dict = Depends(get_current_user)):
+    """Check if a nickname is available in a module."""
+    if not nickname or len(nickname.strip()) < 2:
+        return {"available": False, "reason": "Nickname must be at least 2 characters"}
+    if len(nickname.strip()) > 20:
+        return {"available": False, "reason": "Nickname must be 20 characters or less"}
+    nickname_clean = nickname.strip()
+    existing = await db.leaderboard_settings.find_one({
+        "course_id": course_id,
+        "nickname": {"$regex": f"^{nickname_clean}$", "$options": "i"},
+        "user_id": {"$ne": current_user["id"]}
+    })
+    return {"available": existing is None, "reason": "Nickname already taken in this module" if existing else None}
+
+@api_router.post("/leaderboard/join")
+async def join_leaderboard(request: LeaderboardJoinRequest, current_user: dict = Depends(get_current_user)):
+    """Opt-in to a module leaderboard with a unique nickname."""
+    nickname = request.nickname.strip()
+    if len(nickname) < 2 or len(nickname) > 20:
+        raise HTTPException(status_code=400, detail="Nickname must be 2-20 characters")
+    
+    # Check course exists
+    course = await db.courses.find_one({"id": request.course_id}, {"_id": 0})
+    if not course:
+        raise HTTPException(status_code=404, detail="Course not found")
+    
+    # Check nickname uniqueness in this module
+    existing = await db.leaderboard_settings.find_one({
+        "course_id": request.course_id,
+        "nickname": {"$regex": f"^{nickname}$", "$options": "i"},
+        "user_id": {"$ne": current_user["id"]}
+    })
+    if existing:
+        raise HTTPException(status_code=400, detail="Nickname already taken in this module")
+    
+    now = datetime.now(timezone.utc).isoformat()
+    # Upsert leaderboard settings
+    await db.leaderboard_settings.update_one(
+        {"user_id": current_user["id"], "course_id": request.course_id},
+        {"$set": {
+            "user_id": current_user["id"],
+            "course_id": request.course_id,
+            "nickname": nickname,
+            "joined": True,
+            "role": current_user["role"],
+            "updated_at": now
+        },
+        "$setOnInsert": {"id": str(uuid.uuid4()), "created_at": now}},
+        upsert=True
+    )
+    return {"message": f"Joined leaderboard as '{nickname}'", "nickname": nickname}
+
+@api_router.post("/leaderboard/leave")
+async def leave_leaderboard(request: LeaderboardLeaveRequest, current_user: dict = Depends(get_current_user)):
+    """Opt-out of a module leaderboard."""
+    await db.leaderboard_settings.update_one(
+        {"user_id": current_user["id"], "course_id": request.course_id},
+        {"$set": {"joined": False, "updated_at": datetime.now(timezone.utc).isoformat()}}
+    )
+    return {"message": "Left leaderboard. Your progress is still tracked privately."}
+
+@api_router.get("/leaderboard/settings/{course_id}")
+async def get_leaderboard_settings(course_id: str, current_user: dict = Depends(get_current_user)):
+    """Get current user's leaderboard settings for a module."""
+    settings = await db.leaderboard_settings.find_one(
+        {"user_id": current_user["id"], "course_id": course_id}, {"_id": 0}
+    )
+    return settings or {"joined": False, "nickname": None, "course_id": course_id}
+
+@api_router.get("/leaderboard/{course_id}/students")
+async def get_student_leaderboard(course_id: str, current_user: dict = Depends(get_current_user)):
+    """Get student leaderboard for a module, ranked by positive academic behaviour."""
+    course = await db.courses.find_one({"id": course_id}, {"_id": 0})
+    if not course:
+        raise HTTPException(status_code=404, detail="Course not found")
+    
+    # Get all opted-in students for this module
+    opted_in = await db.leaderboard_settings.find(
+        {"course_id": course_id, "joined": True, "role": "student"}, {"_id": 0}
+    ).to_list(200)
+    
+    if not opted_in:
+        return {"leaderboard": [], "course_name": course["name"], "participant_count": 0}
+    
+    # Get assignments for this course
+    assignments = await db.assignments.find({"course_id": course_id}, {"_id": 0}).to_list(100)
+    assignment_ids = [a["id"] for a in assignments]
+    
+    leaderboard = []
+    for entry in opted_in:
+        uid = entry["user_id"]
+        user = await db.users.find_one({"id": uid}, {"_id": 0, "password_hash": 0})
+        if not user:
+            continue
+        
+        # Get submissions for this module
+        subs = await db.submissions.find(
+            {"student_id": uid, "assignment_id": {"$in": assignment_ids}}, {"_id": 0}
+        ).to_list(200)
+        
+        sub_ids = [s["id"] for s in subs]
+        issues = await db.feedback_issues.find({"submission_id": {"$in": sub_ids}}, {"_id": 0}).to_list(500)
+        fixed = [i for i in issues if i.get("student_status") == "fixed"]
+        perfect = [s for s in subs if s.get("status") == "no_issues"]
+        on_time = [s for s in subs if s.get("status") in ["feedback_released", "no_issues"]]
+        
+        # Score: weighted composite encouraging positive behaviour
+        score = 0
+        score += len(subs) * 10             # Submissions
+        score += len(on_time) * 15           # On-time bonus
+        score += len(fixed) * 8              # Fixed issues
+        score += len(perfect) * 30           # Perfect submissions
+        
+        # Quick fix bonus
+        for fi in fixed:
+            created = parse_iso_datetime(fi.get("created_at", ""))
+            resolved = parse_iso_datetime(fi.get("resolution_timestamp", ""))
+            if created and resolved and (resolved - created).total_seconds() < 86400:
+                score += 5
+        
+        xp = user.get("xp", 0)
+        level, title, _ = get_level_info(xp)
+        badges = user.get("badges", [])
+        
+        leaderboard.append({
+            "user_id": uid,
+            "nickname": entry["nickname"],
+            "score": score,
+            "xp": xp,
+            "level": level,
+            "level_title": title,
+            "badges_count": len(badges),
+            "submissions_count": len(subs),
+            "issues_fixed": len(fixed),
+            "perfect_submissions": len(perfect),
+            "top_badges": badges[:3]
+        })
+    
+    # Sort by score descending
+    leaderboard.sort(key=lambda x: x["score"], reverse=True)
+    
+    # Add rank
+    for i, entry in enumerate(leaderboard):
+        entry["rank"] = i + 1
+    
+    return {
+        "leaderboard": leaderboard,
+        "course_name": course["name"],
+        "participant_count": len(leaderboard)
+    }
+
+@api_router.get("/leaderboard/{course_id}/markers")
+async def get_marker_leaderboard(course_id: str, current_user: dict = Depends(get_current_user)):
+    """Get marker leaderboard for a module, ranked by review quality metrics."""
+    course = await db.courses.find_one({"id": course_id}, {"_id": 0})
+    if not course:
+        raise HTTPException(status_code=404, detail="Course not found")
+    
+    # Get all opted-in markers for this module
+    opted_in = await db.leaderboard_settings.find(
+        {"course_id": course_id, "joined": True, "role": {"$ne": "student"}}, {"_id": 0}
+    ).to_list(200)
+    
+    if not opted_in:
+        return {"leaderboard": [], "course_name": course["name"], "participant_count": 0}
+    
+    assignments = await db.assignments.find({"course_id": course_id}, {"_id": 0}).to_list(100)
+    assignment_ids = [a["id"] for a in assignments]
+    
+    leaderboard = []
+    for entry in opted_in:
+        uid = entry["user_id"]
+        user = await db.users.find_one({"id": uid}, {"_id": 0, "password_hash": 0})
+        if not user:
+            continue
+        
+        # Reviews in this module
+        reviews = await db.submissions.find(
+            {"reviewed_by": uid, "assignment_id": {"$in": assignment_ids}}, {"_id": 0}
+        ).to_list(500)
+        
+        issues_count = 0
+        for r in reviews:
+            ic = await db.feedback_issues.count_documents({"submission_id": r["id"], "marker_id": uid})
+            issues_count += ic
+        
+        approved = len([r for r in reviews if r.get("moderation_status") == "approved"])
+        
+        # Score: weighted composite
+        score = 0
+        score += len(reviews) * 10           # Reviews completed
+        score += issues_count * 5            # Issues found (thoroughness)
+        score += approved * 20               # Moderation approvals
+        
+        # Quick turnaround bonus
+        for r in reviews:
+            sub_time = parse_iso_datetime(r.get("submission_time", ""))
+            rev_time = parse_iso_datetime(r.get("review_completed_at", ""))
+            if sub_time and rev_time and (rev_time - sub_time).total_seconds() <= 172800:
+                score += 8
+        
+        xp = user.get("xp", 0)
+        level, title, _ = get_level_info(xp)
+        badges = user.get("badges", [])
+        
+        leaderboard.append({
+            "user_id": uid,
+            "nickname": entry["nickname"],
+            "score": score,
+            "xp": xp,
+            "level": level,
+            "level_title": title,
+            "badges_count": len(badges),
+            "reviews_count": len(reviews),
+            "issues_found": issues_count,
+            "approval_count": approved,
+            "top_badges": badges[:3]
+        })
+    
+    leaderboard.sort(key=lambda x: x["score"], reverse=True)
+    for i, entry in enumerate(leaderboard):
+        entry["rank"] = i + 1
+    
+    return {
+        "leaderboard": leaderboard,
+        "course_name": course["name"],
+        "participant_count": len(leaderboard)
+    }
+
+# ============ PROFILE ENDPOINT ============
+
+@api_router.get("/profile/{user_id}")
+async def get_user_profile(user_id: str, course_id: Optional[str] = None, current_user: dict = Depends(get_current_user)):
+    """Get a user's public profile with badges, XP, and level. Respects privacy settings."""
+    user = await db.users.find_one({"id": user_id}, {"_id": 0, "password_hash": 0})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    xp = user.get("xp", 0)
+    level, title, xp_to_next = get_level_info(xp)
+    badges = user.get("badges", [])
+    role = user.get("role", "student")
+    
+    # Get display name - check if they have a leaderboard nickname for the given course
+    display_name = user.get("full_name", "Anonymous")
+    is_self = user_id == current_user["id"]
+    
+    if course_id and not is_self:
+        lb_settings = await db.leaderboard_settings.find_one(
+            {"user_id": user_id, "course_id": course_id, "joined": True}, {"_id": 0}
+        )
+        if lb_settings:
+            display_name = lb_settings.get("nickname", display_name)
+        else:
+            display_name = "Private User"
+    
+    # Badge details
+    badge_defs = STUDENT_BADGES if role == "student" else MARKER_BADGES
+    badges_detail = [{"id": b, **badge_defs.get(b, {"name": b, "description": "", "xp": 0})} for b in badges if b in badge_defs]
+    
+    # Role-specific stats
+    stats = {}
+    if role == "student":
+        subs = await db.submissions.find({"student_id": user_id}, {"_id": 0}).to_list(200)
+        sub_ids = [s["id"] for s in subs]
+        all_issues = await db.feedback_issues.find({"submission_id": {"$in": sub_ids}}, {"_id": 0}).to_list(500)
+        stats = {
+            "submissions_count": len(subs),
+            "issues_fixed": len([i for i in all_issues if i.get("student_status") == "fixed"]),
+            "perfect_submissions": len([s for s in subs if s.get("status") == "no_issues"]),
+        }
+    else:
+        reviews = await db.submissions.count_documents({"reviewed_by": user_id})
+        issues = await db.feedback_issues.count_documents({"marker_id": user_id})
+        templates = await db.issue_templates.count_documents({"created_by": user_id})
+        stats = {
+            "reviews_count": reviews,
+            "issues_created": issues,
+            "templates_created": templates,
+        }
+    
+    # Calculate level progress
+    current_threshold = 0
+    next_threshold = 100
+    for lvl, threshold, _ in LEVEL_THRESHOLDS:
+        if xp >= threshold:
+            current_threshold = threshold
+        if threshold > xp:
+            next_threshold = threshold
+            break
+    level_progress = ((xp - current_threshold) / (next_threshold - current_threshold)) * 100 if next_threshold > current_threshold else 100
+    
+    # Modules they're on the leaderboard for
+    lb_entries = await db.leaderboard_settings.find(
+        {"user_id": user_id, "joined": True}, {"_id": 0}
+    ).to_list(50)
+    active_modules = []
+    for lb in lb_entries:
+        c = await db.courses.find_one({"id": lb["course_id"]}, {"_id": 0, "name": 1, "id": 1})
+        if c:
+            active_modules.append({"course_id": c["id"], "course_name": c["name"], "nickname": lb["nickname"]})
+    
+    return {
+        "user_id": user_id,
+        "display_name": display_name,
+        "role": role,
+        "xp": xp,
+        "level": level,
+        "level_title": title,
+        "level_progress": round(level_progress, 1),
+        "xp_to_next_level": xp_to_next,
+        "badges": badges_detail,
+        "badges_count": len(badges),
+        "total_badges_available": len(badge_defs),
+        "stats": stats,
+        "active_modules": active_modules,
+        "is_self": is_self,
+        "member_since": user.get("created_at", "")
+    }
 
 # ============ HEALTH ============
 

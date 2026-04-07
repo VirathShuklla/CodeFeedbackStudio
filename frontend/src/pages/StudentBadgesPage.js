@@ -57,6 +57,16 @@ const STUDENT_BADGE_DEFINITIONS = {
     bg: 'bg-amber-100',
     gradient: 'from-amber-400 to-orange-500'
   },
+  zero_to_hero: {
+    name: 'Zero to Hero',
+    description: 'Fix every single issue in a submission',
+    category: 'Bug Fixing',
+    icon: Trophy,
+    xp: 100,
+    color: 'text-orange-500',
+    bg: 'bg-orange-100',
+    gradient: 'from-orange-400 to-red-500'
+  },
   
   // Excellence
   perfectionist: {
@@ -69,6 +79,16 @@ const STUDENT_BADGE_DEFINITIONS = {
     bg: 'bg-yellow-100',
     gradient: 'from-yellow-400 to-amber-500'
   },
+  five_star: {
+    name: 'Five Star Coder',
+    description: 'Get 5 perfect submissions with no issues',
+    category: 'Excellence',
+    icon: Sparkles,
+    xp: 200,
+    color: 'text-yellow-600',
+    bg: 'bg-yellow-100',
+    gradient: 'from-yellow-500 to-amber-600'
+  },
   improver: {
     name: 'Rapid Improver',
     description: 'Improve your score by 20% on a resubmission',
@@ -80,73 +100,79 @@ const STUDENT_BADGE_DEFINITIONS = {
     gradient: 'from-emerald-400 to-green-500'
   },
   
-  // Consistency
+  // Consistency & Engagement
   consistent: {
     name: 'Consistent Performer',
     description: 'Submit 5 assignments on time',
-    category: 'Consistency',
+    category: 'Consistency & Engagement',
     icon: Calendar,
     xp: 100,
     color: 'text-purple-500',
     bg: 'bg-purple-100',
     gradient: 'from-purple-400 to-purple-600'
   },
-  
-  // Debugging Mastery
-  error_hunter: {
-    name: 'Error Hunter',
-    description: 'Fix 10 distinct runtime errors across 3+ assignments',
-    category: 'Debugging Mastery',
+  streak_warrior: {
+    name: 'Streak Warrior',
+    description: 'Submit 3 assignments on time in a row',
+    category: 'Consistency & Engagement',
     icon: Target,
-    xp: 150,
+    xp: 80,
     color: 'text-rose-500',
     bg: 'bg-rose-100',
     gradient: 'from-rose-400 to-rose-600'
   },
-  exception_architect: {
-    name: 'Exception Architect',
-    description: 'Fix 5 unhandled exception issues with proper handling',
-    category: 'Debugging Mastery',
-    icon: Shield,
-    xp: 125,
-    color: 'text-orange-500',
-    bg: 'bg-orange-100',
-    gradient: 'from-orange-400 to-orange-600'
+  early_bird: {
+    name: 'Early Bird',
+    description: 'Submit an assignment 24 hours before deadline',
+    category: 'Consistency & Engagement',
+    icon: Clock,
+    xp: 60,
+    color: 'text-sky-500',
+    bg: 'bg-sky-100',
+    gradient: 'from-sky-400 to-sky-600'
   },
-  
-  // Code Quality
-  complexity_reducer: {
-    name: 'Complexity Reducer',
-    description: 'Reduce cyclomatic complexity by 20% in 5 submissions',
-    category: 'Code Quality',
-    icon: Code,
-    xp: 150,
-    color: 'text-indigo-500',
-    bg: 'bg-indigo-100',
-    gradient: 'from-indigo-400 to-indigo-600'
-  },
-  dry_advocate: {
-    name: 'DRY Advocate',
-    description: 'Remove 10+ duplicated code blocks across 4 assignments',
-    category: 'Code Quality',
-    icon: Sparkles,
-    xp: 125,
+  feedback_engaged: {
+    name: 'Feedback Champion',
+    description: 'Fix at least 80% of all issues raised on your work',
+    category: 'Consistency & Engagement',
+    icon: CheckCircle2,
+    xp: 120,
     color: 'text-teal-500',
     bg: 'bg-teal-100',
     gradient: 'from-teal-400 to-teal-600'
   },
   
-  // Mastery
-  coding_master: {
-    name: 'Coding Master',
-    description: 'Earn all student badges',
-    category: 'Mastery',
-    icon: Trophy,
-    xp: 500,
-    color: 'text-yellow-600',
-    bg: 'bg-yellow-100',
-    gradient: 'from-yellow-400 to-amber-500'
-  }
+  // Growth & Mastery
+  tenacious: {
+    name: 'Tenacious',
+    description: 'Resubmit and improve your score 3 times',
+    category: 'Growth & Mastery',
+    icon: TrendingUp,
+    xp: 110,
+    color: 'text-cyan-500',
+    bg: 'bg-cyan-100',
+    gradient: 'from-cyan-400 to-cyan-600'
+  },
+  multi_module: {
+    name: 'Multi-Talented',
+    description: 'Be active in 3 or more modules',
+    category: 'Growth & Mastery',
+    icon: Code,
+    xp: 90,
+    color: 'text-indigo-500',
+    bg: 'bg-indigo-100',
+    gradient: 'from-indigo-400 to-indigo-600'
+  },
+  centurion: {
+    name: 'Centurion',
+    description: 'Earn a total of 500 XP',
+    category: 'Growth & Mastery',
+    icon: Shield,
+    xp: 75,
+    color: 'text-slate-500',
+    bg: 'bg-slate-100',
+    gradient: 'from-slate-400 to-slate-600'
+  },
 };
 
 // Level definitions for students

@@ -16,6 +16,7 @@ import StudentAnalyticsPage from './pages/StudentAnalyticsPage';
 import StudentBadgesPage from './pages/StudentBadgesPage';
 import CodeReviewPage from './pages/CodeReviewPage';
 import StudentFeedbackPage from './pages/StudentFeedbackPage';
+import LeaderboardPage from './pages/LeaderboardPage';
 import './App.css';
 
 // Helper to check if user has marker-level access
@@ -80,12 +81,14 @@ const AppRoutes = () => {
       <Route path="/marker/analytics" element={<ProtectedRoute requireMarkerAccess><MarkerAnalyticsPage /></ProtectedRoute>} />
       <Route path="/marker/badges" element={<ProtectedRoute requireMarkerAccess><MarkerBadgesPage /></ProtectedRoute>} />
       <Route path="/marker/moderation" element={<ProtectedRoute requireMarkerAccess><ModerationPage /></ProtectedRoute>} />
+      <Route path="/marker/leaderboard" element={<ProtectedRoute requireMarkerAccess><LeaderboardPage /></ProtectedRoute>} />
       
       {/* Student Routes */}
       <Route path="/student" element={<ProtectedRoute requireRole="student"><StudentDashboard /></ProtectedRoute>} />
       <Route path="/student/feedback/:submissionId" element={<ProtectedRoute requireRole="student"><StudentFeedbackPage /></ProtectedRoute>} />
       <Route path="/student/analytics" element={<ProtectedRoute requireRole="student"><StudentAnalyticsPage /></ProtectedRoute>} />
       <Route path="/student/badges" element={<ProtectedRoute requireRole="student"><StudentBadgesPage /></ProtectedRoute>} />
+      <Route path="/student/leaderboard" element={<ProtectedRoute requireRole="student"><LeaderboardPage /></ProtectedRoute>} />
       
       {/* Default redirect */}
       <Route path="/" element={<Navigate to="/login" replace />} />
