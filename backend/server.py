@@ -1159,6 +1159,32 @@ async def get_assignments(course_id: Optional[str] = None, current_user: dict = 
     result = []
     now = datetime.now(timezone.utc)
     
+    # Batch: pre-fetch all submission counts and courses
+    assignment_ids_for_stats = [a["id"] for a in assignments]
+    course_ids_for_stats = list(set(a.get("course_id") for a in assignments if a.get("course_id")))
+    
+    # Aggregate submission counts per assignment
+    sub_counts_map = {}
+    reviewed_counts_map = {}
+    if assignment_ids_for_stats:
+        all_sub_counts = await db.submissions.aggregate([
+            {"$match": {"assignment_id": {"$in": assignment_ids_for_stats}}},
+            {"$group": {
+                "_id": "$assignment_id",
+                "total": {"$sum": 1},
+                "reviewed": {"$sum": {"$cond": [{"$in": ["$status", ["feedback_released", "no_issues"]]}, 1, 0]}}
+            }}
+        ]).to_list(len(assignment_ids_for_stats))
+        for sc in all_sub_counts:
+            sub_counts_map[sc["_id"]] = sc["total"]
+            reviewed_counts_map[sc["_id"]] = sc["reviewed"]
+    
+    # Bulk fetch courses
+    courses_for_assignments = {}
+    if course_ids_for_stats:
+        courses_list = await db.courses.find({"id": {"$in": course_ids_for_stats}}, {"_id": 0, "id": 1, "name": 1}).to_list(len(course_ids_for_stats))
+        courses_for_assignments = {c["id"]: c for c in courses_list}
+    
     for a in assignments:
         # Check if assignment is released to students
         is_released = True
@@ -1176,19 +1202,10 @@ async def get_assignments(course_id: Optional[str] = None, current_user: dict = 
             publish_dt = datetime.fromisoformat(a["results_publish_date"].replace('Z', '+00:00'))
             if now >= publish_dt:
                 results_published = True
-                # Auto-update if needed
                 if not a.get("results_published"):
                     await db.assignments.update_one({"id": a["id"]}, {"$set": {"results_published": True}})
         
-        # Get submission stats for markers
-        total_subs = await db.submissions.count_documents({"assignment_id": a["id"]})
-        reviewed_subs = await db.submissions.count_documents({
-            "assignment_id": a["id"],
-            "status": {"$in": ["feedback_released", "no_issues"]}
-        })
-        
-        course = await db.courses.find_one({"id": a["course_id"]}, {"_id": 0})
-        # Ensure new fields have default values for legacy assignments
+        course = courses_for_assignments.get(a.get("course_id"))
         result.append({
             **a, 
             "has_deadline": a.get("has_deadline", False),
@@ -1196,8 +1213,8 @@ async def get_assignments(course_id: Optional[str] = None, current_user: dict = 
             "course_name": course["name"] if course else "Unknown",
             "is_past_deadline": is_past_deadline(a.get("due_date")) if a.get("has_deadline") else False,
             "is_released": is_released,
-            "submissions_reviewed": reviewed_subs,
-            "total_submissions": total_subs,
+            "submissions_reviewed": reviewed_counts_map.get(a["id"], 0),
+            "total_submissions": sub_counts_map.get(a["id"], 0),
             "results_published": results_published
         })
     return result
