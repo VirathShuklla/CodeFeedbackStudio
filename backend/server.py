@@ -561,9 +561,16 @@ async def check_and_award_student_badges(user_id: str):
             else:
                 streak = 0
     
-    # early_bird - Submit 24h before deadline
+    # early_bird - Submit 24h before deadline (batch fetch assignments)
+    assignment_ids = list(set(s["assignment_id"] for s in submissions))
+    assignments_for_badges = await db.assignments.find(
+        {"id": {"$in": assignment_ids}},
+        {"_id": 0, "id": 1, "due_date": 1, "has_deadline": 1}
+    ).to_list(len(assignment_ids))
+    assignments_badge_map = {a["id"]: a for a in assignments_for_badges}
+    
     for s in submissions:
-        assignment = await db.assignments.find_one({"id": s["assignment_id"]}, {"_id": 0, "due_date": 1, "has_deadline": 1})
+        assignment = assignments_badge_map.get(s["assignment_id"])
         if assignment and assignment.get("has_deadline") and assignment.get("due_date"):
             deadline = parse_iso_datetime(assignment["due_date"])
             sub_time = parse_iso_datetime(s.get("submission_time", ""))
@@ -808,21 +815,43 @@ async def get_courses(current_user: dict = Depends(get_current_user)):
         courses = await db.courses.find({"id": {"$in": course_ids}}, {"_id": 0}).to_list(100)
     
     result = []
+    
+    # Batch: collect all user IDs and student counts in bulk
+    all_user_ids = set()
+    course_ids_list = []
     for c in courses:
         if "leader_id" not in c:
             continue
-        student_count = await db.users.count_documents({"role": "student", "course_ids": c["id"]})
-        leader = await db.users.find_one({"id": c.get("leader_id")}, {"_id": 0})
-        collaborators = []
-        for coll_id in c.get("collaborator_ids", []):
-            coll = await db.users.find_one({"id": coll_id}, {"_id": 0})
-            if coll:
-                collaborators.append({"id": coll_id, "name": coll["full_name"]})
-        moderators = []
-        for mod_id in c.get("moderator_ids", []):
-            mod = await db.users.find_one({"id": mod_id}, {"_id": 0})
-            if mod:
-                moderators.append({"id": mod_id, "name": mod["full_name"]})
+        course_ids_list.append(c["id"])
+        if c.get("leader_id"):
+            all_user_ids.add(c["leader_id"])
+        all_user_ids.update(c.get("collaborator_ids", []))
+        all_user_ids.update(c.get("moderator_ids", []))
+    
+    # Single bulk query for all users
+    users_map = {}
+    if all_user_ids:
+        all_users = await db.users.find({"id": {"$in": list(all_user_ids)}}, {"_id": 0, "id": 1, "full_name": 1, "email": 1}).to_list(len(all_user_ids))
+        users_map = {u["id"]: u for u in all_users}
+    
+    # Aggregate student counts per course in one query
+    student_counts_map = {}
+    if course_ids_list:
+        pipeline = [
+            {"$match": {"role": "student", "course_ids": {"$in": course_ids_list}}},
+            {"$unwind": "$course_ids"},
+            {"$match": {"course_ids": {"$in": course_ids_list}}},
+            {"$group": {"_id": "$course_ids", "count": {"$sum": 1}}}
+        ]
+        counts = await db.users.aggregate(pipeline).to_list(len(course_ids_list))
+        student_counts_map = {c["_id"]: c["count"] for c in counts}
+    
+    for c in courses:
+        if "leader_id" not in c:
+            continue
+        leader = users_map.get(c.get("leader_id"))
+        collaborators = [{"id": cid, "name": users_map[cid]["full_name"]} for cid in c.get("collaborator_ids", []) if cid in users_map]
+        moderators = [{"id": mid, "name": users_map[mid]["full_name"]} for mid in c.get("moderator_ids", []) if mid in users_map]
         result.append({
             "id": c["id"], "name": c["name"], "code": c.get("code", ""),
             "description": c.get("description", ""), "year": c.get("year"),
@@ -831,7 +860,7 @@ async def get_courses(current_user: dict = Depends(get_current_user)):
             "collaborator_ids": c.get("collaborator_ids", []),
             "moderator_ids": c.get("moderator_ids", []),
             "collaborators": collaborators, "moderators": moderators,
-            "created_at": c.get("created_at", ""), "student_count": student_count
+            "created_at": c.get("created_at", ""), "student_count": student_counts_map.get(c["id"], 0)
         })
     return result
 
@@ -1376,22 +1405,55 @@ async def get_submissions(
         submissions = await db.submissions.find(query, {"_id": 0}).sort("submission_time", -1).to_list(500)
     
     result = []
+    
+    # Batch: collect all user IDs, assignment IDs, submission IDs
+    student_ids = set()
+    reviewer_ids = set()
+    assignment_ids_set = set()
+    submission_ids = []
     for sub in submissions:
-        student = await db.users.find_one({"id": sub["student_id"]}, {"_id": 0})
-        reviewer = await db.users.find_one({"id": sub.get("reviewed_by")}, {"_id": 0}) if sub.get("reviewed_by") else None
-        issues_count = await db.feedback_issues.count_documents({"submission_id": sub["id"]})
+        student_ids.add(sub["student_id"])
+        if sub.get("reviewed_by"):
+            reviewer_ids.add(sub["reviewed_by"])
+        assignment_ids_set.add(sub["assignment_id"])
+        submission_ids.append(sub["id"])
+    
+    # Bulk fetch users
+    all_uids = list(student_ids | reviewer_ids)
+    users_map = {}
+    if all_uids:
+        users_list = await db.users.find({"id": {"$in": all_uids}}, {"_id": 0, "id": 1, "full_name": 1}).to_list(len(all_uids))
+        users_map = {u["id"]: u for u in users_list}
+    
+    # Bulk fetch assignments (for student result visibility)
+    assignments_map = {}
+    if assignment_ids_set:
+        assignments_list = await db.assignments.find({"id": {"$in": list(assignment_ids_set)}}, {"_id": 0}).to_list(len(assignment_ids_set))
+        assignments_map = {a["id"]: a for a in assignments_list}
+    
+    # Aggregate issue counts per submission in one query
+    issues_map = {}
+    if submission_ids:
+        issue_counts = await db.feedback_issues.aggregate([
+            {"$match": {"submission_id": {"$in": submission_ids}}},
+            {"$group": {"_id": "$submission_id", "count": {"$sum": 1}}}
+        ]).to_list(len(submission_ids))
+        issues_map = {ic["_id"]: ic["count"] for ic in issue_counts}
+    
+    for sub in submissions:
+        student = users_map.get(sub["student_id"])
+        reviewer = users_map.get(sub.get("reviewed_by"))
+        issues_count = issues_map.get(sub["id"], 0)
         
         # For students: check if results are published before showing marks
         show_marks = True
         if current_user["role"] == "student":
-            assignment = await db.assignments.find_one({"id": sub["assignment_id"]}, {"_id": 0})
+            assignment = assignments_map.get(sub["assignment_id"])
             if assignment:
-                # Check if results are published (either scheduled or manually)
                 if assignment.get("results_publish_date"):
                     publish_dt = datetime.fromisoformat(assignment["results_publish_date"].replace('Z', '+00:00'))
                     show_marks = now >= publish_dt
                 elif not assignment.get("results_published", True):
-                    # If results_published is explicitly False and no publish date, don't show
                     show_marks = assignment.get("results_published", True)
         
         result.append({
