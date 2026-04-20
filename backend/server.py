@@ -2573,6 +2573,358 @@ async def get_user_profile(user_id: str, course_id: Optional[str] = None, curren
         "member_since": user.get("created_at", "")
     }
 
+# ============ PDF EXPORT ============
+
+from reportlab.lib.pagesizes import A4
+from reportlab.lib import colors
+from reportlab.lib.units import mm
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Preformatted, PageBreak, HRFlowable
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.enums import TA_LEFT, TA_CENTER
+from io import BytesIO
+
+@api_router.get("/submissions/{submission_id}/export-pdf")
+async def export_feedback_pdf(submission_id: str, current_user: dict = Depends(get_current_user)):
+    """Generate a professional PDF feedback report for a submission."""
+    submission = await db.submissions.find_one({"id": submission_id}, {"_id": 0})
+    if not submission:
+        raise HTTPException(status_code=404, detail="Submission not found")
+    
+    # Students can only export their own; markers can export any
+    if current_user["role"] == "student" and submission["student_id"] != current_user["id"]:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    # Gather all data
+    student = await db.users.find_one({"id": submission["student_id"]}, {"_id": 0, "full_name": 1, "email": 1})
+    assignment = await db.assignments.find_one({"id": submission["assignment_id"]}, {"_id": 0})
+    course = await db.courses.find_one({"id": assignment["course_id"]}, {"_id": 0}) if assignment else None
+    issues = await db.feedback_issues.find({"submission_id": submission_id}, {"_id": 0}).to_list(200)
+    reviewer = None
+    if submission.get("reviewed_by"):
+        reviewer = await db.users.find_one({"id": submission["reviewed_by"]}, {"_id": 0, "full_name": 1})
+    
+    # Enrich issues with category names
+    for issue in issues:
+        cat = await db.issue_categories.find_one({"id": issue.get("category_id")}, {"_id": 0, "name": 1})
+        issue["category_name"] = cat["name"] if cat else "Unknown"
+        # Find filename
+        for f in submission.get("files", []):
+            if f["id"] == issue.get("file_id"):
+                issue["filename"] = f["filename"]
+                break
+    
+    # Build PDF
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=A4, topMargin=20*mm, bottomMargin=20*mm, leftMargin=18*mm, rightMargin=18*mm)
+    styles = getSampleStyleSheet()
+    
+    title_style = ParagraphStyle('Title2', parent=styles['Title'], fontSize=18, spaceAfter=4*mm, textColor=colors.HexColor('#1e293b'))
+    subtitle_style = ParagraphStyle('Subtitle2', parent=styles['Normal'], fontSize=10, textColor=colors.HexColor('#64748b'), spaceAfter=6*mm)
+    heading_style = ParagraphStyle('Heading2', parent=styles['Heading2'], fontSize=13, spaceBefore=6*mm, spaceAfter=3*mm, textColor=colors.HexColor('#1e293b'))
+    body_style = ParagraphStyle('Body2', parent=styles['Normal'], fontSize=10, leading=14, textColor=colors.HexColor('#334155'))
+    code_style = ParagraphStyle('Code2', parent=styles['Code'], fontSize=8, leading=11, fontName='Courier', backColor=colors.HexColor('#f8fafc'), leftIndent=8, rightIndent=8, spaceBefore=2*mm, spaceAfter=2*mm, borderWidth=0.5, borderColor=colors.HexColor('#e2e8f0'), borderPadding=6)
+    
+    severity_colors = {
+        'critical': colors.HexColor('#ef4444'),
+        'moderate': colors.HexColor('#f59e0b'),
+        'minor': colors.HexColor('#3b82f6')
+    }
+    
+    elements = []
+    
+    # Header
+    elements.append(Paragraph("CodeFeedback Studio", title_style))
+    elements.append(Paragraph("Feedback Report", subtitle_style))
+    elements.append(HRFlowable(width="100%", thickness=1, color=colors.HexColor('#e2e8f0')))
+    elements.append(Spacer(1, 4*mm))
+    
+    # Student info table
+    info_data = [
+        ["Student", student["full_name"] if student else "Unknown"],
+        ["Module", f"{course['name']} ({course.get('code', '')})" if course else "N/A"],
+        ["Assignment", assignment["title"] if assignment else "N/A"],
+        ["Attempt", str(submission.get("attempt_number", 1))],
+        ["Submitted", submission.get("submission_time", "N/A")[:19].replace('T', ' ')],
+        ["Status", submission.get("status", "pending").replace('_', ' ').title()],
+    ]
+    if submission.get("marks") is not None:
+        info_data.append(["Marks", f"{submission['marks']} / {assignment.get('total_marks', 100) if assignment else 100}"])
+    if reviewer:
+        info_data.append(["Reviewed by", reviewer["full_name"]])
+    if submission.get("review_completed_at"):
+        info_data.append(["Reviewed on", submission["review_completed_at"][:19].replace('T', ' ')])
+    
+    info_table = Table(info_data, colWidths=[35*mm, 140*mm])
+    info_table.setStyle(TableStyle([
+        ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
+        ('FONTNAME', (1, 0), (1, -1), 'Helvetica'),
+        ('FONTSIZE', (0, 0), (-1, -1), 10),
+        ('TEXTCOLOR', (0, 0), (0, -1), colors.HexColor('#64748b')),
+        ('TEXTCOLOR', (1, 0), (1, -1), colors.HexColor('#1e293b')),
+        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+        ('TOPPADDING', (0, 0), (-1, -1), 3),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
+    ]))
+    elements.append(info_table)
+    elements.append(Spacer(1, 6*mm))
+    
+    # Issues summary
+    if issues:
+        elements.append(Paragraph("Issues Summary", heading_style))
+        
+        critical = len([i for i in issues if i.get("severity") == "critical"])
+        moderate = len([i for i in issues if i.get("severity") == "moderate"])
+        minor = len([i for i in issues if i.get("severity") == "minor"])
+        fixed = len([i for i in issues if i.get("student_status") == "fixed"])
+        deductions = sum(i.get("marks_deduction", 0) for i in issues)
+        
+        summary_data = [[
+            f"Total: {len(issues)}",
+            f"Critical: {critical}",
+            f"Moderate: {moderate}",
+            f"Minor: {minor}",
+            f"Fixed: {fixed}",
+            f"Deductions: -{deductions}"
+        ]]
+        summary_table = Table(summary_data)
+        summary_table.setStyle(TableStyle([
+            ('FONTSIZE', (0, 0), (-1, -1), 9),
+            ('TEXTCOLOR', (1, 0), (1, 0), colors.HexColor('#ef4444')),
+            ('TEXTCOLOR', (2, 0), (2, 0), colors.HexColor('#f59e0b')),
+            ('TEXTCOLOR', (3, 0), (3, 0), colors.HexColor('#3b82f6')),
+            ('TEXTCOLOR', (4, 0), (4, 0), colors.HexColor('#10b981')),
+            ('TEXTCOLOR', (5, 0), (5, 0), colors.HexColor('#ef4444')),
+            ('TOPPADDING', (0, 0), (-1, -1), 2),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 2),
+        ]))
+        elements.append(summary_table)
+        elements.append(Spacer(1, 4*mm))
+        
+        # Each issue
+        for idx, issue in enumerate(issues, 1):
+            sev = issue.get("severity", "moderate")
+            sev_color = severity_colors.get(sev, colors.HexColor('#64748b'))
+            status_text = "FIXED" if issue.get("student_status") == "fixed" else "OPEN"
+            
+            elements.append(Paragraph(
+                f'<font color="{sev_color.hexval()}">[{sev.upper()}]</font> '
+                f'Issue {idx}: {issue.get("title", "Untitled")} '
+                f'<font color="#94a3b8">({status_text})</font>',
+                ParagraphStyle('IssueTitle', parent=body_style, fontSize=11, spaceBefore=4*mm, fontName='Helvetica-Bold')
+            ))
+            
+            loc = f'{issue.get("filename", "?")} · Lines {issue.get("line_start", 0)}–{issue.get("line_end", 0)}'
+            if issue.get("marks_deduction", 0) > 0:
+                loc += f' · -{issue["marks_deduction"]} marks'
+            elements.append(Paragraph(loc, ParagraphStyle('IssueLoc', parent=body_style, fontSize=9, textColor=colors.HexColor('#94a3b8'))))
+            
+            elements.append(Paragraph(issue.get("explanation", ""), body_style))
+            
+            if issue.get("suggested_fix"):
+                elements.append(Paragraph("<b>Suggested Fix:</b>", ParagraphStyle('FixLabel', parent=body_style, fontSize=9, spaceBefore=2*mm, textColor=colors.HexColor('#059669'))))
+                elements.append(Paragraph(issue["suggested_fix"], ParagraphStyle('Fix', parent=body_style, fontSize=9, textColor=colors.HexColor('#047857'))))
+            
+            elements.append(Spacer(1, 2*mm))
+    else:
+        elements.append(Paragraph("No Issues Found", heading_style))
+        elements.append(Paragraph("Your code was reviewed and no issues were identified. Excellent work!", body_style))
+    
+    # Code files
+    for f in submission.get("files", []):
+        elements.append(PageBreak())
+        elements.append(Paragraph(f"Code: {f['filename']}", heading_style))
+        
+        file_issues = [i for i in issues if i.get("file_id") == f["id"]]
+        issue_lines = set()
+        for fi in file_issues:
+            for ln in range(fi.get("line_start", 0), fi.get("line_end", 0) + 1):
+                issue_lines.add(ln)
+        
+        # Show code with line numbers (truncate very long lines)
+        lines = (f.get("content", "") or "").split('\n')
+        numbered = []
+        for i, line in enumerate(lines, 1):
+            prefix = ">>> " if i in issue_lines else "    "
+            truncated = line[:120] + ('...' if len(line) > 120 else '')
+            numbered.append(f"{prefix}{i:4d} | {truncated}")
+        
+        code_text = '\n'.join(numbered[:500])
+        if len(lines) > 500:
+            code_text += f'\n... ({len(lines) - 500} more lines)'
+        
+        elements.append(Preformatted(code_text, code_style))
+    
+    # Footer note
+    elements.append(Spacer(1, 10*mm))
+    elements.append(HRFlowable(width="100%", thickness=0.5, color=colors.HexColor('#e2e8f0')))
+    elements.append(Paragraph(
+        f"Generated by CodeFeedback Studio · {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')}",
+        ParagraphStyle('Footer', parent=body_style, fontSize=8, textColor=colors.HexColor('#94a3b8'), alignment=TA_CENTER)
+    ))
+    
+    doc.build(elements)
+    buffer.seek(0)
+    
+    # Write to temp file and return
+    filename = f"feedback_{submission.get('student_id', 'unknown')}_{submission_id[:8]}.pdf"
+    pdf_path = ROOT_DIR / "data" / filename
+    (ROOT_DIR / "data").mkdir(exist_ok=True)
+    with open(pdf_path, 'wb') as pf:
+        pf.write(buffer.read())
+    
+    return FileResponse(str(pdf_path), media_type="application/pdf", filename=filename)
+
+# ============ CROSS-STUDENT COMPARISON ============
+
+@api_router.get("/compare/submissions")
+async def get_comparable_submissions(assignment_id: str, current_user: dict = Depends(require_marker)):
+    """Get all submissions for an assignment (for comparison picker). Marker-only."""
+    submissions = await db.submissions.find(
+        {"assignment_id": assignment_id},
+        {"_id": 0, "id": 1, "student_id": 1, "status": 1, "attempt_number": 1, "submission_time": 1, "marks": 1}
+    ).to_list(500)
+    
+    student_ids = list(set(s["student_id"] for s in submissions))
+    students = await db.users.find({"id": {"$in": student_ids}}, {"_id": 0, "id": 1, "full_name": 1}).to_list(len(student_ids))
+    students_map = {s["id"]: s["full_name"] for s in students}
+    
+    result = []
+    for s in submissions:
+        result.append({
+            "id": s["id"],
+            "student_name": students_map.get(s["student_id"], "Unknown"),
+            "status": s["status"],
+            "attempt_number": s.get("attempt_number", 1),
+            "marks": s.get("marks"),
+            "submission_time": s.get("submission_time", "")
+        })
+    
+    return result
+
+@api_router.get("/compare/{submission_id_a}/{submission_id_b}")
+async def compare_submissions(submission_id_a: str, submission_id_b: str, current_user: dict = Depends(require_marker)):
+    """Get two submissions side by side for comparison. Marker-only."""
+    sub_a = await db.submissions.find_one({"id": submission_id_a}, {"_id": 0})
+    sub_b = await db.submissions.find_one({"id": submission_id_b}, {"_id": 0})
+    
+    if not sub_a or not sub_b:
+        raise HTTPException(status_code=404, detail="Submission not found")
+    
+    # Get student names
+    student_a = await db.users.find_one({"id": sub_a["student_id"]}, {"_id": 0, "full_name": 1})
+    student_b = await db.users.find_one({"id": sub_b["student_id"]}, {"_id": 0, "full_name": 1})
+    
+    # Get issues for primary submission only
+    issues_a = await db.feedback_issues.find({"submission_id": submission_id_a}, {"_id": 0}).to_list(200)
+    for issue in issues_a:
+        cat = await db.issue_categories.find_one({"id": issue.get("category_id")}, {"_id": 0, "name": 1})
+        issue["category_name"] = cat["name"] if cat else "Unknown"
+    
+    return {
+        "submission_a": {
+            **sub_a,
+            "student_name": student_a["full_name"] if student_a else "Unknown",
+            "issues": issues_a
+        },
+        "submission_b": {
+            **sub_b,
+            "student_name": student_b["full_name"] if student_b else "Unknown",
+            "issues": []  # Reference only — no issues exposed
+        }
+    }
+
+# ============ STUDENT REFLECTIONS ============
+
+class ReflectionCreate(BaseModel):
+    submission_id: str
+    reflection_type: str  # "pre_submission" or "post_feedback"
+    content: str
+    prompted_responses: Optional[Dict[str, str]] = None
+
+@api_router.post("/reflections")
+async def save_reflection(data: ReflectionCreate, current_user: dict = Depends(get_current_user)):
+    """Save or update a student reflection for a submission."""
+    # Students only
+    if current_user["role"] != "student":
+        raise HTTPException(status_code=403, detail="Only students can write reflections")
+    
+    submission = await db.submissions.find_one({"id": data.submission_id}, {"_id": 0})
+    if not submission:
+        raise HTTPException(status_code=404, detail="Submission not found")
+    if submission["student_id"] != current_user["id"]:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    # Editing rules: pre_submission always editable before grading; post_feedback only after feedback
+    if data.reflection_type == "post_feedback" and submission.get("status") not in ["feedback_released", "no_issues"]:
+        raise HTTPException(status_code=400, detail="Post-feedback reflections can only be written after receiving feedback")
+    
+    now = datetime.now(timezone.utc).isoformat()
+    
+    await db.reflections.update_one(
+        {"submission_id": data.submission_id, "user_id": current_user["id"], "reflection_type": data.reflection_type},
+        {"$set": {
+            "submission_id": data.submission_id,
+            "user_id": current_user["id"],
+            "reflection_type": data.reflection_type,
+            "content": data.content,
+            "prompted_responses": data.prompted_responses or {},
+            "updated_at": now
+        },
+        "$setOnInsert": {"id": str(uuid.uuid4()), "created_at": now}},
+        upsert=True
+    )
+    return {"message": "Reflection saved"}
+
+@api_router.get("/reflections/{submission_id}")
+async def get_reflections(submission_id: str, current_user: dict = Depends(get_current_user)):
+    """Get reflections for a submission. Students see own; markers see student's reflections."""
+    submission = await db.submissions.find_one({"id": submission_id}, {"_id": 0})
+    if not submission:
+        raise HTTPException(status_code=404, detail="Submission not found")
+    
+    # Access control
+    if current_user["role"] == "student" and submission["student_id"] != current_user["id"]:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    reflections = await db.reflections.find(
+        {"submission_id": submission_id},
+        {"_id": 0}
+    ).to_list(10)
+    
+    return {
+        "pre_submission": next((r for r in reflections if r.get("reflection_type") == "pre_submission"), None),
+        "post_feedback": next((r for r in reflections if r.get("reflection_type") == "post_feedback"), None)
+    }
+
+@api_router.post("/reflections/auto-save")
+async def auto_save_reflection(data: dict = Body(...), current_user: dict = Depends(get_current_user)):
+    """Auto-save a reflection draft."""
+    if current_user["role"] != "student":
+        raise HTTPException(status_code=403, detail="Only students can write reflections")
+    
+    await db.reflection_drafts.update_one(
+        {"submission_id": data.get("submission_id"), "user_id": current_user["id"], "reflection_type": data.get("reflection_type")},
+        {"$set": {
+            "submission_id": data.get("submission_id"),
+            "user_id": current_user["id"],
+            "reflection_type": data.get("reflection_type"),
+            "content": data.get("content", ""),
+            "prompted_responses": data.get("prompted_responses", {}),
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }},
+        upsert=True
+    )
+    return {"message": "Draft saved"}
+
+@api_router.get("/reflections/draft/{submission_id}/{reflection_type}")
+async def get_reflection_draft(submission_id: str, reflection_type: str, current_user: dict = Depends(get_current_user)):
+    """Get auto-saved reflection draft."""
+    draft = await db.reflection_drafts.find_one(
+        {"submission_id": submission_id, "user_id": current_user["id"], "reflection_type": reflection_type},
+        {"_id": 0}
+    )
+    return draft or {"content": "", "prompted_responses": {}}
+
 # ============ HEALTH ============
 
 @api_router.get("/")

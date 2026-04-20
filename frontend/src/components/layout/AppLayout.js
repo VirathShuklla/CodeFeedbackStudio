@@ -9,7 +9,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '../ui/dropdown-menu';
-import { Code2, LogOut, ChevronDown, BarChart3, Award, BookOpen, Home, Shield, Trophy, Moon, Sun, Swords } from 'lucide-react';
+import { Code2, LogOut, ChevronDown, BarChart3, Award, BookOpen, Home, Shield, Trophy, Moon, Sun, Swords, GitCompare } from 'lucide-react';
 
 export const AppLayout = ({ children }) => {
   const { user, logout, isMarker, isStudent, isModerator } = useAuth();
@@ -83,6 +83,16 @@ export const AppLayout = ({ children }) => {
                 >
                   <Swords className="w-4 h-4" />
                   <span className="hidden sm:inline">Leaderboard</span>
+                </Button>
+              </Link>
+              <Link to="/marker/compare">
+                <Button 
+                  variant={isActive('/marker/compare') ? 'secondary' : 'ghost'} 
+                  size="sm"
+                  className="gap-2"
+                >
+                  <GitCompare className="w-4 h-4" />
+                  <span className="hidden sm:inline">Compare</span>
                 </Button>
               </Link>
               <Link to="/marker/analytics">

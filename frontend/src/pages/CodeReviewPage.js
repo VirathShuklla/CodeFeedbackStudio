@@ -52,6 +52,8 @@ import {
   Search,
   CloudOff,
   Cloud,
+  Download,
+  GitCompare,
 } from 'lucide-react';
 import Editor from '@monaco-editor/react';
 
@@ -344,6 +346,23 @@ export default function CodeReviewPage() {
     }
   };
 
+  const handleExportPDF = async () => {
+    try {
+      const res = await api().get(`/submissions/${submissionId}/export-pdf`, { responseType: 'blob' });
+      const url = window.URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `feedback_${submission?.student_name?.replace(/\s+/g, '_') || 'report'}_attempt${submission?.attempt_number || 1}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+      toast.success('PDF exported');
+    } catch {
+      toast.error('Failed to export PDF');
+    }
+  };
+
   const scrollToIssue = (issue) => {
     if (issue.file_id !== activeFileId) {
       setActiveFileId(issue.file_id);
@@ -427,6 +446,12 @@ export default function CodeReviewPage() {
         
         {!isCompleted && (
           <div className="ml-auto flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => navigate(`/marker/compare?assignment=${submission?.assignment_id}&a=${submissionId}`)} data-testid="compare-btn">
+              <GitCompare className="w-4 h-4 mr-1.5" /> Compare
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleExportPDF} data-testid="export-pdf-btn">
+              <Download className="w-4 h-4 mr-1.5" /> PDF
+            </Button>
             <AlertDialog open={showNoIssuesDialog} onOpenChange={setShowNoIssuesDialog}>
               <Button variant="outline" size="sm" onClick={() => setShowNoIssuesDialog(true)} disabled={issues.length > 0} data-testid="no-issues-btn">
                 <ThumbsUp className="w-4 h-4 mr-1.5" /> No Issues
@@ -451,6 +476,13 @@ export default function CodeReviewPage() {
             
             <Button size="sm" onClick={handlePublishFeedback} disabled={issues.length === 0} className="btn-primary" data-testid="publish-btn">
               <Send className="w-4 h-4 mr-1.5" /> Publish
+            </Button>
+          </div>
+        )}
+        {isCompleted && (
+          <div className="ml-auto flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={handleExportPDF} data-testid="export-pdf-btn">
+              <Download className="w-4 h-4 mr-1.5" /> Export PDF
             </Button>
           </div>
         )}
