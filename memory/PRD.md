@@ -95,7 +95,7 @@ Build a comprehensive code assessment and moderation platform ("CodeFeedback Stu
 ### P3 (Low Priority/Future)
 - [ ] Phase 3 - Analytics & Reporting dashboards
 - [ ] Code plagiarism detection
-- [ ] System Modeling Documentation (Event B)
+- [x] System Modeling Documentation (Event-B) — `/app/docs/event-b/README.md`
 
 ## Test Credentials
 - **Marker**: marker@test.com / password123
