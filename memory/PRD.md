@@ -97,8 +97,8 @@ Build a comprehensive code assessment and moderation platform ("CodeFeedback Stu
 - [ ] Code plagiarism detection
 - [x] System Modeling Documentation (Event-B) — `/app/docs/event-b/README.md`
 - [x] Requirements Analysis (112 requirements) — `/app/docs/requirements-analysis.md`
-- [x] UML Class Diagram (PlantUML) — `/app/docs/uml/class-diagram.md`
-- [x] UML Package Diagram (PlantUML) — `/app/docs/uml/package-diagram.md`
+- [x] UML Class Diagram (PNG image) — `/app/docs/uml/class-diagram.png`
+- [x] UML Package Diagram (PNG image) — `/app/docs/uml/package-diagram.png`
 - [x] Testing & Evaluation Report (9 iterations) — `/app/docs/testing-evaluation-report.md`
 
 ## Test Credentials
