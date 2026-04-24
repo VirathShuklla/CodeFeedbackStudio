@@ -64,6 +64,15 @@ Build a comprehensive code assessment and moderation platform ("CodeFeedback Stu
 - [x] Post-feedback reflections only available after receiving feedback
 - [x] Saved reflection confirmation with timestamp
 
+### Student Courses Page Refresh (NEW - Feb 2026)
+- [x] Backend: Enriched `/api/students/courses` endpoint — now returns description, year, semester, student_count, assignments_count, submitted_count, reviewed_count, pending_count, progress_pct (aggregation-based, no N+1)
+- [x] Frontend: Complete redesign of `StudentDashboard.js` — hero banner with XP/Level pills, rich course cards grid with circular progress rings, stat strip (total/submitted/in-review/feedback), course progress bar, next-deadline callout, search + filter (All/To do/In review/Completed) + sort controls, status-coloured assignment cards with grade/issue chips, improved Manage Courses dialog with search
+- [x] Tested: 9/9 backend pytest + 100% frontend (iteration_10.json)
+
+### Documentation Expansion (NEW - Feb 2026)
+- [x] README.md heavily expanded: added Frontend Routing & Page Inventory, Component Inventory, State Management & Hooks, Security Model & Access Control, Performance Optimizations, Data Validation, Error Handling Strategy, Accessibility, Testing Strategy, Observability, FAQ, Glossary, and Changelog sections
+- [x] Student Features section rewritten to describe the new dashboard in detail
+
 ### Assignment Workflow
 - [x] Schedule Release, Set Deadline, Publish Results
 - [x] Delete assignment with cascading deletion (Module Leader only)
@@ -91,6 +100,8 @@ Build a comprehensive code assessment and moderation platform ("CodeFeedback Stu
 - [ ] ESLint react-hooks/exhaustive-deps warnings fix
 - [ ] Use StreamingResponse for PDF export instead of writing to disk
 - [ ] Add Pydantic model for reflection auto-save endpoint
+- [ ] Extract CourseCard, StatPill, ProgressRing, ManageCoursesDialog from StudentDashboard.js (~895 lines) into separate components under `components/student/`
+- [ ] Use backend `progress_pct` as single source of truth instead of recomputing on client in StudentDashboard
 
 ### P3 (Low Priority/Future)
 - [ ] Phase 3 - Analytics & Reporting dashboards
@@ -106,4 +117,4 @@ Build a comprehensive code assessment and moderation platform ("CodeFeedback Stu
 - **Student**: student@test.com / password123
 
 ---
-*Last Updated: April 2026*
+*Last Updated: February 2026*
