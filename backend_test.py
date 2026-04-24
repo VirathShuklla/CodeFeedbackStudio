@@ -7,7 +7,7 @@ from datetime import datetime
 from typing import Dict, Any, Optional
 
 class CodeFeedbackStudioTester:
-    def __init__(self, base_url="https://codefeedback-studio.preview.emergentagent.com/api"):
+    def __init__(self, base_url="https://codefeedback-studio-1.preview.emergentagent.com/api"):
         self.base_url = base_url
         self.marker_token = None
         self.student_token = None

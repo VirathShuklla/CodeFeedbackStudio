@@ -968,13 +968,78 @@ async def get_enrolled_courses(current_user: dict = Depends(require_student)):
     if not course_ids:
         return []
     courses = await db.courses.find({"id": {"$in": course_ids}}, {"_id": 0}).to_list(100)
+
+    # Bulk fetch leaders
+    leader_ids = [c.get("leader_id") for c in courses if c.get("leader_id")]
+    leaders_map = {}
+    if leader_ids:
+        leaders = await db.users.find({"id": {"$in": leader_ids}}, {"_id": 0, "id": 1, "full_name": 1}).to_list(len(leader_ids))
+        leaders_map = {u["id"]: u["full_name"] for u in leaders}
+
+    # Per-course stats: assignments count, student count, and this student's submission stats
+    # Aggregate assignments per course
+    assignments_agg = await db.assignments.aggregate([
+        {"$match": {"course_id": {"$in": course_ids}}},
+        {"$group": {"_id": "$course_id", "count": {"$sum": 1}, "assignment_ids": {"$push": "$id"}}}
+    ]).to_list(len(course_ids))
+    assignments_by_course = {a["_id"]: a for a in assignments_agg}
+
+    all_assignment_ids = [aid for a in assignments_agg for aid in a.get("assignment_ids", [])]
+
+    # Fetch this student's submissions for those assignments (latest attempts only)
+    student_subs_by_course = {}
+    if all_assignment_ids:
+        subs = await db.submissions.find(
+            {"student_id": current_user["id"], "assignment_id": {"$in": all_assignment_ids}, "is_latest_attempt": True},
+            {"_id": 0, "assignment_id": 1, "status": 1}
+        ).to_list(len(all_assignment_ids))
+        # Map assignment_id -> course_id
+        assignment_to_course = {}
+        for a in assignments_agg:
+            for aid in a.get("assignment_ids", []):
+                assignment_to_course[aid] = a["_id"]
+        for s in subs:
+            cid = assignment_to_course.get(s["assignment_id"])
+            if not cid:
+                continue
+            bucket = student_subs_by_course.setdefault(cid, {"submitted": 0, "reviewed": 0, "pending": 0})
+            bucket["submitted"] += 1
+            if s.get("status") in ("feedback_released", "no_issues"):
+                bucket["reviewed"] += 1
+            elif s.get("status") in ("pending", "in_review"):
+                bucket["pending"] += 1
+
+    # Student counts per course
+    student_counts_agg = await db.users.aggregate([
+        {"$match": {"role": "student", "course_ids": {"$in": course_ids}}},
+        {"$unwind": "$course_ids"},
+        {"$match": {"course_ids": {"$in": course_ids}}},
+        {"$group": {"_id": "$course_ids", "count": {"$sum": 1}}}
+    ]).to_list(len(course_ids))
+    student_counts_map = {s["_id"]: s["count"] for s in student_counts_agg}
+
     result = []
     for c in courses:
-        leader = await db.users.find_one({"id": c.get("leader_id")}, {"_id": 0})
+        cid = c["id"]
+        a_stats = assignments_by_course.get(cid, {})
+        s_stats = student_subs_by_course.get(cid, {"submitted": 0, "reviewed": 0, "pending": 0})
+        total_assignments = a_stats.get("count", 0)
         result.append({
-            "id": c["id"], "name": c["name"], "code": c.get("code", ""),
-            "leader_name": leader["full_name"] if leader else "Unknown",
-            "created_at": c.get("created_at", "")
+            "id": cid,
+            "name": c["name"],
+            "code": c.get("code", ""),
+            "description": c.get("description", ""),
+            "year": c.get("year"),
+            "semester": c.get("semester", ""),
+            "leader_id": c.get("leader_id", ""),
+            "leader_name": leaders_map.get(c.get("leader_id"), "Unknown"),
+            "created_at": c.get("created_at", ""),
+            "student_count": student_counts_map.get(cid, 0),
+            "assignments_count": total_assignments,
+            "submitted_count": s_stats["submitted"],
+            "reviewed_count": s_stats["reviewed"],
+            "pending_count": s_stats["pending"],
+            "progress_pct": int(round((s_stats["submitted"] / total_assignments) * 100)) if total_assignments else 0,
         })
     return result
 

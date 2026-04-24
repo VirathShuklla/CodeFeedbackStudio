@@ -1,0 +1,44 @@
+{
+  "summary": "Iteration 10 testing complete for enriched Student Courses page. Backend: 9/9 pytest tests PASSED covering GET /api/students/courses enriched response (description, year, semester, student_count, assignments_count, submitted_count, reviewed_count, pending_count, progress_pct), field types/ranges, progress math, _id leak, auth gate, marker-forbidden, plus regression on assignments listing. Frontend: all new data-testids render correctly for student Alice Johnson — student-dashboard, student-hero (with first name 'Alice', XP 60, Level 1, Manage Courses button), 2 course cards (CS101 10%, CS201 0%) with progress rings, course-detail panel, stat-total/submitted/pending/reviewed (10/1/1/0), course-progress bar, assignment-search, sort-select, filter-all/todo/pending/reviewed, 10 assignment cards rendered (uuid-style testids), Manage Courses dialog with 'Your Courses' + 'Available Courses' sections, course-search-input, 2 unenroll + 83 enroll buttons. Regression passed on /analytics, /badges, /leaderboard and on submit dialog. No critical issues found.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Manage Courses dialog", "issues": ["Dialog lists 80+ 'Enrol' buttons (seed test courses like TC170632/TC170634) that clutter the list; consider pagination or a max-height scroll cap. Cosmetic only."]},
+      {"screen": "Student dashboard course-detail", "issues": ["next-deadline-card not rendered for student@test.com because all assignments on CS101 show 'Deadline passed'. Expected behaviour — cannot be validated without a future-dated assignment in seed data."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iteration10_student_courses.py",
+    "/app/test_reports/pytest/iteration10_results.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "server.py get_enrolled_courses (L965): student_counts_agg double-matches {course_ids: {$in: course_ids}} before and after $unwind which works but is O(users*courses). For many users this could be slow — acceptable for current scale.",
+    "StudentDashboard.js is now ~895 lines (over 700-line guideline). Consider extracting CourseCard, StatPill, ProgressRing, ManageCoursesDialog into components/.",
+    "StudentDashboard deriveAssignmentState treats status 'feedback_released' and 'no_issues' as 'reviewed' consistently with backend bucket — good alignment.",
+    "courseStats.progress is computed client-side from assignments+submissions, duplicating the backend progress_pct calculation. Consider using the backend value for a single source of truth (currently client recomputes using latest attempt heuristics — minor risk of divergence).",
+    "Course card shows 'X total / Y done' where Y comes from submitted_count; reviewed_count (feedback released) is not shown on the card — may confuse students who have reviewed work. Minor UX suggestion.",
+    "server.py remains at 3010 lines — same long-file concern as iteration 9."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iteration10_student_courses.py - new pytest suite (9 tests) for enriched /students/courses + regression"
+  ],
+  "success_rate": {
+    "backend": "100% (9/9 tests passed)",
+    "frontend": "100% (all requested testids & flows verified; next-deadline-card not seen because no future-dated assignments in seed)"
+  },
+  "test_credentials": {
+    "student": "student@test.com / password123 (Alice Johnson, enrolled in CS101 + CS201)",
+    "marker": "marker@test.com / password123"
+  },
+  "seed_data_creation": "None — used existing seed data.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Iteration 10 (richer student dashboard + enriched /api/students/courses) is stable. Pytest suite /app/backend/tests/test_iteration10_student_courses.py has 9 passing tests. Frontend hero/course-cards/stat pills/filters/assignment-search/sort-select/Manage Courses dialog all working. next-deadline-card logic is correct but not testable with current seed (all deadlines are in the past); to exercise it, create an assignment with due_date > now and no submission from Alice. Click a course-card before asserting course-detail — initial auto-select happens after data load but safer to click explicitly. When counting assignment cards with data-testid^='assignment-', remember the 'assignment-search' input matches that prefix too — use a UUID regex or div[data-testid^='assignment-']:not([data-testid='assignment-search']).",
+  "rca_of_the_issue": "N/A - no defects found"
+}

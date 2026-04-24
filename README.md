@@ -57,6 +57,19 @@ A comprehensive code assessment, feedback, and moderation platform built for uni
   - [MongoDB Atlas](#mongodb-atlas)
 - [Event-B Formal Specification](#event-b-formal-specification)
 - [Troubleshooting](#troubleshooting)
+- [Frontend Routing & Page Inventory](#frontend-routing--page-inventory)
+- [Component Inventory](#component-inventory)
+- [State Management & Hooks](#state-management--hooks)
+- [Security Model & Access Control](#security-model--access-control)
+- [Performance Optimizations](#performance-optimizations)
+- [Data Validation](#data-validation)
+- [Error Handling Strategy](#error-handling-strategy)
+- [Accessibility (a11y)](#accessibility-a11y)
+- [Testing Strategy](#testing-strategy)
+- [Observability](#observability)
+- [Frequently Asked Questions](#frequently-asked-questions)
+- [Glossary](#glossary)
+- [Changelog (selected)](#changelog-selected)
 - [Contributing](#contributing)
 - [License](#license)
 
@@ -421,6 +434,25 @@ Student (base role)
 ---
 
 ## Features for Students
+
+### The Redesigned Student Dashboard (2026)
+
+The student-facing landing page — **"My Courses"** — was rebuilt from the ground up to be glanceable, motivational, and action-oriented. In a single scroll, a student can answer *Where am I? What's next? What's blocking me?*
+
+| Surface | What it does |
+|--------|--------------|
+| **Personalised Hero Banner** | Greets the student by first name, shows a `Welcome back` badge, and surfaces live **XP** and **Level** pills alongside a one-click `Manage Courses` button. Transitions smoothly in light and dark mode. |
+| **Course Cards Grid** | Each enrolled course is rendered as a rich, tappable card showing the course code, title, semester/year, leader, number of students, total assignments, and a **circular progress ring** reflecting how many assignments the student has already submitted. The currently active course is highlighted with a primary-colour border and subtle elevation. |
+| **Course Detail Header** | Once a course is selected, a clean detail header shows the code pill, name in display font, semester/year with a calendar icon, and the module leader name. Descriptions (when provided by the leader) are rendered in muted text. |
+| **Stat Strip** | Four mini stat cards — **Assignments**, **Submitted**, **In review**, **Feedback** — each with an icon, accent colour, and live count. Designed to be readable at a glance and accessible (icons paired with text, never emoji-only). |
+| **Course Progress Bar** | A horizontal progress bar right beneath the stat strip converts the raw numbers into an emotional indicator of how close the student is to "done" for the course. |
+| **Next Deadline Callout** | If there is an unsubmitted assignment with an upcoming deadline, the next most-urgent one is surfaced in a prominent amber gradient card. Tapping it opens the submission modal directly. |
+| **Search + Filter + Sort** | Students can search assignments by title/description, filter by state (`All / To do / In review / Completed`), and sort by deadline or title. All controls persist the selection in component state while navigating between courses. |
+| **Assignment Cards** | Each assignment card now shows a colour-coded state pill, a grade chip (when results are published), an issue-count chip (when feedback has arrived), attempt counters, relative deadline text (*"Due in 2 days"* / *"Due in 4h"* in orange / *"Deadline passed"* in red), and quick action buttons: `Submit`, `Resubmit`, or `View Feedback`. |
+| **Empty & Boundary States** | Three distinct empty states are provided: (1) no courses enrolled, (2) no assignments released, (3) no assignments match the current filter. Each has its own icon, microcopy, and call-to-action. |
+| **Enrollment Drawer** | The "Manage Courses" dialog now supports searching the available course catalogue by code or name, clearer separation of *Your Courses* vs *Available Courses*, and student-count metadata on every card. |
+
+### Other Student Features
 
 | Feature | Description |
 |---------|-------------|
@@ -1186,6 +1218,212 @@ JWT_SECRET="your-secret-key"
 - Badge evaluation runs after specific trigger events (submission, fix, review completion)
 - Check `GET /api/gamification/stats` for current badge list
 - Some badges require multiple actions (e.g., "Bug Squasher" needs 10 fixed issues)
+
+---
+
+## Frontend Routing & Page Inventory
+
+Every route in the SPA is protected by the `PrivateRoute` wrapper (see `src/App.js`). Role-based routing keeps students out of marker pages and vice-versa.
+
+| Path | Component | Role(s) | Purpose |
+|------|-----------|---------|---------|
+| `/login` | `LoginPage.js` | public | Email + password authentication |
+| `/register` | `RegisterPage.js` | public | New user self-registration with role + course preselection |
+| `/student` | `StudentDashboard.js` | student | The enriched **"My Courses"** landing — hero, course grid, stats, deadlines, assignment list |
+| `/student/feedback/:submissionId` | `StudentFeedbackPage.js` | student | Inline feedback viewer, reflections, PDF export |
+| `/student/analytics` | `StudentAnalyticsPage.js` | student | Personal progress dashboard with charts |
+| `/student/badges` | `StudentBadgesPage.js` | student | Badge gallery with earned / unearned states |
+| `/student/leaderboard` | `LeaderboardPage.js` | student | Per-module opt-in leaderboard |
+| `/marker` | `MarkerDashboard.js` | marker/ML | Course list with assignment queues |
+| `/marker/course/:courseId` | `MarkerCoursePage.js` | marker/ML | Assignments, templates, students for a course |
+| `/marker/review/:submissionId` | `CodeReviewPage.js` | marker/ML | Monaco-based review + annotation workspace |
+| `/marker/moderation` | `ModerationPage.js` | moderator/ML | Quality-control sample review |
+| `/marker/compare` | `ComparisonPage.js` | marker/ML | Dual-editor side-by-side student comparison |
+| `/marker/analytics` | `MarkerAnalyticsPage.js` | marker/ML | Marker performance and course-wide stats |
+| `/marker/badges` | `MarkerBadgesPage.js` | marker/ML | Marker badges gallery |
+| `/marker/leaderboard` | `LeaderboardPage.js` | marker/ML | Marker leaderboard |
+
+---
+
+## Component Inventory
+
+### Layout & Shell
+- `components/layout/AppLayout.js` — Top navigation, user dropdown, dark mode toggle, per-role nav links.
+- `components/LoadingScreen.js` — Branded first-visit splash with animated progress bar and orbiting particles.
+
+### Page-level Components
+Every page in `src/pages/` is a default-export React function that renders inside `<AppLayout>`.
+
+### shadcn/ui Primitives (in `components/ui/`)
+Pre-wired, accessible, dark-mode-aware primitives used across the app:
+
+`accordion`, `alert`, `alert-dialog`, `avatar`, `badge`, `breadcrumb`, `button`, `calendar`, `card`, `carousel`, `checkbox`, `collapsible`, `command`, `context-menu`, `dialog`, `drawer`, `dropdown-menu`, `form`, `hover-card`, `input`, `input-otp`, `label`, `menubar`, `navigation-menu`, `pagination`, `popover`, `progress`, `radio-group`, `resizable`, `scroll-area`, `select`, `separator`, `sheet`, `skeleton`, `slider`, `sonner` (toast), `switch`, `table`, `tabs`, `textarea`, `toast`, `toaster`, `toggle`, `toggle-group`, `tooltip`.
+
+All components are styled with Tailwind CSS variables that follow the `--primary`, `--secondary`, `--muted`, `--accent`, `--destructive` token system defined in `src/index.css`.
+
+### Custom Mini-Components
+- **`ProgressRing`** — SVG-based circular progress indicator embedded in `StudentDashboard.js` for per-course completion.
+- **`StatPill`** — Icon + label + value card used across the stat strip on the Student and Marker dashboards.
+- **`MonacoEditor`** — `@monaco-editor/react` is imported directly; configured differently per page (read-only for markers, editable for students, read-only + diff for comparison).
+
+---
+
+## State Management & Hooks
+
+CodeFeedback Studio deliberately avoids a global state library (Redux / Zustand). Instead it relies on:
+
+1. **React Context**
+   - `AuthContext` — `user`, `token`, `api()` (Axios factory with the auth header), `login`, `logout`, `refreshUser`, and role helpers (`isStudent`, `isMarker`, `isModerator`, `isModuleLeader`).
+   - `ThemeContext` — `isDark`, `toggleTheme`; persists to `localStorage`.
+2. **Local component state** for page-specific data (`useState`, `useMemo`, `useCallback`).
+3. **`useMemo` for derived data** — e.g., visible assignment list after filter/sort is computed from raw `assignments` + `submissions`.
+4. **Axios with token injection** — the `api()` helper returns a fresh axios instance with the Bearer header on every call, so a logout instantly stops all subsequent authenticated requests.
+
+Why no Redux? The app is stateful per-page and mostly transactional — pushing every course list and submission through a global store would add ceremony without benefit. If/when real-time collaboration (multi-marker simultaneous editing) is added, WebSocket + optimistic reducers become a natural next step.
+
+---
+
+## Security Model & Access Control
+
+### Authentication
+- **JWT** tokens, HS256, 30-day expiry, stored in `localStorage` under the key `token`.
+- Passwords are hashed with **bcrypt** (12 rounds) on registration.
+- The backend exposes `GET /api/auth/me` for the frontend to refresh the user object on mount.
+
+### Authorization
+Role guards are implemented as FastAPI dependencies:
+
+| Dependency | Allowed roles |
+|------------|---------------|
+| `get_current_user` | any authenticated user |
+| `require_student` | `student` |
+| `require_marker` | `marker`, `moderator`, `module_leader` |
+| `require_moderator` | `moderator`, `module_leader` |
+| `require_module_leader` | `module_leader` |
+
+Course-scoped access is enforced by `get_accessible_course_ids(user)` which unions the user's direct `course_ids`, `collaborator_ids`, `moderator_ids`, and `leader_id` across the `courses` collection. No route reads or writes a course without first asserting it belongs to the caller's scope.
+
+### Defence-in-depth
+- Assignment result visibility is enforced server-side — even if a student inspects the payload, `marks` is scrubbed to `null` until the scheduled `results_publish_date` passes or the leader manually publishes.
+- Marker draft autosave endpoints require the caller to be assigned to the parent submission's course.
+- Moderation sampling is server-side randomised per request (failing work + 10% passing sample) to prevent marker gaming.
+
+---
+
+## Performance Optimizations
+
+Historical N+1 query pain points were all replaced with batch reads and aggregation pipelines. The following optimisations are live today:
+
+| Hot path | Before | After |
+|----------|--------|-------|
+| Enrolled-courses endpoint | Sequential `find_one` per leader, per-course student count loop | Bulk `find({id:{$in:[...]}})` for leaders + `$group` aggregation for student counts + `$group` aggregation for assignments; joined in memory. |
+| `/submissions` list | N+1 for student, reviewer, issue counts | Bulk `users.find({id:{$in:ids}})` + `$group` on `feedback_issues` keyed by `submission_id`. |
+| Gamification badge check | Many per-user queries | Single aggregation of user's submissions + assignments, then in-memory fan-out over badge rules. |
+| Moderation sampling | Looped per assignment | Single `$match` then Python `random.sample` at the service layer. |
+
+Every endpoint that touches MongoDB now excludes `_id` in the projection (`{"_id": 0}`) to avoid the BSON ObjectId → JSON serialisation pitfall.
+
+---
+
+## Data Validation
+
+All input and output schemas are Pydantic models (see top of `backend/server.py`). Examples:
+
+- `UserRegister`, `UserLogin`, `UserResponse` — auth payloads.
+- `CourseCreate`, `CourseUpdate`, `CourseResponse` — course lifecycle.
+- `AssignmentCreate`, `AssignmentUpdate` — assignment lifecycle with optional `has_deadline`, `schedule_release_date`, `max_attempts`.
+- `SubmissionCreate`, `SubmissionFile` — multi-file code submissions (`filename` + `content`).
+- `FeedbackIssueCreate`, `FeedbackIssueUpdate` — inline issues with severity enum.
+- `IssueTemplate` — reusable feedback templates.
+- `ReflectionCreate` — student pre/post reflections.
+
+Outgoing responses also use Pydantic models where possible (e.g., `UserResponse`), guaranteeing no sensitive field (`password_hash`) ever leaks.
+
+---
+
+## Error Handling Strategy
+
+- **Backend**: Every business-rule violation raises `HTTPException(status_code=..., detail="...")` with a human-readable `detail`. 4xx codes are used liberally (400 validation, 401 auth, 403 forbidden, 404 not found, 409 conflict). 5xx is reserved for unexpected exceptions — these are logged via `logger.error` with a stack trace but never leak internals to the client.
+- **Frontend**: All Axios calls live inside `try / catch`. On failure, the client reads `error.response?.data?.detail` and surfaces it through `sonner` toasts. A generic *"Failed to load data"* fallback covers unknown errors. 401s on protected routes trigger a logout and redirect.
+- **Auto-draft errors** are silenced in the UI (only a "Unsaved" cloud icon) to avoid interrupting the marker — the draft is retried on the next 15-second tick.
+
+---
+
+## Accessibility (a11y)
+
+- **Keyboard navigation**: Every interactive element is a `<button>` or `<Link>`; focus rings are preserved on Tailwind's default `focus-visible` state.
+- **Colour contrast**: Status pills and stat chips use WCAG AA-compliant colour combinations in both themes. Dark mode adjusts backgrounds from `/10` to `/30` opacities to maintain contrast.
+- **Screen readers**: Icon-only buttons carry descriptive `aria-label`s through the shadcn/ui primitives; toasts from `sonner` are announced as `role="status"`.
+- **Motion**: Animations respect `prefers-reduced-motion` implicitly through Tailwind's `motion-reduce` variants on critical transitions.
+- **Dark mode**: Toggleable from the header and the user menu; stored in `localStorage` under `theme`.
+
+---
+
+## Testing Strategy
+
+### Backend
+- **pytest** unit tests live in `backend/tests/` (add-only, created during each iteration).
+- The **testing agent** (`testing_agent_v3_fork`) runs end-to-end curl-based integration tests against the real preview URL after every major feature and writes its report to `/app/test_reports/iteration_N.json`.
+
+### Frontend
+- **Playwright via the testing agent** drives real browser flows — login, course selection, assignment submission, feedback viewing, PDF export, comparison, reflections.
+- Every interactive element carries a `data-testid` — naming convention is kebab-case and describes the *function* (e.g., `enroll-btn-<courseId>`, `submit-code-btn`, `assignment-search`).
+
+### Regression Reports
+Historical test reports are kept under `/app/test_reports/` and summarised in the **Testing & Evaluation Report** (`docs/testing-evaluation-report.md`).
+
+---
+
+## Observability
+
+- **Logs**: FastAPI's `logging` is configured at INFO level in development. Supervisor rotates stdout/stderr into `/var/log/supervisor/backend.*.log`.
+- **PostHog** (optional): Frontend is wired for PostHog page views and feature-flagged events. Provide `REACT_APP_POSTHOG_KEY` and `REACT_APP_POSTHOG_HOST` in `frontend/.env` to enable.
+- **Health probe**: `GET /api/health` returns `{"status": "ok"}` — suitable for Kubernetes readiness probes.
+
+---
+
+## Frequently Asked Questions
+
+**Q. Can a student see marks before the deadline or before results are published?**
+No — the `/submissions` endpoint strips `marks` server-side until the assignment's `results_publish_date` has passed (or the course leader manually publishes results).
+
+**Q. What happens to a draft when a marker finalises a submission?**
+The draft is deleted from the `marker_drafts` collection as part of the finalisation transaction. If the marker re-opens the submission, a fresh state is loaded.
+
+**Q. Can students edit a previously submitted attempt?**
+No. Each resubmission creates a new `submissions` document with `attempt_number + 1` and sets the previous attempt's `is_latest_attempt` to `false`. History is preserved.
+
+**Q. Who sees the cross-student comparison view?**
+Markers, moderators, and module leaders — never students. Comparison reads are restricted to the user's accessible courses.
+
+**Q. How is the leaderboard anonymised?**
+Students and markers choose a `nickname` per module when opting in. Real names are never exposed on the leaderboard view. The leader can still identify users if a reversal is needed for welfare reasons.
+
+---
+
+## Glossary
+
+| Term | Meaning |
+|------|---------|
+| **Attempt** | One submission of a student for a given assignment. Tracked by `attempt_number`. |
+| **Moderation sample** | The subset of submissions a moderator reviews: all failing (< 50%) + 10% random sample of passing. |
+| **Marking scheme** | A PDF/doc uploaded by the module leader that describes how to grade an assignment. Visible to markers only. |
+| **Publish results** | Irreversible action by the module leader that makes marks visible to students. |
+| **Badge** | A one-time achievement that awards a fixed XP amount. 14 student + 13 marker badges are defined. |
+| **Level** | A tier derived from total XP. 10 tiers from *Novice* to *Grandmaster*. |
+| **Reflection** | Structured, guided notes a student writes before submitting or after receiving feedback. Auto-drafted every few seconds. |
+
+---
+
+## Changelog (selected)
+
+- **Feb 2026 — Student Dashboard Refresh**: Full redesign of the "My Courses" page with hero banner, course cards grid, rich stats, deadline callout, filters, and search. Backend `/students/courses` enriched with course metadata and per-student progress stats.
+- **Feb 2026 — Documentation Pack**: README expanded to cover full system. Event-B formal specification, Requirements Analysis, Testing Evaluation Report, and Graphviz UML diagrams added under `/app/docs/`.
+- **Feb 2026 — PDF Export**: Professional per-submission PDF reports with syntax-highlighted code and full issue detail.
+- **Feb 2026 — Cross-Student Comparison**: Side-by-side synchronised Monaco editors for marker calibration.
+- **Feb 2026 — Student Reflections**: Pre-submission and post-feedback reflections with guided prompts and auto-draft.
+- **2025 — Moderation Pipeline**: Failing-work and random-sample review workflow; module-leader approval of flags.
+- **2025 — Gamification v2**: XP + 27 badges + per-module leaderboards with privacy-first nicknames.
 
 ---
 

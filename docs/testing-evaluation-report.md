@@ -82,7 +82,7 @@ The project follows a **layered testing strategy** combining:
 | Environment | Configuration |
 |-------------|---------------|
 | **Development** | Kubernetes pod: FastAPI on port 8001, React dev server on port 3000, MongoDB local instance |
-| **Preview** | `https://codefeedback-studio.preview.emergentagent.com` — ingress routes `/api/*` to backend, all other routes to frontend |
+| **Preview** | `https://codefeedback-studio-1.preview.emergentagent.com` — ingress routes `/api/*` to backend, all other routes to frontend |
 | **Database** | MongoDB instance with Motor async driver, isolated per environment |
 
 ### 2.3 Test Data Management
