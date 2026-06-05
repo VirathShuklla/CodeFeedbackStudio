@@ -1451,3 +1451,7 @@ This project is proprietary software built for educational institutions. All rig
 ---
 
 Built with care for educators and learners.
+
+---
+
+I really loved building this project — from the inline feedback editor to the gamification system, every piece taught me something new. If it makes even one student's feedback experience a little less stressful and one marker's life a little easier, it was worth every line of code.
